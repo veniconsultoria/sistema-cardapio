@@ -1,26 +1,19 @@
-// Variáveis globais compartilhadas
-let produtos = [];
-let receitas = [];
-let tiposRefeicoes = [];
-let clientes = [];
-let cardapios = {};
-let ingredientesReceita = [];
-let ingredientesReceitaTemp = [];
-let tiposRefeicaoTemp = [];
-let receitasSelecionadas = [];
-let editandoProduto = null;
-let editandoReceita = null;
-let editandoTipoRefeicao = null;
-let editandoCliente = null;
-let clienteAtualCardapio = null;
-let tipoRefeicaoAtualCardapio = null;
-let dataAtualCardapio = null;
+// main.js - Sistema principal sem conflitos de variáveis
+
+console.log('📁 Carregando main.js...');
+
+// Variáveis globais do sistema principal (prefixadas para evitar conflito)
+let mainProdutos = [];
+let mainReceitas = [];
+let mainTiposRefeicoes = [];
+let mainClientes = [];
+let mainCardapios = {};
 
 // Contadores
-let proximoCodigoProduto = 1;
-let proximoCodigoReceita = 1;
-let proximoCodigoTipoRefeicao = 1;
-let proximoCodigoCliente = 1;
+let proximoCodigoProdutoMain = 1;
+let proximoCodigoReceitaMain = 1;
+let proximoCodigoTipoRefeicaoMain = 1;
+let proximoCodigoClienteMain = 1;
 
 // Data atual para calendário
 let dataAtual = new Date();
@@ -31,26 +24,30 @@ let calendarioVisivel = true;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Sistema iniciado');
-    inicializarSistema();
+    console.log('📄 DOM carregado - main.js');
+    inicializarSistemaMain();
 });
 
-function inicializarSistema() {
-    // Configurar eventos básicos
-    configurarEventos();
+function inicializarSistemaMain() {
+    console.log('🚀 Inicializando sistema principal...');
     
-    // Gerar códigos iniciais
-    gerarProximoCodigoProduto();
-    gerarProximoCodigoReceita();
-    gerarProximoCodigoTipoRefeicao();
-    gerarProximoCodigoCliente();
+    // Configurar eventos básicos
+    configurarEventosMain();
+    
+    // Configurar data atual
+    const hoje = new Date().toISOString().split('T')[0];
+    const inputData = document.getElementById('dataCardapio');
+    if (inputData) {
+        inputData.value = hoje;
+    }
     
     // Carregar dados do calendário
     carregarCalendario();
-    carregarClientesCardapio();
 }
 
-function configurarEventos() {
+function configurarEventosMain() {
+    console.log('⚙️ Configurando eventos principais...');
+    
     // Formatação de telefone
     const telefoneInput = document.getElementById('telefoneCliente');
     if (telefoneInput) {
@@ -66,22 +63,14 @@ function configurarEventos() {
         });
     }
 
-    // Formulários
-    const formProduto = document.getElementById('formProduto');
-    if (formProduto) formProduto.addEventListener('submit', salvarProduto);
-    
-    const formReceita = document.getElementById('formReceita');
-    if (formReceita) formReceita.addEventListener('submit', salvarReceita);
-    
-    const formTipoRefeicao = document.getElementById('formTipoRefeicao');
-    if (formTipoRefeicao) formTipoRefeicao.addEventListener('submit', salvarTipoRefeicao);
-    
-    const formCliente = document.getElementById('formCliente');
-    if (formCliente) formCliente.addEventListener('submit', salvarCliente);
+    // NÃO configurar formulários aqui - cada módulo cuida dos seus próprios
+    console.log('✅ Eventos principais configurados');
 }
 
 // Funções de navegação
 function showTab(tabName) {
+    console.log('📂 Abrindo aba:', tabName);
+    
     // Ocultar todas as abas
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.add('hidden');
@@ -93,47 +82,55 @@ function showTab(tabName) {
     });
     
     // Mostrar aba selecionada
-    document.getElementById(tabName).classList.remove('hidden');
-    event.target.classList.add('active');
+    const tabContent = document.getElementById(tabName);
+    const tabButton = event?.target;
     
-    // Carregar dados específicos da aba se necessário
-    if (tabName === 'cardapio') {
-        carregarClientesCardapio();
+    if (tabContent) {
+        tabContent.classList.remove('hidden');
     }
-    // ADICIONAR ESTA LINHA:
-    if (tabName === 'receitas' && typeof onReceitasTabOpened === 'function') {
-        onReceitasTabOpened();
-    }
-}
     
-
-// Funções de código
-function gerarProximoCodigoProduto() {
-    const element = document.getElementById('codigoProduto');
-    if (element) {
-        element.value = proximoCodigoProduto.toString().padStart(14, '0');
+    if (tabButton) {
+        tabButton.classList.add('active');
     }
-}
-
-function gerarProximoCodigoReceita() {
-    const element = document.getElementById('codigoReceita');
-    if (element) {
-        element.value = proximoCodigoReceita.toString().padStart(14, '0');
-    }
-}
-
-function gerarProximoCodigoTipoRefeicao() {
-    const element = document.getElementById('codigoTipoRefeicao');
-    if (element) {
-        element.value = proximoCodigoTipoRefeicao.toString().padStart(14, '0');
-    }
-}
-
-function gerarProximoCodigoCliente() {
-    const element = document.getElementById('codigoCliente');
-    if (element) {
-        element.value = 'CLI' + proximoCodigoCliente.toString().padStart(11, '0');
-    }
+    
+    // Inicializar módulos específicos quando necessário
+    setTimeout(() => {
+        if (tabName === 'produtos-novo') {
+            if (typeof inicializarProdutosNovo === 'function') {
+                inicializarProdutosNovo();
+            }
+        }
+        
+        if (tabName === 'produtos') {
+            if (typeof inicializarSistema === 'function') {
+                inicializarSistema();
+            }
+        }
+        
+        if (tabName === 'receitas') {
+            if (typeof inicializarReceitas === 'function') {
+                inicializarReceitas();
+            }
+        }
+        
+        if (tabName === 'tipos-refeicoes') {
+            if (typeof inicializarTiposRefeicoes === 'function') {
+                inicializarTiposRefeicoes();
+            }
+        }
+        
+        if (tabName === 'clientes') {
+            if (typeof inicializarClientes === 'function') {
+                inicializarClientes();
+            }
+        }
+        
+        if (tabName === 'cardapio') {
+            if (typeof carregarClientesCardapio === 'function') {
+                carregarClientesCardapio();
+            }
+        }
+    }, 100);
 }
 
 // Funções auxiliares
@@ -234,7 +231,7 @@ function atualizarCalendario() {
         const dataStr = `${anoAtual}-${(mesAtual + 1).toString().padStart(2, '0')}-${dia.toString().padStart(2, '0')}`;
         
         // Verificar se tem cardápio
-        if (cardapios[dataStr]) {
+        if (mainCardapios[dataStr]) {
             div.classList.add('has-menu');
         }
         
@@ -273,16 +270,12 @@ function mudarMes(direcao) {
     atualizarCalendario();
 }
 
-function carregarClientesCardapio() {
-    const select = document.getElementById('clienteCardapio');
-    if (!select) return;
-    
-    select.innerHTML = '<option value="">Selecione...</option>';
+// Exportar funções para uso global
+window.showTab = showTab;
+window.fecharModal = fecharModal;
+window.mostrarAlerta = mostrarAlerta;
+window.toggleCalendar = toggleCalendar;
+window.mudarMes = mudarMes;
+window.selecionarDia = selecionarDia;
 
-    clientes.filter(cliente => cliente.tiposRefeicao && cliente.tiposRefeicao.length > 0).forEach((cliente, index) => {
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = cliente.descricao;
-        select.appendChild(option);
-    });
-}
+console.log('✅ main.js carregado sem conflitos!');

@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Cadastro - Produtos e Receitas</title>
     <link rel="stylesheet" href="css/main.css">
-
-        <!-- ✅ ADICIONAR ESTAS LINHAS AQUI ✅ -->
-
-    <!-- ✅ ATÉ AQUI ✅ -->
 </head>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,10 +14,15 @@
     <div class="container">
         <div class="header">
             <h1>Sistema de Cadastro - Produtos e Receitas</h1>
+            <div>
+                <button class="btn btn-secondary" onclick="mostrarUUID()">🔍 Mostrar UUID</button>
+                <button class="btn btn-secondary" onclick="logout()">Sair</button>
+            </div>
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="showTab('produtos')">Cadastro de Produtos</button>
+            <button class="tab active" onclick="showTab('produtos-novo')">🛒 Produtos (Novo)</button>
+            <button class="tab" onclick="showTab('produtos')">Cadastro de Produtos</button>
             <button class="tab" onclick="showTab('receitas')">Cadastro de Receitas</button>
             <button class="tab" onclick="showTab('tipos-refeicoes')">Tipos de Refeições</button>
             <button class="tab" onclick="showTab('clientes')">Cadastro de Clientes</button>
@@ -29,8 +30,63 @@
         </div>
 
         <div class="content">
-            <!-- Cadastro de Produtos -->
-            <div id="produtos" class="tab-content">
+            <!-- NOVA ABA: Produtos Melhorados -->
+            <div id="produtos-novo" class="tab-content">
+                <div class="section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2>🛒 Gestão de Produtos</h2>
+                        <div>
+                            <button class="btn btn-primary" onclick="abrirModalNovoProduto()">+ Novo Produto</button>
+                            <button class="btn btn-secondary" onclick="recarregarProdutos()">🔄 Recarregar</button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <input type="text" id="busca-produtos" placeholder="🔍 Buscar produtos..." style="min-width: 200px; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                        <select id="filtro-grupo" style="padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                            <option value="">Todos os grupos</option>
+                            <option value="Ingredientes">Ingredientes</option>
+                            <option value="Descartáveis">Descartáveis</option>
+                            <option value="Outros produtos">Outros produtos</option>
+                        </select>
+                        <span>Total: <strong id="total-produtos">0</strong> produtos</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tabelaProdutosNovo">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Grupo</th>
+                                    <th>Unidade</th>
+                                    <th>Peso Bruto</th>
+                                    <th>Peso Líquido</th>
+                                    <th>Preço</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="produtos-tbody">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                                        Carregando produtos...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 5px; border-left: 4px solid #2196f3;">
+                        <h3>🔧 Status do Sistema</h3>
+                        <p><strong>Supabase:</strong> <span id="status-supabase" style="display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #f8d7da; color: #721c24;">Verificando...</span></p>
+                        <p><strong>Usuário:</strong> <span id="usuario-info">Carregando...</span></p>
+                        <p><strong>Último erro:</strong> <span id="ultimo-erro">Nenhum</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cadastro de Produtos (Original) -->
+            <div id="produtos" class="tab-content hidden">
                 <div class="section">
                     <h2>Cadastro de Produtos</h2>
                     <form id="formProduto">
@@ -213,19 +269,7 @@
                                 <div class="editor-content" 
                                      id="textoReceita" 
                                      contenteditable="true" 
-                                     placeholder="Digite aqui o modo de preparo da receita...
-
-Dicas de uso:
-- Use Ctrl+B para negrito, Ctrl+I para itálico, Ctrl+U para sublinhado
-- Selecione o texto antes de aplicar formatação
-- Use as listas para organizar ingredientes ou etapas
-- Pressione Enter duas vezes para criar parágrafos
-- Arraste o canto inferior direito para redimensionar
-
-Exemplo:
-1. Pré-aqueça o forno a 180°C
-2. Em uma tigela, misture os ingredientes secos
-3. Adicione os ingredientes líquidos gradualmente..."
+                                     placeholder="Digite aqui o modo de preparo da receita..."
                                      oninput="updateRecipeText()"
                                      onkeydown="handleEditorKeydown(event)">
                                 </div>
@@ -299,7 +343,8 @@ Exemplo:
                                 <tr>
                                     <th>Código</th>
                                     <th>Descrição</th>
-                                    <th>Peso Bruto</th>
+                                    <th>Rendimento</th>
+                                    <th>Peso Final</th>
                                     <th>Preço Total</th>
                                     <th>Ações</th>
                                 </tr>
@@ -472,7 +517,65 @@ Exemplo:
         </div>
     </div>
 
-    <!-- Modais -->
+    <!-- Modal de Produto (Novo) -->
+    <div id="modal-produto" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModalProduto()">&times;</span>
+            <h2>📦 Produto</h2>
+            <form>
+                <input type="hidden" id="produto-id">
+                
+                <div class="form-group">
+                    <label for="produto-codigo">Código:</label>
+                    <input type="text" id="produto-codigo" readonly style="background-color: #f8f9fa;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="produto-descricao">Descrição: *</label>
+                    <input type="text" id="produto-descricao" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="produto-grupo">Grupo:</label>
+                    <select id="produto-grupo">
+                        <option value="Ingredientes">Ingredientes</option>
+                        <option value="Descartáveis">Descartáveis</option>
+                        <option value="Outros produtos">Outros produtos</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="produto-unidade">Unidade de Medida:</label>
+                    <select id="produto-unidade">
+                        <option value="KG">KG</option>
+                        <option value="L">L</option>
+                        <option value="UN">UN</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="produto-peso-bruto">Peso Bruto:</label>
+                    <input type="number" id="produto-peso-bruto" step="0.01" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="produto-peso-liquido">Peso Líquido:</label>
+                    <input type="number" id="produto-peso-liquido" step="0.01" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="produto-preco">Preço:</label>
+                    <input type="number" id="produto-preco" step="0.01" min="0">
+                </div>
+            </form>
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="fecharModalProduto()">Cancelar</button>
+                <button class="btn btn-primary" onclick="salvarProduto()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outros Modais (mantidos originais) -->
     <div id="modalIngredientes" class="modal">
         <div class="modal-content">
             <span class="close" onclick="fecharModal('modalIngredientes')">&times;</span>
@@ -509,177 +612,7 @@ Exemplo:
         </div>
     </div>
 
-    <!-- Modal Impressão ATUALIZADO -->
-    <div id="modalImpressao" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="fecharModal('modalImpressao')">&times;</span>
-            <h2>📄 Imprimir Cardápio</h2>
-            
-            <!-- Período -->
-            <div class="form-section">
-                <h4>📅 Período</h4>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="dataInicioPeriodo">Data Início</label>
-                        <input type="date" id="dataInicioPeriodo" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="dataFimPeriodo">Data Fim</label>
-                        <input type="date" id="dataFimPeriodo" required>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Seleção de Clientes -->
-            <div class="form-section">
-                <h4>👥 Clientes</h4>
-                <div class="form-group">
-                    <label>
-                        <input type="radio" name="tipoCliente" value="todos" checked onchange="toggleClienteSelection()">
-                        Todos os clientes
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="radio" name="tipoCliente" value="especificos" onchange="toggleClienteSelection()">
-                        Clientes específicos
-                    </label>
-                </div>
-                <div id="selecaoClientes" class="clientes-list hidden">
-                    <div class="checkbox-list" id="listaClientesImpressao">
-                        <!-- Clientes serão carregados dinamicamente -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Seleção de Tipos de Refeição -->
-            <div class="form-section">
-                <h4>🍽️ Tipos de Refeição</h4>
-                <div class="form-group">
-                    <label>
-                        <input type="radio" name="tipoRefeicao" value="todos" checked onchange="toggleTipoRefeicaoSelection()">
-                        Todos os tipos de refeição
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="radio" name="tipoRefeicao" value="especificos" onchange="toggleTipoRefeicaoSelection()">
-                        Tipos específicos
-                    </label>
-                </div>
-                <div id="selecaoTiposRefeicao" class="tipos-refeicao-list hidden">
-                    <div class="checkbox-list" id="listaTiposRefeicaoImpressao">
-                        <!-- Tipos serão carregados dinamicamente -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botões de Impressão NOVOS -->
-            <div class="form-section">
-                <h4>📋 Opções de Impressão</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-                    
-                    <!-- Imprimir Preparos -->
-                    <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 2px solid #e9ecef; transition: all 0.3s ease;" 
-                         onmouseover="this.style.borderColor='#667eea'" 
-                         onmouseout="this.style.borderColor='#e9ecef'">
-                        <div style="text-align: center; margin-bottom: 10px;">
-                            <span style="font-size: 24px;">🥘</span>
-                            <h5 style="margin: 5px 0; color: #333;">Preparos</h5>
-                        </div>
-                        <p style="font-size: 12px; color: #666; margin-bottom: 15px; text-align: center;">
-                            Lista de ingredientes com quantidades calculadas para cada receita
-                        </p>
-                        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="imprimirPreparos()">
-                            Imprimir Preparos
-                        </button>
-                    </div>
-
-                    <!-- Imprimir Lista de Produtos -->
-                    <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 2px solid #e9ecef; transition: all 0.3s ease;" 
-                         onmouseover="this.style.borderColor='#28a745'" 
-                         onmouseout="this.style.borderColor='#e9ecef'">
-                        <div style="text-align: center; margin-bottom: 10px;">
-                            <span style="font-size: 24px;">📋</span>
-                            <h5 style="margin: 5px 0; color: #333;">Lista de Produtos</h5>
-                        </div>
-                        <p style="font-size: 12px; color: #666; margin-bottom: 15px; text-align: center;">
-                            Lista consolidada de todos os produtos necessários para compras
-                        </p>
-                        <button type="button" class="btn btn-success" style="width: 100%;" onclick="imprimirListaProdutos()">
-                            Imprimir Lista de Produtos
-                        </button>
-                    </div>
-
-                    <!-- NOVO: Imprimir Receitas Completas -->
-                    <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 2px solid #e9ecef; transition: all 0.3s ease;" 
-                         onmouseover="this.style.borderColor='#fd7e14'" 
-                         onmouseout="this.style.borderColor='#e9ecef'">
-                        <div style="text-align: center; margin-bottom: 10px;">
-                            <span style="font-size: 24px;">👨‍🍳</span>
-                            <h5 style="margin: 5px 0; color: #333;">Receitas Completas</h5>
-                        </div>
-                        <p style="font-size: 12px; color: #666; margin-bottom: 15px; text-align: center;">
-                            Receitas com modo de preparo e quantidades calculadas para cada cliente
-                        </p>
-                        <button type="button" class="btn" style="width: 100%; background: #fd7e14; color: white;" onclick="imprimirReceitasCompletas()">
-                            Imprimir Receitas
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Informações Adicionais -->
-            <div style="background: #e3f2fd; border-radius: 8px; padding: 15px; margin-top: 20px; border-left: 4px solid #2196f3;">
-                <h5 style="color: #1976d2; margin-bottom: 10px;">💡 Dicas de Impressão:</h5>
-                <ul style="margin: 0; padding-left: 20px; color: #666; font-size: 13px;">
-                    <li><strong>Preparos:</strong> Para a equipe de cozinha - mostra apenas ingredientes e quantidades</li>
-                    <li><strong>Lista de Produtos:</strong> Para compras - consolida todos os produtos necessários</li>
-                    <li><strong>Receitas Completas:</strong> Para o cozinheiro - inclui modo de preparo detalhado</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Visualizar Receita -->
-    <div id="modalVisualizarReceita" class="modal">
-        <div class="modal-content modal-receita">
-            <span class="close" onclick="fecharModal('modalVisualizarReceita')">&times;</span>
-            <div class="receita-header">
-                <h2 id="tituloReceitaModal">Nome da Receita</h2>
-                <div class="receita-info">
-                    <span id="rendimentoReceitaModal">Rendimento: -</span>
-                    <span id="pesoReceitaModal">Peso: -</span>
-                    <span id="precoReceitaModal">Preço: -</span>
-                </div>
-            </div>
-            
-            <div class="receita-tabs">
-                <button class="receita-tab active" onclick="showReceitaTab('preparo')">Modo de Preparo</button>
-                <button class="receita-tab" onclick="showReceitaTab('ingredientes')">Ingredientes</button>
-            </div>
-            
-            <div id="preparo-tab" class="receita-tab-content active">
-                <div id="textoReceitaModal" class="receita-preparo-content">
-                    <!-- Conteúdo do modo de preparo será inserido aqui -->
-                </div>
-            </div>
-            
-            <div id="ingredientes-tab" class="receita-tab-content">
-                <div id="ingredientesReceitaModal" class="receita-ingredientes-content">
-                    <!-- Lista de ingredientes será inserida aqui -->
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-primary" onclick="imprimirReceitaModal()">Imprimir</button>
-                <button class="btn btn-secondary" onclick="editarReceitaModal()">Editar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
+    <!-- Scripts - ORDEM CORRIGIDA PARA EVITAR CONFLITOS -->
     <script src="js/main.js"></script>
     <script src="js/produtos.js"></script>
     <script src="js/receitas.js"></script>
@@ -687,68 +620,368 @@ Exemplo:
     <script src="js/clientes.js"></script>
     <script src="js/cardapio.js"></script>
 
-    <!-- Estilos adicionais para os modais melhorados -->
+    <!-- Script inline APENAS para produtos melhorados -->
+    <script>
+        // PRODUTOS MELHORADOS - INTEGRADO NO SISTEMA (SEM CONFLITOS)
+        console.log('🚀 Iniciando sistema de produtos melhorados...');
+        
+        // Variáveis locais para produtos melhorados (prefixadas para evitar conflito)
+        let produtosNovoSistema = [];
+        let editandoNovoSistema = null;
+
+        // Aguardar Supabase
+        function aguardarSupabaseNovoSistema(callback, tentativas = 0) {
+            if (window.supabase && window.supabase.auth) {
+                callback();
+            } else if (tentativas < 50) {
+                setTimeout(() => aguardarSupabaseNovoSistema(callback, tentativas + 1), 100);
+            } else {
+                alert('Erro: Supabase não carregou');
+            }
+        }
+
+        // Inicializar quando aba produtos-novo for selecionada
+        function inicializarProdutosNovo() {
+            aguardarSupabaseNovoSistema(async () => {
+                try {
+                    // Verificar usuário
+                    const { data: { user } } = await window.supabase.auth.getUser();
+                    if (!user) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    document.getElementById('status-supabase').textContent = 'Conectado';
+                    document.getElementById('status-supabase').style.background = '#d4edda';
+                    document.getElementById('status-supabase').style.color = '#155724';
+                    document.getElementById('usuario-info').textContent = user.email;
+                    
+                    await carregarProdutosNovoSistema();
+                    await gerarCodigoNovoSistema();
+                    configurarEventosNovoSistema();
+                    
+                } catch (error) {
+                    console.error('Erro:', error);
+                    document.getElementById('ultimo-erro').textContent = error.message;
+                }
+            });
+        }
+
+        // Configurar eventos para produtos melhorados
+        function configurarEventosNovoSistema() {
+            const buscaInput = document.getElementById('busca-produtos');
+            const filtroSelect = document.getElementById('filtro-grupo');
+            
+            if (buscaInput) {
+                buscaInput.removeEventListener('input', filtrarNovoSistema);
+                buscaInput.addEventListener('input', filtrarNovoSistema);
+            }
+            if (filtroSelect) {
+                filtroSelect.removeEventListener('change', filtrarNovoSistema);
+                filtroSelect.addEventListener('change', filtrarNovoSistema);
+            }
+        }
+
+        // Gerar código para produtos melhorados
+        async function gerarCodigoNovoSistema() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                const { data, error } = await window.supabase.rpc('get_next_produto_codigo', {
+                    user_uuid: user.id
+                });
+                if (error) throw error;
+                
+                const input = document.getElementById('produto-codigo');
+                if (input) {
+                    input.value = data || 'PR000001';
+                }
+            } catch (error) {
+                const input = document.getElementById('produto-codigo');
+                if (input) {
+                    input.value = 'PR000001';
+                }
+            }
+        }
+
+        // Carregar produtos melhorados
+        async function carregarProdutosNovoSistema() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                const { data, error } = await window.supabase
+                    .from('produtos')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('codigo');
+
+                if (error) throw error;
+                produtosNovoSistema = data || [];
+                renderizarNovoSistema();
+                
+            } catch (error) {
+                console.error('Erro ao carregar:', error);
+                document.getElementById('ultimo-erro').textContent = error.message;
+            }
+        }
+
+        // Renderizar tabela de produtos melhorados
+        function renderizarNovoSistema() {
+            const tbody = document.getElementById('produtos-tbody');
+            const total = document.getElementById('total-produtos');
+            
+            if (!tbody || !total) return;
+            
+            tbody.innerHTML = '';
+            total.textContent = produtosNovoSistema.length;
+
+            if (produtosNovoSistema.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">Nenhum produto encontrado</td></tr>';
+                return;
+            }
+
+            produtosNovoSistema.forEach(produto => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${produto.codigo}</td>
+                    <td>${produto.descricao}</td>
+                    <td>${produto.grupo}</td>
+                    <td>${produto.unidade_medida}</td>
+                    <td>${produto.peso_bruto || '-'}</td>
+                    <td>${produto.peso_liquido || '-'}</td>
+                    <td>R$ ${parseFloat(produto.preco || 0).toFixed(2)}</td>
+                    <td>
+                        <button onclick="editarNovoSistema('${produto.id}')" class="btn btn-primary btn-sm">Editar</button>
+                        <button onclick="excluirNovoSistema('${produto.id}')" class="btn btn-danger btn-sm">Excluir</button>
+                    </td>
+                `;
+            });
+        }
+
+        // Filtrar produtos melhorados
+        function filtrarNovoSistema() {
+            const busca = document.getElementById('busca-produtos')?.value.toLowerCase() || '';
+            const grupo = document.getElementById('filtro-grupo')?.value || '';
+            
+            let filtrados = produtosNovoSistema.filter(p => {
+                const matchBusca = !busca || p.descricao.toLowerCase().includes(busca) || p.codigo.toLowerCase().includes(busca);
+                const matchGrupo = !grupo || p.grupo === grupo;
+                return matchBusca && matchGrupo;
+            });
+            
+            const tbody = document.getElementById('produtos-tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            filtrados.forEach(produto => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${produto.codigo}</td>
+                    <td>${produto.descricao}</td>
+                    <td>${produto.grupo}</td>
+                    <td>${produto.unidade_medida}</td>
+                    <td>${produto.peso_bruto || '-'}</td>
+                    <td>${produto.peso_liquido || '-'}</td>
+                    <td>R$ ${parseFloat(produto.preco || 0).toFixed(2)}</td>
+                    <td>
+                        <button onclick="editarNovoSistema('${produto.id}')" class="btn btn-primary btn-sm">Editar</button>
+                        <button onclick="excluirNovoSistema('${produto.id}')" class="btn btn-danger btn-sm">Excluir</button>
+                    </td>
+                `;
+            });
+        }
+
+        // Abrir modal de produto melhorado
+        async function abrirModalNovoProduto() {
+            await gerarCodigoNovoSistema();
+            document.getElementById('produto-id').value = '';
+            document.getElementById('produto-descricao').value = '';
+            document.getElementById('produto-grupo').value = 'Ingredientes';
+            document.getElementById('produto-unidade').value = 'KG';
+            document.getElementById('produto-peso-bruto').value = '';
+            document.getElementById('produto-peso-liquido').value = '';
+            document.getElementById('produto-preco').value = '';
+            document.getElementById('modal-produto').style.display = 'block';
+            
+            setTimeout(() => {
+                const descInput = document.getElementById('produto-descricao');
+                if (descInput) descInput.focus();
+            }, 100);
+        }
+
+        // Salvar produto melhorado
+        async function salvarProduto() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                
+                const id = document.getElementById('produto-id').value;
+                const dados = {
+                    codigo: document.getElementById('produto-codigo').value.trim(),
+                    descricao: document.getElementById('produto-descricao').value.trim(),
+                    grupo: document.getElementById('produto-grupo').value,
+                    unidade_medida: document.getElementById('produto-unidade').value,
+                    peso_bruto: parseFloat(document.getElementById('produto-peso-bruto').value) || null,
+                    peso_liquido: parseFloat(document.getElementById('produto-peso-liquido').value) || null,
+                    preco: parseFloat(document.getElementById('produto-preco').value) || null,
+                    user_id: user.id
+                };
+
+                if (!dados.descricao) {
+                    alert('Informe a descrição');
+                    document.getElementById('produto-descricao').focus();
+                    return;
+                }
+
+                let result;
+                if (id) {
+                    result = await window.supabase.from('produtos').update(dados).eq('id', id).eq('user_id', user.id);
+                } else {
+                    result = await window.supabase.from('produtos').insert([dados]);
+                }
+
+                if (result.error) throw result.error;
+
+                alert(id ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
+                fecharModalProduto();
+                await carregarProdutosNovoSistema();
+
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                alert('Erro: ' + error.message);
+                document.getElementById('ultimo-erro').textContent = error.message;
+            }
+        }
+
+        // Editar produto melhorado
+        function editarNovoSistema(id) {
+            const produto = produtosNovoSistema.find(p => p.id === id);
+            if (!produto) return;
+
+            document.getElementById('produto-id').value = produto.id;
+            document.getElementById('produto-codigo').value = produto.codigo;
+            document.getElementById('produto-descricao').value = produto.descricao;
+            document.getElementById('produto-grupo').value = produto.grupo;
+            document.getElementById('produto-unidade').value = produto.unidade_medida;
+            document.getElementById('produto-peso-bruto').value = produto.peso_bruto || '';
+            document.getElementById('produto-peso-liquido').value = produto.peso_liquido || '';
+            document.getElementById('produto-preco').value = produto.preco || '';
+            document.getElementById('modal-produto').style.display = 'block';
+            
+            setTimeout(() => {
+                const descInput = document.getElementById('produto-descricao');
+                if (descInput) descInput.focus();
+            }, 100);
+        }
+
+        // Excluir produto melhorado
+        async function excluirNovoSistema(id) {
+            const produto = produtosNovoSistema.find(p => p.id === id);
+            if (!produto || !confirm(`Excluir "${produto.descricao}"?`)) return;
+
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                const { error } = await window.supabase
+                    .from('produtos')
+                    .delete()
+                    .eq('id', id)
+                    .eq('user_id', user.id);
+                    
+                if (error) throw error;
+                alert('Produto excluído com sucesso!');
+                await carregarProdutosNovoSistema();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+                document.getElementById('ultimo-erro').textContent = error.message;
+            }
+        }
+
+        // Fechar modal de produto
+        function fecharModalProduto() {
+            document.getElementById('modal-produto').style.display = 'none';
+        }
+
+        // Recarregar produtos melhorados
+        async function recarregarProdutos() {
+            await carregarProdutosNovoSistema();
+            alert('Produtos recarregados!');
+        }
+
+        // Exportar funções globais (apenas as que não conflitam)
+        window.abrirModalNovoProduto = abrirModalNovoProduto;
+        window.salvarProduto = salvarProduto;
+        window.editarNovoSistema = editarNovoSistema;
+        window.excluirNovoSistema = excluirNovoSistema;
+        window.fecharModalProduto = fecharModalProduto;
+        window.recarregarProdutos = recarregarProdutos;
+        window.inicializarProdutosNovo = inicializarProdutosNovo;
+
+        // Fechar modal ao clicar fora
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('modal-produto');
+            if (event.target === modal) {
+                fecharModalProduto();
+            }
+        });
+
+        console.log('✅ Sistema de produtos melhorados carregado sem conflitos!');
+    </script>
+
+    <!-- Estilos adicionais -->
     <style>
-    .form-section {
-        margin-bottom: 25px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #e9ecef;
-    }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
 
-    .form-section:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-    }
+        /* Melhorias no modal */
+        .modal-content {
+            max-width: 600px;
+        }
 
-    .form-section h4 {
-        color: #495057;
-        margin-bottom: 15px;
-        font-size: 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
 
-    .checkbox-list {
-        max-height: 150px;
-        overflow-y: auto;
-        border: 1px solid #e9ecef;
-        border-radius: 5px;
-        padding: 10px;
-        background: white;
-    }
+        .form-group {
+            margin-bottom: 15px;
+        }
 
-    .checkbox-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 5px 0;
-    }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
 
-    .checkbox-item input[type="checkbox"] {
-        margin: 0;
-    }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 14px;
+        }
 
-    .checkbox-item label {
-        margin: 0;
-        cursor: pointer;
-        flex: 1;
-    }
-
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    .btn-info {
-        background: #17a2b8;
-        color: white;
-    }
-
-    .btn-info:hover {
-        background: #138496;
-        transform: translateY(-2px);
-    }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
     </style>
 </body>
-</html>
+</html><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cadastro - Produtos e Receitas</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<body>
+    <div class="container">
+        <div class="header">

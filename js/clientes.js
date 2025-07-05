@@ -1,70 +1,95 @@
-// clientes.js - Sistema de Clientes com Supabase
-// Semana 2 - Adaptação para Supabase
+// clientes.js - Sistema de Clientes com Supabase (VERSÃO COMPLETA CORRIGIDA)
 
-// Verificar se o usuário está logado
-async function verificarAutenticacao() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        alert('Você precisa estar logado para acessar esta página.');
-        window.location.href = 'login.html';
-        return false;
-    }
-    return true;
+console.log('📁 Carregando clientes.js...');
+
+// Verificar se as variáveis já existem para evitar redeclaração
+if (typeof window.clientesModulo === 'undefined') {
+    // Variáveis globais do módulo clientes (usando namespace)
+    window.clientesModulo = {
+        clientesCarregados: [],
+        tiposRefeicaoTemp: [],
+        editandoCliente: null,
+        inicializado: false
+    };
 }
 
-// Variáveis globais
-let clientesCarregados = [];
-let tiposRefeicaoTemp = [];
-let editandoCliente = null;
+// Aguardar Supabase estar disponível
+function aguardarSupabaseClientes(callback, tentativas = 0) {
+    if (window.supabase && window.supabase.auth) {
+        console.log('✅ Supabase disponível para clientes.js');
+        callback();
+    } else if (tentativas < 50) {
+        setTimeout(() => aguardarSupabaseClientes(callback, tentativas + 1), 100);
+    } else {
+        console.error('❌ Timeout: Supabase não ficou disponível');
+        alert('Erro: Não foi possível conectar com o Supabase.');
+    }
+}
 
-// Inicializar página de clientes
-document.addEventListener('DOMContentLoaded', async function() {
-    // Verificar autenticação
-    if (!await verificarAutenticacao()) {
+// Verificar autenticação
+async function verificarAutenticacaoClientes() {
+    try {
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) {
+            alert('Você precisa estar logado para acessar esta página.');
+            window.location.href = 'login.html';
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error('Erro na autenticação:', error);
+        return false;
+    }
+}
+
+// Inicializar quando aba clientes for aberta
+async function inicializarClientes() {
+    if (window.clientesModulo.inicializado) {
+        console.log('⚠️ Clientes já inicializados');
         return;
     }
-    
-    // Carregar dados do Supabase
-    await carregarClientes();
-    await carregarTiposRefeicoesPadrao();
-    
-    // Configurar eventos dos botões
-    configurarEventos();
-    
-    // Gerar próximo código
-    await gerarProximoCodigoCliente();
-});
 
-// Configurar eventos dos botões e formulários
-function configurarEventos() {
-    // Formulário de salvar
+    aguardarSupabaseClientes(async () => {
+        if (await verificarAutenticacaoClientes()) {
+            await carregarClientes();
+            await carregarTiposRefeicoesPadrao();
+            await gerarProximoCodigoCliente();
+            configurarEventosClientes();
+            
+            window.clientesModulo.inicializado = true;
+            console.log('✅ Clientes inicializados com sucesso');
+        }
+    });
+}
+
+// Configurar eventos
+function configurarEventosClientes() {
+    console.log('⚙️ Configurando eventos de clientes...');
+    
     const form = document.getElementById('formCliente');
     if (form) {
-        form.addEventListener('submit', salvarCliente);
+        // Remover listeners existentes para evitar duplicação
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        newForm.addEventListener('submit', salvarClienteHandler);
     }
-    
-    // Botão Limpar
-    const btnLimpar = document.getElementById('btn-limpar-cliente');
-    if (btnLimpar) {
-        btnLimpar.addEventListener('click', limparFormularioCliente);
-    }
-    
-    // Botão Tipos de Refeição
-    const btnTipos = document.getElementById('btn-tipos-refeicao');
-    if (btnTipos) {
-        btnTipos.addEventListener('click', abrirModalTiposRefeicao);
-    }
+}
+
+// Handler para salvar cliente
+async function salvarClienteHandler(e) {
+    e.preventDefault();
+    await salvarCliente();
 }
 
 // Carregar clientes do Supabase
 async function carregarClientes() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            throw new Error('Usuário não autenticado');
-        }
+        console.log('📥 Carregando clientes...');
+        
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
 
-        const { data, error } = await supabase
+        const { data, error } = await window.supabase
             .from('clientes')
             .select(`
                 *,
@@ -75,20 +100,20 @@ async function carregarClientes() {
             .eq('user_id', user.id)
             .order('codigo');
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         // Transformar dados para formato compatível
-        clientesCarregados = (data || []).map(cliente => ({
+        window.clientesModulo.clientesCarregados = (data || []).map(cliente => ({
             ...cliente,
             tiposRefeicao: cliente.cliente_tipos_refeicao.map(rel => rel.tipos_refeicoes)
         }));
         
         atualizarTabelaClientes();
         
+        console.log(`✅ ${window.clientesModulo.clientesCarregados.length} clientes carregados`);
+        
     } catch (error) {
-        console.error('Erro ao carregar clientes:', error);
+        console.error('❌ Erro ao carregar clientes:', error);
         alert('Erro ao carregar clientes: ' + error.message);
     }
 }
@@ -96,18 +121,16 @@ async function carregarClientes() {
 // Carregar tipos de refeições disponíveis
 async function carregarTiposRefeicoesPadrao() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) return;
 
-        const { data, error } = await supabase
+        const { data, error } = await window.supabase
             .from('tipos_refeicoes')
             .select('*')
             .eq('user_id', user.id)
             .order('codigo');
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         window.tiposRefeicoesPadrao = data || [];
         
@@ -120,22 +143,23 @@ async function carregarTiposRefeicoesPadrao() {
 // Gerar próximo código de cliente
 async function gerarProximoCodigoCliente() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data, error } = await supabase.rpc('get_next_cliente_codigo', {
+        console.log('🔢 Gerando próximo código de cliente...');
+        
+        const { data: { user } } = await window.supabase.auth.getUser();
+        const { data, error } = await window.supabase.rpc('get_next_cliente_codigo', {
             user_uuid: user.id
         });
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         const input = document.getElementById('codigoCliente');
         if (input) {
             input.value = data || 'CLI001';
+            console.log('✅ Próximo código gerado:', data);
         }
         
     } catch (error) {
-        console.error('Erro ao gerar código:', error);
+        console.error('❌ Erro ao gerar código:', error);
         const input = document.getElementById('codigoCliente');
         if (input) {
             input.value = 'CLI001';
@@ -143,15 +167,13 @@ async function gerarProximoCodigoCliente() {
     }
 }
 
-// Salvar cliente (novo ou editado)
-async function salvarCliente(e) {
-    e.preventDefault();
-    
+// Salvar cliente (CORRIGIDO PARA SUPABASE)
+async function salvarCliente() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            throw new Error('Usuário não autenticado');
-        }
+        console.log('💾 Salvando cliente...');
+        
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
 
         // Coletar dados do formulário
         const codigo = document.getElementById('codigoCliente').value.trim();
@@ -185,12 +207,15 @@ async function salvarCliente(e) {
             user_id: user.id
         };
 
+        console.log('📤 Dados do cliente:', clienteData);
+
         let clienteId;
         
-        if (editandoCliente !== null) {
+        if (window.clientesModulo.editandoCliente !== null) {
             // Atualizar cliente existente
-            const clienteAtual = clientesCarregados[editandoCliente];
-            const { error } = await supabase
+            console.log('🔄 Atualizando cliente existente...');
+            const clienteAtual = window.clientesModulo.clientesCarregados[window.clientesModulo.editandoCliente];
+            const { error } = await window.supabase
                 .from('clientes')
                 .update(clienteData)
                 .eq('id', clienteAtual.id)
@@ -200,7 +225,8 @@ async function salvarCliente(e) {
             clienteId = clienteAtual.id;
         } else {
             // Criar novo cliente
-            const { data, error } = await supabase
+            console.log('➕ Criando novo cliente...');
+            const { data, error } = await window.supabase
                 .from('clientes')
                 .insert([clienteData])
                 .select()
@@ -213,14 +239,15 @@ async function salvarCliente(e) {
         // Salvar tipos de refeição vinculados
         await salvarTiposRefeicaoCliente(clienteId);
 
-        alert(editandoCliente !== null ? 'Cliente atualizado com sucesso!' : 'Cliente criado com sucesso!');
+        console.log('✅ Cliente salvo com sucesso!');
+        alert(window.clientesModulo.editandoCliente !== null ? 'Cliente atualizado com sucesso!' : 'Cliente criado com sucesso!');
         
         // Limpar formulário e recarregar lista
         limparFormularioCliente();
         await carregarClientes();
 
     } catch (error) {
-        console.error('Erro ao salvar cliente:', error);
+        console.error('❌ Erro ao salvar cliente:', error);
         alert('Erro ao salvar cliente: ' + error.message);
     }
 }
@@ -228,28 +255,32 @@ async function salvarCliente(e) {
 // Salvar tipos de refeição do cliente
 async function salvarTiposRefeicaoCliente(clienteId) {
     try {
+        console.log('💾 Salvando tipos de refeição do cliente...');
+        
         // Remover tipos existentes
-        await supabase
+        await window.supabase
             .from('cliente_tipos_refeicao')
             .delete()
             .eq('cliente_id', clienteId);
 
         // Adicionar novos tipos
-        if (tiposRefeicaoTemp.length > 0) {
-            const relacoes = tiposRefeicaoTemp.map(tipo => ({
+        if (window.clientesModulo.tiposRefeicaoTemp.length > 0) {
+            const relacoes = window.clientesModulo.tiposRefeicaoTemp.map(tipo => ({
                 cliente_id: clienteId,
                 tipo_refeicao_id: tipo.id
             }));
 
-            const { error } = await supabase
+            const { error } = await window.supabase
                 .from('cliente_tipos_refeicao')
                 .insert(relacoes);
 
             if (error) throw error;
         }
 
+        console.log('✅ Tipos de refeição do cliente salvos!');
+
     } catch (error) {
-        console.error('Erro ao salvar tipos de refeição do cliente:', error);
+        console.error('❌ Erro ao salvar tipos de refeição do cliente:', error);
         throw error;
     }
 }
@@ -260,9 +291,9 @@ function limparFormularioCliente() {
     if (form) {
         form.reset();
     }
-    tiposRefeicaoTemp = [];
+    window.clientesModulo.tiposRefeicaoTemp = [];
     atualizarTiposRefeicaoVinculados();
-    editandoCliente = null;
+    window.clientesModulo.editandoCliente = null;
     gerarProximoCodigoCliente();
 }
 
@@ -273,7 +304,7 @@ function atualizarTabelaClientes() {
     
     tbody.innerHTML = '';
 
-    if (clientesCarregados.length === 0) {
+    if (window.clientesModulo.clientesCarregados.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" style="text-align: center; color: #666; padding: 20px;">
@@ -284,7 +315,7 @@ function atualizarTabelaClientes() {
         return;
     }
 
-    clientesCarregados.forEach((cliente, index) => {
+    window.clientesModulo.clientesCarregados.forEach((cliente, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${cliente.codigo}</td>
@@ -307,7 +338,7 @@ function atualizarTabelaClientes() {
 
 // Editar cliente
 async function editarCliente(index) {
-    const cliente = clientesCarregados[index];
+    const cliente = window.clientesModulo.clientesCarregados[index];
     if (!cliente) {
         alert('Cliente não encontrado');
         return;
@@ -320,9 +351,9 @@ async function editarCliente(index) {
     document.getElementById('telefoneCliente').value = cliente.telefone || '';
     document.getElementById('emailCliente').value = cliente.email || '';
     
-    tiposRefeicaoTemp = [...(cliente.tiposRefeicao || [])];
+    window.clientesModulo.tiposRefeicaoTemp = [...(cliente.tiposRefeicao || [])];
     atualizarTiposRefeicaoVinculados();
-    editandoCliente = index;
+    window.clientesModulo.editandoCliente = index;
     
     document.getElementById('descricaoCliente').focus();
 }
@@ -330,7 +361,7 @@ async function editarCliente(index) {
 // Excluir cliente
 async function excluirCliente(index) {
     try {
-        const cliente = clientesCarregados[index];
+        const cliente = window.clientesModulo.clientesCarregados[index];
         if (!cliente) {
             alert('Cliente não encontrado');
             return;
@@ -340,33 +371,32 @@ async function excluirCliente(index) {
             return;
         }
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            throw new Error('Usuário não autenticado');
-        }
+        console.log('🗑️ Excluindo cliente:', cliente.id);
+
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
 
         // Excluir relações primeiro
-        await supabase
+        await window.supabase
             .from('cliente_tipos_refeicao')
             .delete()
             .eq('cliente_id', cliente.id);
 
         // Excluir cliente
-        const { error } = await supabase
+        const { error } = await window.supabase
             .from('clientes')
             .delete()
             .eq('id', cliente.id)
             .eq('user_id', user.id);
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
+        console.log('✅ Cliente excluído com sucesso!');
         alert('Cliente excluído com sucesso!');
         await carregarClientes();
 
     } catch (error) {
-        console.error('Erro ao excluir cliente:', error);
+        console.error('❌ Erro ao excluir cliente:', error);
         alert('Erro ao excluir cliente: ' + error.message);
     }
 }
@@ -412,12 +442,12 @@ function adicionarTipoRefeicao(index) {
         return;
     }
     
-    if (tiposRefeicaoTemp.find(t => t.id === tipo.id)) {
+    if (window.clientesModulo.tiposRefeicaoTemp.find(t => t.id === tipo.id)) {
         alert('Tipo de refeição já adicionado!');
         return;
     }
 
-    tiposRefeicaoTemp.push(tipo);
+    window.clientesModulo.tiposRefeicaoTemp.push(tipo);
     atualizarTiposRefeicaoVinculados();
     alert('Tipo de refeição adicionado!');
 }
@@ -429,12 +459,12 @@ function atualizarTiposRefeicaoVinculados() {
     
     container.innerHTML = '';
 
-    if (tiposRefeicaoTemp.length === 0) {
+    if (window.clientesModulo.tiposRefeicaoTemp.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #666; padding: 10px;">Nenhum tipo de refeição vinculado</p>';
         return;
     }
 
-    tiposRefeicaoTemp.forEach((tipo, index) => {
+    window.clientesModulo.tiposRefeicaoTemp.forEach((tipo, index) => {
         const div = document.createElement('div');
         div.className = 'ingredient-item';
         div.innerHTML = `
@@ -448,7 +478,7 @@ function atualizarTiposRefeicaoVinculados() {
 // Remover tipo de refeição do cliente
 function removerTipoRefeicao(index) {
     if (confirm('Tem certeza que deseja remover este tipo de refeição?')) {
-        tiposRefeicaoTemp.splice(index, 1);
+        window.clientesModulo.tiposRefeicaoTemp.splice(index, 1);
         atualizarTiposRefeicaoVinculados();
         alert('Tipo de refeição removido!');
     }
@@ -469,3 +499,8 @@ window.abrirModalTiposRefeicao = abrirModalTiposRefeicao;
 window.adicionarTipoRefeicao = adicionarTipoRefeicao;
 window.removerTipoRefeicao = removerTipoRefeicao;
 window.fecharModal = fecharModal;
+window.salvarCliente = salvarCliente;
+window.limparFormularioCliente = limparFormularioCliente;
+window.inicializarClientes = inicializarClientes;
+
+console.log('✅ clientes.js carregado com sucesso!');

@@ -1,76 +1,93 @@
-// tipos-refeicoes.js - Sistema de Tipos de Refeições com Supabase
-// Semana 2 - Adaptação para Supabase
+// tipos-refeicoes.js - Sistema de Tipos de Refeições com Supabase (CORRIGIDO)
 
-// Verificar se o usuário está logado
-async function verificarAutenticacao() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        alert('Você precisa estar logado para acessar esta página.');
-        window.location.href = 'login.html';
-        return false;
-    }
-    return true;
-}
+console.log('📁 Carregando tipos-refeicoes.js...');
 
-// Variável global para armazenar tipos de refeições
+// Variáveis globais
 let tiposRefeicoesCarregados = [];
 let editandoTipoRefeicao = null;
 
-// Inicializar página de tipos de refeições
-document.addEventListener('DOMContentLoaded', async function() {
-    // Verificar autenticação
-    if (!await verificarAutenticacao()) {
-        return;
+// Aguardar Supabase estar disponível
+function aguardarSupabaseTipos(callback, tentativas = 0) {
+    if (window.supabase && window.supabase.auth) {
+        console.log('✅ Supabase disponível para tipos-refeicoes.js');
+        callback();
+    } else if (tentativas < 50) {
+        setTimeout(() => aguardarSupabaseTipos(callback, tentativas + 1), 100);
+    } else {
+        console.error('❌ Timeout: Supabase não ficou disponível');
+        alert('Erro: Não foi possível conectar com o Supabase.');
     }
-    
-    // Carregar tipos de refeições do Supabase
-    await carregarTiposRefeicoes();
-    
-    // Configurar eventos dos botões
-    configurarEventos();
-    
-    // Gerar próximo código
-    await gerarProximoCodigoTipoRefeicao();
-});
+}
 
-// Configurar eventos dos botões e formulários
-function configurarEventos() {
-    // Formulário de salvar
+// Verificar autenticação
+async function verificarAutenticacaoTipos() {
+    try {
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) {
+            alert('Você precisa estar logado para acessar esta página.');
+            window.location.href = 'login.html';
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error('Erro na autenticação:', error);
+        return false;
+    }
+}
+
+// Inicializar quando aba tipos-refeicoes for aberta
+async function inicializarTiposRefeicoes() {
+    aguardarSupabaseTipos(async () => {
+        if (await verificarAutenticacaoTipos()) {
+            await carregarTiposRefeicoes();
+            await gerarProximoCodigoTipoRefeicao();
+            configurarEventosTipos();
+        }
+    });
+}
+
+// Configurar eventos
+function configurarEventosTipos() {
     const form = document.getElementById('formTipoRefeicao');
     if (form) {
-        form.addEventListener('submit', salvarTipoRefeicao);
+        // Remover listeners existentes para evitar duplicação
+        form.removeEventListener('submit', salvarTipoRefeicaoHandler);
+        form.addEventListener('submit', salvarTipoRefeicaoHandler);
     }
-    
-    // Botão Limpar
-    const btnLimpar = document.getElementById('btn-limpar-tipo');
-    if (btnLimpar) {
-        btnLimpar.addEventListener('click', limparFormularioTipoRefeicao);
-    }
+}
+
+// Handler para salvar tipo de refeição
+async function salvarTipoRefeicaoHandler(e) {
+    e.preventDefault();
+    await salvarTipoRefeicao();
 }
 
 // Carregar tipos de refeições do Supabase
 async function carregarTiposRefeicoes() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            throw new Error('Usuário não autenticado');
-        }
+        console.log('📥 Carregando tipos de refeições...');
+        
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
 
-        const { data, error } = await supabase
+        const { data, error } = await window.supabase
             .from('tipos_refeicoes')
             .select('*')
             .eq('user_id', user.id)
             .order('codigo');
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         tiposRefeicoesCarregados = data || [];
         atualizarTabelaTiposRefeicoes();
         
+        // Disponibilizar globalmente para outros módulos
+        window.tiposRefeicoesPadrao = tiposRefeicoesCarregados;
+        
+        console.log(`✅ ${tiposRefeicoesCarregados.length} tipos de refeições carregados`);
+        
     } catch (error) {
-        console.error('Erro ao carregar tipos de refeições:', error);
+        console.error('❌ Erro ao carregar tipos de refeições:', error);
         alert('Erro ao carregar tipos de refeições: ' + error.message);
     }
 }
@@ -78,22 +95,23 @@ async function carregarTiposRefeicoes() {
 // Gerar próximo código de tipo de refeição
 async function gerarProximoCodigoTipoRefeicao() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data, error } = await supabase.rpc('get_next_tipo_refeicao_codigo', {
+        console.log('🔢 Gerando próximo código de tipo de refeição...');
+        
+        const { data: { user } } = await window.supabase.auth.getUser();
+        const { data, error } = await window.supabase.rpc('get_next_tipo_refeicao_codigo', {
             user_uuid: user.id
         });
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         const input = document.getElementById('codigoTipoRefeicao');
         if (input) {
             input.value = data || 'TIPO001';
+            console.log('✅ Próximo código gerado:', data);
         }
         
     } catch (error) {
-        console.error('Erro ao gerar código:', error);
+        console.error('❌ Erro ao gerar código:', error);
         const input = document.getElementById('codigoTipoRefeicao');
         if (input) {
             input.value = 'TIPO001';
@@ -101,15 +119,13 @@ async function gerarProximoCodigoTipoRefeicao() {
     }
 }
 
-// Salvar tipo de refeição (novo ou editado)
-async function salvarTipoRefeicao(e) {
-    e.preventDefault();
-    
+// Salvar tipo de refeição (CORRIGIDO PARA SUPABASE)
+async function salvarTipoRefeicao() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            throw new Error('Usuário não autenticado');
-        }
+        console.log('💾 Salvando tipo de refeição...');
+        
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
 
         // Coletar dados do formulário
         const codigo = document.getElementById('codigoTipoRefeicao').value.trim();
@@ -135,26 +151,29 @@ async function salvarTipoRefeicao(e) {
             user_id: user.id
         };
 
+        console.log('📤 Dados do tipo de refeição:', tipoRefeicaoData);
+
         let result;
         if (editandoTipoRefeicao !== null) {
             // Atualizar tipo existente
+            console.log('🔄 Atualizando tipo de refeição existente...');
             const tipoAtual = tiposRefeicoesCarregados[editandoTipoRefeicao];
-            result = await supabase
+            result = await window.supabase
                 .from('tipos_refeicoes')
                 .update(tipoRefeicaoData)
                 .eq('id', tipoAtual.id)
                 .eq('user_id', user.id);
         } else {
             // Criar novo tipo
-            result = await supabase
+            console.log('➕ Criando novo tipo de refeição...');
+            result = await window.supabase
                 .from('tipos_refeicoes')
                 .insert([tipoRefeicaoData]);
         }
 
-        if (result.error) {
-            throw result.error;
-        }
+        if (result.error) throw result.error;
 
+        console.log('✅ Tipo de refeição salvo com sucesso!');
         alert(editandoTipoRefeicao !== null ? 'Tipo de refeição atualizado com sucesso!' : 'Tipo de refeição criado com sucesso!');
         
         // Limpar formulário e recarregar lista
@@ -162,7 +181,7 @@ async function salvarTipoRefeicao(e) {
         await carregarTiposRefeicoes();
 
     } catch (error) {
-        console.error('Erro ao salvar tipo de refeição:', error);
+        console.error('❌ Erro ao salvar tipo de refeição:', error);
         alert('Erro ao salvar tipo de refeição: ' + error.message);
     }
 }
@@ -241,30 +260,46 @@ async function excluirTipoRefeicao(index) {
             return;
         }
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            throw new Error('Usuário não autenticado');
-        }
+        console.log('🗑️ Excluindo tipo de refeição:', tipo.id);
 
-        const { error } = await supabase
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
+
+        const { error } = await window.supabase
             .from('tipos_refeicoes')
             .delete()
             .eq('id', tipo.id)
             .eq('user_id', user.id);
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
+        console.log('✅ Tipo de refeição excluído com sucesso!');
         alert('Tipo de refeição excluído com sucesso!');
         await carregarTiposRefeicoes();
 
     } catch (error) {
-        console.error('Erro ao excluir tipo de refeição:', error);
+        console.error('❌ Erro ao excluir tipo de refeição:', error);
         alert('Erro ao excluir tipo de refeição: ' + error.message);
     }
+}
+
+// Modificar showTab para incluir inicialização quando necessário
+const originalShowTabTipos = window.showTab;
+if (originalShowTabTipos) {
+    window.showTab = function(tabName) {
+        originalShowTabTipos(tabName);
+        
+        if (tabName === 'tipos-refeicoes') {
+            setTimeout(inicializarTiposRefeicoes, 100);
+        }
+    };
 }
 
 // Exportar funções para uso global
 window.editarTipoRefeicao = editarTipoRefeicao;
 window.excluirTipoRefeicao = excluirTipoRefeicao;
+window.salvarTipoRefeicao = salvarTipoRefeicao;
+window.limparFormularioTipoRefeicao = limparFormularioTipoRefeicao;
+window.inicializarTiposRefeicoes = inicializarTiposRefeicoes;
+
+console.log('✅ tipos-refeicoes.js carregado com sucesso!');
