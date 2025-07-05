@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cadastro - Produtos e Receitas</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sistema de Cadastro - Produtos e Receitas</h1>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('produtos')">Cadastro de Produtos</button>
+            <button class="tab" onclick="showTab('receitas')">Cadastro de Receitas</button>
+            <button class="tab" onclick="showTab('tipos-refeicoes')">Tipos de Refeições</button>
+            <button class="tab" onclick="showTab('clientes')">Cadastro de Clientes</button>
+            <button class="tab" onclick="showTab('cardapio')">Planejamento de Cardápio</button>
+        </div>
+
+        <div class="content">
+            <!-- Cadastro de Produtos -->
+            <div id="produtos" class="tab-content">
+                <div class="section">
+                    <h2>Cadastro de Produtos</h2>
+                    <form id="formProduto">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="codigoProduto" class="required">Código do Item</label>
+                                <input type="text" id="codigoProduto" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="descricaoProduto" class="required">Descrição do Item</label>
+                                <input type="text" id="descricaoProduto" maxlength="50" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="grupoProduto" class="required">Grupo</label>
+                                <select id="grupoProduto" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Ingredientes">Ingredientes</option>
+                                    <option value="Descartáveis">Descartáveis</option>
+                                    <option value="Outros produtos">Outros produtos</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="unidadeMedida" class="required">Unidade de Medida Básica</label>
+                                <select id="unidadeMedida" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="KG">KG</option>
+                                    <option value="L">L</option>
+                                    <option value="UN">UN</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="pesoBruto">Peso Bruto</label>
+                                <input type="number" id="pesoBruto" step="0.001">
+                            </div>
+                            <div class="form-group">
+                                <label for="unidadePeso">Unidade de Peso</label>
+                                <select id="unidadePeso">
+                                    <option value="">Selecione...</option>
+                                    <option value="KG">KG</option>
+                                    <option value="gr">gr</option>
+                                    <option value="mg">mg</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="pesoLiquido">Peso Líquido</label>
+                                <input type="number" id="pesoLiquido" step="0.001">
+                            </div>
+                            <div class="form-group">
+                                <label for="volumeM3">Volume M³</label>
+                                <input type="number" id="volumeM3" step="0.001">
+                            </div>
+                            <div class="form-group">
+                                <label for="perdaPercent">Perda %</label>
+                                <input type="number" id="perdaPercent" step="0.01" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label for="precoItem">Preço do Item R$</label>
+                                <input type="number" id="precoItem" step="0.01">
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button type="submit" class="btn btn-primary">Salvar Produto</button>
+                            <button type="button" class="btn btn-secondary" onclick="limparFormularioProduto()">Limpar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="section">
+                    <h3>Lista de Produtos</h3>
+                    <div class="table-responsive">
+                        <table id="tabelaProdutos">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Grupo</th>
+                                    <th>UMB</th>
+                                    <th>Preço</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cadastro de Receitas -->
+            <div id="receitas" class="tab-content hidden">
+                <div class="section">
+                    <h2>Cadastro de Receitas</h2>
+                    <form id="formReceita">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="codigoReceita" class="required">Código da Receita</label>
+                                <input type="text" id="codigoReceita" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="descricaoReceita" class="required">Descrição da Receita</label>
+                                <input type="text" id="descricaoReceita" maxlength="50" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="pesoFinal">Peso Final</label>
+                                <input type="number" id="pesoFinal" step="0.001" readonly placeholder="0,000">
+                            </div>
+                            <div class="form-group">
+                                <label for="rendimento">Rendimento</label>
+                                <input type="number" id="rendimento" step="0.001" placeholder="0,000">
+                            </div>
+                            <div class="form-group">
+                                <label for="unidadeRendimento">Unidade do Rendimento</label>
+                                <select id="unidadeRendimento">
+                                    <option value="">Selecione...</option>
+                                    <option value="UN">UN</option>
+                                    <option value="KG">KG</option>
+                                    <option value="L">L</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Editor de Receita -->
+                        <div class="form-group full-width">
+                            <label for="textoReceita">Modo de Preparo</label>
+                            <div class="recipe-editor" id="recipeEditor">
+                                <!-- Barra de Ferramentas -->
+                                <div class="editor-toolbar">
+                                    <div class="toolbar-group">
+                                        <button type="button" class="toolbar-btn" onclick="formatText('bold')" title="Negrito (Ctrl+B)">
+                                            <strong>B</strong>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" onclick="formatText('italic')" title="Itálico (Ctrl+I)">
+                                            <em>I</em>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" onclick="formatText('underline')" title="Sublinhado (Ctrl+U)">
+                                            <u>U</u>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="toolbar-group">
+                                        <select class="font-size-select" onchange="changeFontSize(this.value)" title="Tamanho da fonte">
+                                            <option value="12px">12px</option>
+                                            <option value="14px" selected>14px</option>
+                                            <option value="16px">16px</option>
+                                            <option value="18px">18px</option>
+                                            <option value="20px">20px</option>
+                                            <option value="24px">24px</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="toolbar-group">
+                                        <button type="button" class="toolbar-btn" onclick="formatText('insertUnorderedList')" title="Lista com marcadores">
+                                            ≡
+                                        </button>
+                                        <button type="button" class="toolbar-btn" onclick="formatText('insertOrderedList')" title="Lista numerada">
+                                            1.
+                                        </button>
+                                    </div>
+
+                                    <div class="toolbar-group">
+                                        <button type="button" class="toolbar-btn" onclick="clearFormatting()" title="Limpar formatação">
+                                            🧹
+                                        </button>
+                                    </div>
+
+                                    <div class="toolbar-group">
+                                        <button type="button" class="toolbar-btn" onclick="setEditorSize('small')" title="Tamanho pequeno">
+                                            📱
+                                        </button>
+                                        <button type="button" class="toolbar-btn" onclick="setEditorSize('medium')" title="Tamanho médio">
+                                            💻
+                                        </button>
+                                        <button type="button" class="toolbar-btn" onclick="setEditorSize('large')" title="Tamanho grande">
+                                            🖥️
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Área de Edição -->
+                                <div class="editor-content" 
+                                     id="textoReceita" 
+                                     contenteditable="true" 
+                                     placeholder="Digite aqui o modo de preparo da receita...
+
+Dicas de uso:
+- Use Ctrl+B para negrito, Ctrl+I para itálico, Ctrl+U para sublinhado
+- Selecione o texto antes de aplicar formatação
+- Use as listas para organizar ingredientes ou etapas
+- Pressione Enter duas vezes para criar parágrafos
+- Arraste o canto inferior direito para redimensionar
+
+Exemplo:
+1. Pré-aqueça o forno a 180°C
+2. Em uma tigela, misture os ingredientes secos
+3. Adicione os ingredientes líquidos gradualmente..."
+                                     oninput="updateRecipeText()"
+                                     onkeydown="handleEditorKeydown(event)">
+                                </div>
+
+                                <!-- Handle de redimensionamento -->
+                                <div class="resize-handle" id="resizeHandle"></div>
+
+                                <!-- Footer -->
+                                <div class="editor-footer">
+                                    <div class="char-counter">
+                                        <span id="charCount">0</span> caracteres
+                                    </div>
+                                    <div class="editor-tips">
+                                        <small>💡 Dica: Use <kbd>Ctrl+B</kbd>, <kbd>Ctrl+I</kbd>, <kbd>Ctrl+U</kbd> para formatação rápida</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="actions">
+                            <button type="submit" class="btn btn-primary">Salvar Receita</button>
+                            <button type="button" class="btn btn-secondary" onclick="limparFormularioReceita()">Limpar</button>
+                            <button type="button" class="btn btn-success" onclick="previewReceita()">Visualizar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="section">
+                    <h3>Ingredientes</h3>
+                    <button type="button" class="btn btn-primary" onclick="abrirModalIngredientes()">Selecionar Ingredientes</button>
+                    <div class="table-responsive">
+                        <table id="tabelaIngredientes">
+                            <thead>
+                                <tr>
+                                    <th>Cód. Produto</th>
+                                    <th>Nome</th>
+                                    <th>Quantidade</th>
+                                    <th>UMB</th>
+                                    <th>% Perda</th>
+                                    <th>% Ganho</th>
+                                    <th>Preço</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Cálculos</h3>
+                    <button type="button" class="btn btn-success" onclick="calcularReceita()">Calcular</button>
+                    <div id="resultadosCalculos" class="form-grid">
+                        <div class="card">
+                            <h4>Preço Total</h4>
+                            <p id="precoTotal">R$ 0,00</p>
+                        </div>
+                        <div class="card">
+                            <h4>Peso Final</h4>
+                            <p id="pesoFinalCalculado">0,000 KG</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Lista de Receitas</h3>
+                    <div class="table-responsive">
+                        <table id="tabelaReceitas">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Peso Bruto</th>
+                                    <th>Preço Total</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tipos de Refeições -->
+            <div id="tipos-refeicoes" class="tab-content hidden">
+                <div class="section">
+                    <h2>Cadastro de Tipos de Refeições</h2>
+                    <form id="formTipoRefeicao">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="codigoTipoRefeicao" class="required">Código do Tipo de Refeição</label>
+                                <input type="text" id="codigoTipoRefeicao" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="descricaoTipoRefeicao" class="required">Descrição do Tipo de Refeição</label>
+                                <input type="text" id="descricaoTipoRefeicao" maxlength="25" required>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button type="submit" class="btn btn-primary">Salvar Tipo de Refeição</button>
+                            <button type="button" class="btn btn-secondary" onclick="limparFormularioTipoRefeicao()">Limpar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="section">
+                    <h3>Lista de Tipos de Refeições</h3>
+                    <div class="table-responsive">
+                        <table id="tabelaTiposRefeicoes">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cadastro de Clientes -->
+            <div id="clientes" class="tab-content hidden">
+                <div class="section">
+                    <h2>Cadastro de Clientes</h2>
+                    <form id="formCliente">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="codigoCliente" class="required">Código do Cliente</label>
+                                <input type="text" id="codigoCliente" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="descricaoCliente" class="required">Descrição do Cliente</label>
+                                <input type="text" id="descricaoCliente" maxlength="50" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="enderecoCliente">Endereço</label>
+                                <input type="text" id="enderecoCliente" maxlength="50">
+                            </div>
+                            <div class="form-group">
+                                <label for="numeroCliente">Número</label>
+                                <input type="text" id="numeroCliente" maxlength="4">
+                            </div>
+                            <div class="form-group">
+                                <label for="telefoneCliente">Telefone</label>
+                                <input type="tel" id="telefoneCliente" placeholder="(00)00000-0000">
+                            </div>
+                            <div class="form-group">
+                                <label for="emailCliente">E-mail</label>
+                                <input type="email" id="emailCliente">
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button type="submit" class="btn btn-primary">Salvar Cliente</button>
+                            <button type="button" class="btn btn-secondary" onclick="limparFormularioCliente()">Limpar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="section">
+                    <h3>Vincular Tipos de Refeições</h3>
+                    <button type="button" class="btn btn-primary" onclick="abrirModalTiposRefeicao()">Adicionar Tipos de Refeição</button>
+                    <div id="tiposRefeicaoVinculados">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Lista de Clientes</h3>
+                    <div class="table-responsive">
+                        <table id="tabelaClientes">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Endereço</th>
+                                    <th>Telefone</th>
+                                    <th>E-mail</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Planejamento de Cardápio -->
+            <div id="cardapio" class="tab-content hidden">
+                <!-- Calendário com opção de mostrar/ocultar -->
+                <div class="calendar-toggle">
+                    <button class="btn btn-secondary" onclick="toggleCalendar()">
+                        <span id="calendar-toggle-text">Ocultar Calendário</span>
+                    </button>
+                </div>
+                
+                <div class="calendar-container" id="calendarContainer">
+                    <div class="calendar-header">
+                        <button onclick="mudarMes(-1)" class="btn btn-secondary">❮</button>
+                        <span id="mesAno"></span>
+                        <button onclick="mudarMes(1)" class="btn btn-secondary">❯</button>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Planejamento de Cardápio</h2>
+                    <div class="form-grid cardapio-form-grid">
+                        <div class="form-group">
+                            <label for="clienteCardapio" class="required">Cliente</label>
+                            <select id="clienteCardapio" required onchange="carregarTiposRefeicaoCliente()">
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataCardapio" class="required">Data</label>
+                            <input type="date" id="dataCardapio" required onchange="carregarCardapioData()">
+                        </div>
+                        <div class="form-group">
+                            <label for="totalComensais">Total Comensais</label>
+                            <input type="number" id="totalComensais" min="1" class="compact-input">
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button type="button" class="btn btn-secondary compact-btn" onclick="atualizarParaTodos()">Atualizar</button>
+                        <button type="button" class="btn btn-success compact-btn" onclick="calcularParaTodos()">Calcular para Todos</button>
+                        <button type="button" class="btn btn-primary compact-btn" onclick="gravarParaTodos()">Gravar para Todos</button>
+                        <button type="button" class="btn btn-primary compact-btn" onclick="abrirModalImpressao()">Imprimir</button>
+                        <button type="button" class="btn btn-info compact-btn" onclick="abrirVisualizacaoSemanal()">📅 Visão Semanal</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Tipos de Refeições do Cliente</h3>
+                    <div id="tiposRefeicaoCardapio">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modais -->
+    <div id="modalIngredientes" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModal('modalIngredientes')">&times;</span>
+            <h2>Selecionar Ingredientes</h2>
+            <div class="search-box">
+                <input type="text" id="searchIngredientes" placeholder="Pesquisar por nome do produto..." onkeyup="filtrarIngredientes()">
+            </div>
+            <div id="listaIngredientes">
+            </div>
+        </div>
+    </div>
+
+    <div id="modalTiposRefeicao" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModal('modalTiposRefeicao')">&times;</span>
+            <h2>Selecionar Tipos de Refeição</h2>
+            <div id="listaTiposRefeicao">
+            </div>
+        </div>
+    </div>
+
+    <div id="modalReceitas" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModal('modalReceitas')">&times;</span>
+            <h2>Selecionar Receitas</h2>
+            <div class="search-box">
+                <input type="text" id="searchReceitas" placeholder="Pesquisar por nome da receita..." onkeyup="filtrarReceitas()">
+            </div>
+            <div id="listaReceitasModal">
+            </div>
+            <div class="actions">
+                <button type="button" class="btn btn-primary" onclick="adicionarReceitasSelecionadas()">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Impressão ATUALIZADO -->
+    <div id="modalImpressao" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModal('modalImpressao')">&times;</span>
+            <h2>📄 Imprimir Cardápio</h2>
+            
+            <!-- Período -->
+            <div class="form-section">
+                <h4>📅 Período</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="dataInicioPeriodo">Data Início</label>
+                        <input type="date" id="dataInicioPeriodo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dataFimPeriodo">Data Fim</label>
+                        <input type="date" id="dataFimPeriodo" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seleção de Clientes -->
+            <div class="form-section">
+                <h4>👥 Clientes</h4>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="tipoCliente" value="todos" checked onchange="toggleClienteSelection()">
+                        Todos os clientes
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="tipoCliente" value="especificos" onchange="toggleClienteSelection()">
+                        Clientes específicos
+                    </label>
+                </div>
+                <div id="selecaoClientes" class="clientes-list hidden">
+                    <div class="checkbox-list" id="listaClientesImpressao">
+                        <!-- Clientes serão carregados dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seleção de Tipos de Refeição -->
+            <div class="form-section">
+                <h4>🍽️ Tipos de Refeição</h4>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="tipoRefeicao" value="todos" checked onchange="toggleTipoRefeicaoSelection()">
+                        Todos os tipos de refeição
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="tipoRefeicao" value="especificos" onchange="toggleTipoRefeicaoSelection()">
+                        Tipos específicos
+                    </label>
+                </div>
+                <div id="selecaoTiposRefeicao" class="tipos-refeicao-list hidden">
+                    <div class="checkbox-list" id="listaTiposRefeicaoImpressao">
+                        <!-- Tipos serão carregados dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões de Impressão NOVOS -->
+            <div class="form-section">
+                <h4>📋 Opções de Impressão</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                    
+                    <!-- Imprimir Preparos -->
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 2px solid #e9ecef; transition: all 0.3s ease;" 
+                         onmouseover="this.style.borderColor='#667eea'" 
+                         onmouseout="this.style.borderColor='#e9ecef'">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <span style="font-size: 24px;">🥘</span>
+                            <h5 style="margin: 5px 0; color: #333;">Preparos</h5>
+                        </div>
+                        <p style="font-size: 12px; color: #666; margin-bottom: 15px; text-align: center;">
+                            Lista de ingredientes com quantidades calculadas para cada receita
+                        </p>
+                        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="imprimirPreparos()">
+                            Imprimir Preparos
+                        </button>
+                    </div>
+
+                    <!-- Imprimir Lista de Produtos -->
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 2px solid #e9ecef; transition: all 0.3s ease;" 
+                         onmouseover="this.style.borderColor='#28a745'" 
+                         onmouseout="this.style.borderColor='#e9ecef'">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <span style="font-size: 24px;">📋</span>
+                            <h5 style="margin: 5px 0; color: #333;">Lista de Produtos</h5>
+                        </div>
+                        <p style="font-size: 12px; color: #666; margin-bottom: 15px; text-align: center;">
+                            Lista consolidada de todos os produtos necessários para compras
+                        </p>
+                        <button type="button" class="btn btn-success" style="width: 100%;" onclick="imprimirListaProdutos()">
+                            Imprimir Lista de Produtos
+                        </button>
+                    </div>
+
+                    <!-- NOVO: Imprimir Receitas Completas -->
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 2px solid #e9ecef; transition: all 0.3s ease;" 
+                         onmouseover="this.style.borderColor='#fd7e14'" 
+                         onmouseout="this.style.borderColor='#e9ecef'">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <span style="font-size: 24px;">👨‍🍳</span>
+                            <h5 style="margin: 5px 0; color: #333;">Receitas Completas</h5>
+                        </div>
+                        <p style="font-size: 12px; color: #666; margin-bottom: 15px; text-align: center;">
+                            Receitas com modo de preparo e quantidades calculadas para cada cliente
+                        </p>
+                        <button type="button" class="btn" style="width: 100%; background: #fd7e14; color: white;" onclick="imprimirReceitasCompletas()">
+                            Imprimir Receitas
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Informações Adicionais -->
+            <div style="background: #e3f2fd; border-radius: 8px; padding: 15px; margin-top: 20px; border-left: 4px solid #2196f3;">
+                <h5 style="color: #1976d2; margin-bottom: 10px;">💡 Dicas de Impressão:</h5>
+                <ul style="margin: 0; padding-left: 20px; color: #666; font-size: 13px;">
+                    <li><strong>Preparos:</strong> Para a equipe de cozinha - mostra apenas ingredientes e quantidades</li>
+                    <li><strong>Lista de Produtos:</strong> Para compras - consolida todos os produtos necessários</li>
+                    <li><strong>Receitas Completas:</strong> Para o cozinheiro - inclui modo de preparo detalhado</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Visualizar Receita -->
+    <div id="modalVisualizarReceita" class="modal">
+        <div class="modal-content modal-receita">
+            <span class="close" onclick="fecharModal('modalVisualizarReceita')">&times;</span>
+            <div class="receita-header">
+                <h2 id="tituloReceitaModal">Nome da Receita</h2>
+                <div class="receita-info">
+                    <span id="rendimentoReceitaModal">Rendimento: -</span>
+                    <span id="pesoReceitaModal">Peso: -</span>
+                    <span id="precoReceitaModal">Preço: -</span>
+                </div>
+            </div>
+            
+            <div class="receita-tabs">
+                <button class="receita-tab active" onclick="showReceitaTab('preparo')">Modo de Preparo</button>
+                <button class="receita-tab" onclick="showReceitaTab('ingredientes')">Ingredientes</button>
+            </div>
+            
+            <div id="preparo-tab" class="receita-tab-content active">
+                <div id="textoReceitaModal" class="receita-preparo-content">
+                    <!-- Conteúdo do modo de preparo será inserido aqui -->
+                </div>
+            </div>
+            
+            <div id="ingredientes-tab" class="receita-tab-content">
+                <div id="ingredientesReceitaModal" class="receita-ingredientes-content">
+                    <!-- Lista de ingredientes será inserida aqui -->
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="imprimirReceitaModal()">Imprimir</button>
+                <button class="btn btn-secondary" onclick="editarReceitaModal()">Editar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script src="js/produtos.js"></script>
+    <script src="js/receitas.js"></script>
+    <script src="js/tipos-refeicoes.js"></script>
+    <script src="js/clientes.js"></script>
+    <script src="js/cardapio.js"></script>
+
+    <!-- Estilos adicionais para os modais melhorados -->
+    <style>
+    .form-section {
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .form-section h4 {
+        color: #495057;
+        margin-bottom: 15px;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkbox-list {
+        max-height: 150px;
+        overflow-y: auto;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 10px;
+        background: white;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 0;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        margin: 0;
+    }
+
+    .checkbox-item label {
+        margin: 0;
+        cursor: pointer;
+        flex: 1;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background: #138496;
+        transform: translateY(-2px);
+    }
+    </style>
+</body>
+</html>
