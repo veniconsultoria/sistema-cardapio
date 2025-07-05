@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos - Sistema de Cardápio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+
+        .btn-primary {
+            background: #4c51bf;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #434190;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .controls input,
+        .controls select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .controls input {
+            min-width: 200px;
+        }
+
+        .table-container {
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .modal-footer {
+            padding: 20px;
+            text-align: right;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .debug-section {
+            margin: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .controls input,
+            .controls select,
+            .controls .btn {
+                width: 100%;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Gestão de Produtos</h1>
+            <div>
+                <button class="btn btn-success" onclick="abrirModalNovoProduto()">+ Novo Produto</button>
+                <button class="btn btn-secondary" onclick="recarregarProdutos()">🔄 Recarregar</button>
+                <button class="btn btn-secondary" onclick="logout()">Sair</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="busca-produtos" placeholder="🔍 Buscar produtos...">
+            <select id="filtro-grupo">
+                <option value="">Todos os grupos</option>
+                <option value="Ingredientes">Ingredientes</option>
+                <option value="Descartáveis">Descartáveis</option>
+                <option value="Outros produtos">Outros produtos</option>
+            </select>
+            <span>Total: <strong id="total-produtos">0</strong> produtos</span>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descrição</th>
+                        <th>Grupo</th>
+                        <th>Unidade</th>
+                        <th>Peso Bruto</th>
+                        <th>Peso Líquido</th>
+                        <th>Preço</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="produtos-tbody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            Carregando produtos...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="debug-section">
+            <h3>🔧 Status do Sistema</h3>
+            <p><strong>Supabase:</strong> <span id="status-supabase" class="status status-error">Verificando...</span></p>
+            <p><strong>Usuário:</strong> <span id="usuario-info">Carregando...</span></p>
+            <p><strong>Último erro:</strong> <span id="ultimo-erro">Nenhum</span></p>
+        </div>
+    </div>
+
+    <!-- Modal de Produto -->
+    <div id="modal-produto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📦 Produto</h2>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <input type="hidden" id="produto-id">
+                    
+                    <div class="form-group">
+                        <label for="produto-codigo">Código:</label>
+                        <input type="text" id="produto-codigo" readonly style="background-color: #f8f9fa;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="produto-descricao">Descrição: *</label>
+                        <input type="text" id="produto-descricao" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="produto-grupo">Grupo:</label>
+                        <select id="produto-grupo">
+                            <option value="Ingredientes">Ingredientes</option>
+                            <option value="Descartáveis">Descartáveis</option>
+                            <option value="Outros produtos">Outros produtos</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="produto-unidade">Unidade de Medida:</label>
+                        <select id="produto-unidade">
+                            <option value="KG">KG</option>
+                            <option value="L">L</option>
+                            <option value="UN">UN</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="produto-peso-bruto">Peso Bruto:</label>
+                        <input type="number" id="produto-peso-bruto" step="0.01" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="produto-peso-liquido">Peso Líquido:</label>
+                        <input type="number" id="produto-peso-liquido" step="0.01" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="produto-preco">Preço:</label>
+                        <input type="number" id="produto-preco" step="0.01" min="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="salvarProduto()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts - APENAS OS NECESSÁRIOS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    
+    <script>
+        // CÓDIGO PRODUCTS INLINE PARA EVITAR CONFLITOS
+        console.log('🚀 Iniciando sistema de produtos...');
+        
+        // Variáveis locais (sem conflito)
+        let produtos = [];
+        let editando = null;
+
+        // Aguardar Supabase
+        function aguardarSupabase(callback, tentativas = 0) {
+            if (window.supabase && window.supabase.auth) {
+                callback();
+            } else if (tentativas < 50) {
+                setTimeout(() => aguardarSupabase(callback, tentativas + 1), 100);
+            } else {
+                alert('Erro: Supabase não carregou');
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            aguardarSupabase(async () => {
+                try {
+                    // Verificar usuário
+                    const { data: { user } } = await window.supabase.auth.getUser();
+                    if (!user) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    document.getElementById('status-supabase').textContent = 'Conectado';
+                    document.getElementById('status-supabase').className = 'status status-success';
+                    document.getElementById('usuario-info').textContent = user.email;
+                    
+                    await carregarProdutos();
+                    await gerarCodigo();
+                    configurarEventos();
+                    
+                } catch (error) {
+                    console.error('Erro:', error);
+                    document.getElementById('ultimo-erro').textContent = error.message;
+                }
+            });
+        });
+
+        // Configurar eventos
+        function configurarEventos() {
+            document.getElementById('busca-produtos').addEventListener('input', filtrar);
+            document.getElementById('filtro-grupo').addEventListener('change', filtrar);
+        }
+
+        // Gerar código
+        async function gerarCodigo() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                const { data, error } = await window.supabase.rpc('get_next_produto_codigo', {
+                    user_uuid: user.id
+                });
+                if (error) throw error;
+                document.getElementById('produto-codigo').value = data || 'PR000001';
+            } catch (error) {
+                document.getElementById('produto-codigo').value = 'PR000001';
+            }
+        }
+
+        // Carregar produtos
+        async function carregarProdutos() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                const { data, error } = await window.supabase
+                    .from('produtos')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('codigo');
+
+                if (error) throw error;
+                produtos = data || [];
+                renderizar();
+                
+            } catch (error) {
+                console.error('Erro ao carregar:', error);
+                document.getElementById('ultimo-erro').textContent = error.message;
+            }
+        }
+
+        // Renderizar tabela
+        function renderizar() {
+            const tbody = document.getElementById('produtos-tbody');
+            const total = document.getElementById('total-produtos');
+            
+            tbody.innerHTML = '';
+            total.textContent = produtos.length;
+
+            if (produtos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">Nenhum produto encontrado</td></tr>';
+                return;
+            }
+
+            produtos.forEach(produto => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${produto.codigo}</td>
+                    <td>${produto.descricao}</td>
+                    <td>${produto.grupo}</td>
+                    <td>${produto.unidade_medida}</td>
+                    <td>${produto.peso_bruto || '-'}</td>
+                    <td>${produto.peso_liquido || '-'}</td>
+                    <td>R$ ${parseFloat(produto.preco || 0).toFixed(2)}</td>
+                    <td>
+                        <button onclick="editar('${produto.id}')" class="btn btn-primary btn-sm">Editar</button>
+                        <button onclick="excluir('${produto.id}')" class="btn btn-danger btn-sm">Excluir</button>
+                    </td>
+                `;
+            });
+        }
+
+        // Filtrar
+        function filtrar() {
+            const busca = document.getElementById('busca-produtos').value.toLowerCase();
+            const grupo = document.getElementById('filtro-grupo').value;
+            
+            let filtrados = produtos.filter(p => {
+                const matchBusca = !busca || p.descricao.toLowerCase().includes(busca) || p.codigo.toLowerCase().includes(busca);
+                const matchGrupo = !grupo || p.grupo === grupo;
+                return matchBusca && matchGrupo;
+            });
+            
+            const tbody = document.getElementById('produtos-tbody');
+            tbody.innerHTML = '';
+            
+            filtrados.forEach(produto => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${produto.codigo}</td>
+                    <td>${produto.descricao}</td>
+                    <td>${produto.grupo}</td>
+                    <td>${produto.unidade_medida}</td>
+                    <td>${produto.peso_bruto || '-'}</td>
+                    <td>${produto.peso_liquido || '-'}</td>
+                    <td>R$ ${parseFloat(produto.preco || 0).toFixed(2)}</td>
+                    <td>
+                        <button onclick="editar('${produto.id}')" class="btn btn-primary btn-sm">Editar</button>
+                        <button onclick="excluir('${produto.id}')" class="btn btn-danger btn-sm">Excluir</button>
+                    </td>
+                `;
+            });
+        }
+
+        // Abrir modal
+        async function abrirModalNovoProduto() {
+            await gerarCodigo();
+            document.getElementById('produto-id').value = '';
+            document.getElementById('produto-descricao').value = '';
+            document.getElementById('produto-grupo').value = 'Ingredientes';
+            document.getElementById('produto-unidade').value = 'KG';
+            document.getElementById('produto-peso-bruto').value = '';
+            document.getElementById('produto-peso-liquido').value = '';
+            document.getElementById('produto-preco').value = '';
+            document.getElementById('modal-produto').style.display = 'block';
+            document.getElementById('produto-descricao').focus();
+        }
+
+        // Salvar produto
+        async function salvarProduto() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                
+                const id = document.getElementById('produto-id').value;
+                const dados = {
+                    codigo: document.getElementById('produto-codigo').value.trim(),
+                    descricao: document.getElementById('produto-descricao').value.trim(),
+                    grupo: document.getElementById('produto-grupo').value,
+                    unidade_medida: document.getElementById('produto-unidade').value,
+                    peso_bruto: parseFloat(document.getElementById('produto-peso-bruto').value) || null,
+                    peso_liquido: parseFloat(document.getElementById('produto-peso-liquido').value) || null,
+                    preco: parseFloat(document.getElementById('produto-preco').value) || null,
+                    user_id: user.id
+                };
+
+                if (!dados.descricao) {
+                    alert('Informe a descrição');
+                    return;
+                }
+
+                let result;
+                if (id) {
+                    result = await window.supabase.from('produtos').update(dados).eq('id', id);
+                } else {
+                    result = await window.supabase.from('produtos').insert([dados]);
+                }
+
+                if (result.error) throw result.error;
+
+                alert(id ? 'Produto atualizado!' : 'Produto criado!');
+                fecharModal();
+                await carregarProdutos();
+
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                alert('Erro: ' + error.message);
+            }
+        }
+
+        // Editar
+        function editar(id) {
+            const produto = produtos.find(p => p.id === id);
+            if (!produto) return;
+
+            document.getElementById('produto-id').value = produto.id;
+            document.getElementById('produto-codigo').value = produto.codigo;
+            document.getElementById('produto-descricao').value = produto.descricao;
+            document.getElementById('produto-grupo').value = produto.grupo;
+            document.getElementById('produto-unidade').value = produto.unidade_medida;
+            document.getElementById('produto-peso-bruto').value = produto.peso_bruto || '';
+            document.getElementById('produto-peso-liquido').value = produto.peso_liquido || '';
+            document.getElementById('produto-preco').value = produto.preco || '';
+            document.getElementById('modal-produto').style.display = 'block';
+        }
+
+        // Excluir
+        async function excluir(id) {
+            const produto = produtos.find(p => p.id === id);
+            if (!produto || !confirm(`Excluir "${produto.descricao}"?`)) return;
+
+            try {
+                const { error } = await window.supabase.from('produtos').delete().eq('id', id);
+                if (error) throw error;
+                alert('Produto excluído!');
+                await carregarProdutos();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+
+        // Fechar modal
+        function fecharModal() {
+            document.getElementById('modal-produto').style.display = 'none';
+        }
+
+        // Recarregar
+        async function recarregarProdutos() {
+            await carregarProdutos();
+        }
+
+        // Logout
+        async function logout() {
+            await window.supabase.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        // Fechar modal ao clicar fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-produto');
+            if (event.target === modal) {
+                fecharModal();
+            }
+        }
+    </script>
+</body>
+</html>
