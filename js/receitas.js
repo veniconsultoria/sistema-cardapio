@@ -1,10 +1,9 @@
-// receitas.js - Sistema de Receitas com Supabase (VERSÃO FINAL CORRIGIDA)
+// receitas.js - Sistema de Receitas com Supabase (VERSÃO CORRIGIDA FINAL)
 
 console.log('📁 Carregando receitas.js...');
 
 // Verificar se as variáveis já existem para evitar redeclaração
 if (typeof window.receitasModulo === 'undefined') {
-    // Variáveis globais do módulo receitas (usando namespace)
     window.receitasModulo = {
         receitasCarregadas: [],
         produtosCarregados: [],
@@ -57,7 +56,6 @@ async function inicializarReceitas() {
             await gerarProximoCodigoReceitaModulo();
             configurarEventosReceitas();
             
-            // Inicializar editor
             setTimeout(() => {
                 initializeResizeHandle();
                 updateCharCount();
@@ -73,19 +71,15 @@ async function inicializarReceitas() {
 function configurarEventosReceitas() {
     console.log('⚙️ Configurando eventos de receitas...');
     
-    // Formulário de salvar
     const form = document.getElementById('formReceita');
     if (form) {
-        // Remover listeners existentes para evitar duplicação
         const newForm = form.cloneNode(true);
         form.parentNode.replaceChild(newForm, form);
         newForm.addEventListener('submit', salvarReceitaHandler);
     }
     
-    // Editor de texto
     const editor = document.getElementById('textoReceita');
     if (editor) {
-        // Remover listeners existentes
         const newEditor = editor.cloneNode(true);
         editor.parentNode.replaceChild(newEditor, editor);
         
@@ -97,13 +91,12 @@ function configurarEventosReceitas() {
     }
 }
 
-// Handler para salvar receita
 async function salvarReceitaHandler(e) {
     e.preventDefault();
     await salvarReceitaModulo();
 }
 
-// Carregar receitas do Supabase
+// Carregar receitas - ESTRATÉGIA DEFENSIVA
 async function carregarReceitasModulo() {
     try {
         console.log('📥 Carregando receitas...');
@@ -111,52 +104,83 @@ async function carregarReceitasModulo() {
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
 
-        const { data, error } = await window.supabase
+        // ESTRATÉGIA: Carregar primeiro só receitas, depois tentar ingredientes
+        console.log('🔍 Carregando receitas básicas...');
+        const { data: receitasData, error: receitasError } = await window.supabase
             .from('receitas')
-            .select(`
-                *,
-                ingredientes (
-                    id,
-                    receita_id,
-                    produto_id,
-                    quantidade,
-                    unidade_medida,
-                    perda_percent,
-                    ganho_percent,
-                    preco_unitario,
-                    produtos (
-                        codigo,
-                        descricao
-                    )
-                )
-            `)
+            .select('*')
             .eq('user_id', user.id)
             .order('codigo');
 
-        if (error) throw error;
+        if (receitasError) throw receitasError;
 
-        // Transformar dados para formato compatível
-        window.receitasModulo.receitasCarregadas = (data || []).map(receita => ({
+        // Inicializar com receitas sem ingredientes
+        window.receitasModulo.receitasCarregadas = (receitasData || []).map(receita => ({
             ...receita,
-            ingredientes: receita.ingredientes.map(ing => ({
-                codigoProduto: ing.produtos.codigo,
-                nome: ing.produtos.descricao,
-                quantidade: ing.quantidade,
-                unidadeMedida: ing.unidade_medida,
-                perdaPercent: ing.perda_percent,
-                ganhoPercent: ing.ganho_percent,
-                precoUnitario: ing.preco_unitario,
-                produtoId: ing.produto_id
-            }))
+            ingredientes: []
         }));
+
+        console.log(`✅ ${window.receitasModulo.receitasCarregadas.length} receitas carregadas`);
+
+        // Tentar carregar ingredientes separadamente
+        console.log('🔍 Tentando carregar ingredientes...');
+        await carregarIngredientesReceitas();
         
         atualizarTabelaReceitasModulo();
-        
-        console.log(`✅ ${window.receitasModulo.receitasCarregadas.length} receitas carregadas`);
         
     } catch (error) {
         console.error('❌ Erro ao carregar receitas:', error);
         alert('Erro ao carregar receitas: ' + error.message);
+        window.receitasModulo.receitasCarregadas = [];
+        atualizarTabelaReceitasModulo();
+    }
+}
+
+// Carregar ingredientes separadamente
+async function carregarIngredientesReceitas() {
+    try {
+        // Tentar carregar ingredientes com join
+        const { data: ingredientesData, error } = await window.supabase
+            .from('ingredientes')
+            .select(`
+                *,
+                produtos (codigo, descricao),
+                receitas!inner (user_id)
+            `)
+            .eq('receitas.user_id', (await window.supabase.auth.getUser()).data.user.id);
+
+        if (error) {
+            console.warn('⚠️ Não foi possível carregar ingredientes com join:', error.message);
+            return;
+        }
+
+        // Organizar ingredientes por receita
+        const ingredientesPorReceita = {};
+        (ingredientesData || []).forEach(ing => {
+            if (!ingredientesPorReceita[ing.receita_id]) {
+                ingredientesPorReceita[ing.receita_id] = [];
+            }
+            ingredientesPorReceita[ing.receita_id].push({
+                codigoProduto: ing.produtos?.codigo || 'N/A',
+                nome: ing.produtos?.descricao || 'Produto não encontrado',
+                quantidade: ing.quantidade,
+                unidadeMedida: ing.unidade_medida || 'UN',
+                perdaPercent: ing.perda_percent || 0,
+                ganhoPercent: ing.ganho_percent || 0,
+                precoUnitario: ing.preco_unitario || 0,
+                produtoId: ing.produto_id
+            });
+        });
+
+        // Associar ingredientes às receitas
+        window.receitasModulo.receitasCarregadas.forEach(receita => {
+            receita.ingredientes = ingredientesPorReceita[receita.id] || [];
+        });
+
+        console.log('✅ Ingredientes carregados com sucesso');
+
+    } catch (error) {
+        console.warn('⚠️ Erro ao carregar ingredientes:', error.message);
     }
 }
 
@@ -173,7 +197,6 @@ async function carregarProdutosReceitas() {
             .order('codigo');
 
         if (error) throw error;
-
         window.receitasModulo.produtosCarregados = data || [];
         
     } catch (error) {
@@ -185,15 +208,12 @@ async function carregarProdutosReceitas() {
 // Gerar próximo código de receita
 async function gerarProximoCodigoReceitaModulo() {
     try {
-        console.log('🔢 Gerando próximo código de receita...');
-        
         const { data: { user } } = await window.supabase.auth.getUser();
         const { data, error } = await window.supabase.rpc('get_next_receita_codigo', {
             user_uuid: user.id
         });
 
         if (error) throw error;
-
         const input = document.getElementById('codigoReceita');
         if (input) {
             input.value = data || 'REC001';
@@ -208,7 +228,7 @@ async function gerarProximoCodigoReceitaModulo() {
     }
 }
 
-// Salvar receita (CORRIGIDO PARA SUPABASE)
+// Salvar receita - CORRIGIDO PARA USAR COLUNA 'texto'
 async function salvarReceitaModulo() {
     try {
         console.log('💾 Salvando receita...');
@@ -216,7 +236,6 @@ async function salvarReceitaModulo() {
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
 
-        // Coletar dados do formulário
         const codigo = document.getElementById('codigoReceita').value.trim();
         const descricao = document.getElementById('descricaoReceita').value.trim();
         const pesoFinal = parseFloat(document.getElementById('pesoFinal').value) || 0;
@@ -224,13 +243,11 @@ async function salvarReceitaModulo() {
         const unidadeRendimento = document.getElementById('unidadeRendimento').value;
         const textoReceita = getRecipeText();
 
-        // Pegar valores calculados
         let precoTotal = 0;
         if (window.receitaTemporaria) {
             precoTotal = window.receitaTemporaria.precoTotal || 0;
         }
 
-        // Validações
         if (!descricao) {
             alert('Por favor, informe a descrição da receita');
             document.getElementById('descricaoReceita').focus();
@@ -243,7 +260,7 @@ async function salvarReceitaModulo() {
             return;
         }
 
-        // Preparar dados da receita
+        // CORRIGIDO: usar 'texto' ao invés de 'texto_receita'
         const receitaData = {
             codigo,
             descricao,
@@ -251,14 +268,13 @@ async function salvarReceitaModulo() {
             rendimento,
             unidade_rendimento: unidadeRendimento,
             preco_total: precoTotal,
-            texto_receita: textoReceita,
+            texto: textoReceita, // ✅ CORRIGIDO
             user_id: user.id
         };
 
         let receitaId;
         
         if (window.receitasModulo.editandoReceita !== null) {
-            // Atualizar receita existente
             const receitaAtual = window.receitasModulo.receitasCarregadas[window.receitasModulo.editandoReceita];
             const { error } = await window.supabase
                 .from('receitas')
@@ -269,7 +285,6 @@ async function salvarReceitaModulo() {
             if (error) throw error;
             receitaId = receitaAtual.id;
         } else {
-            // Criar nova receita
             const { data, error } = await window.supabase
                 .from('receitas')
                 .insert([receitaData])
@@ -280,12 +295,10 @@ async function salvarReceitaModulo() {
             receitaId = data.id;
         }
 
-        // Salvar ingredientes
         await salvarIngredientesReceitaModulo(receitaId);
 
         alert(window.receitasModulo.editandoReceita !== null ? 'Receita atualizada com sucesso!' : 'Receita criada com sucesso!');
         
-        // Limpar formulário e recarregar lista
         limparFormularioReceitaModulo();
         await carregarReceitasModulo();
 
@@ -295,46 +308,56 @@ async function salvarReceitaModulo() {
     }
 }
 
-// Salvar ingredientes da receita
+// Salvar ingredientes - CORRIGIDO PARA USAR TODOS OS NOMES CORRETOS
 async function salvarIngredientesReceitaModulo(receitaId) {
     try {
+        console.log('💾 Salvando ingredientes da receita...', receitaId);
+        
         // Remover ingredientes existentes
         await window.supabase
             .from('ingredientes')
             .delete()
             .eq('receita_id', receitaId);
 
-        // Adicionar novos ingredientes
         if (window.receitasModulo.ingredientesReceita.length > 0) {
             const ingredientesData = [];
             
             for (const ingrediente of window.receitasModulo.ingredientesReceita) {
-                // Buscar produto_id pelo código
                 const produto = window.receitasModulo.produtosCarregados.find(p => p.codigo === ingrediente.codigoProduto);
                 if (produto) {
-                    ingredientesData.push({
+                    const ingredienteData = {
                         receita_id: receitaId,
                         produto_id: produto.id,
-                        quantidade: ingrediente.quantidade,
-                        unidade_medida: ingrediente.unidadeMedida,
-                        perda_percent: ingrediente.perdaPercent,
-                        ganho_percent: ingrediente.ganhoPercent,
-                        preco_unitario: ingrediente.precoUnitario
-                    });
+                        quantidade: parseFloat(ingrediente.quantidade) || 0,
+                        unidade_medida: ingrediente.unidadeMedida || 'UN', // ✅ CORRETO
+                        perda_percent: parseFloat(ingrediente.perdaPercent) || 0, // ✅ CORRETO
+                        ganho_percent: parseFloat(ingrediente.ganhoPercent) || 0, // ✅ CORRETO
+                        preco_unitario: parseFloat(ingrediente.precoUnitario) || 0 // ✅ CORRETO
+                    };
+                    
+                    console.log('📤 Ingrediente a inserir:', ingredienteData);
+                    ingredientesData.push(ingredienteData);
                 }
             }
 
             if (ingredientesData.length > 0) {
+                console.log('📤 Inserindo ingredientes:', ingredientesData);
+                
                 const { error } = await window.supabase
                     .from('ingredientes')
                     .insert(ingredientesData);
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ Erro ao inserir ingredientes:', error);
+                    throw error;
+                }
+                
+                console.log('✅ Ingredientes salvos com sucesso!');
             }
         }
 
     } catch (error) {
-        console.error('Erro ao salvar ingredientes:', error);
+        console.error('❌ Erro ao salvar ingredientes:', error);
         throw error;
     }
 }
@@ -350,13 +373,11 @@ function limparFormularioReceitaModulo() {
     atualizarTabelaIngredientesModulo();
     setRecipeText('');
     
-    // Limpar campos calculados
     const precoTotal = document.getElementById('precoTotal');
     const pesoCalculado = document.getElementById('pesoFinalCalculado');
     if (precoTotal) precoTotal.textContent = 'R$ 0,00';
     if (pesoCalculado) pesoCalculado.textContent = '0,000 KG';
     
-    // Limpar variáveis temporárias
     window.receitaTemporaria = null;
     window.receitasModulo.editandoReceita = null;
     
@@ -398,7 +419,7 @@ function atualizarTabelaReceitasModulo() {
     });
 }
 
-// Editar receita
+// Editar receita - CORRIGIDO PARA USAR 'texto'
 async function editarReceitaModulo(index) {
     const receita = window.receitasModulo.receitasCarregadas[index];
     if (!receita) {
@@ -414,9 +435,8 @@ async function editarReceitaModulo(index) {
     
     window.receitasModulo.ingredientesReceita = [...(receita.ingredientes || [])];
     atualizarTabelaIngredientesModulo();
-    setRecipeText(receita.texto_receita || '');
+    setRecipeText(receita.texto || ''); // ✅ CORRIGIDO
     
-    // Atualizar campos calculados
     const precoTotal = document.getElementById('precoTotal');
     const pesoCalculado = document.getElementById('pesoFinalCalculado');
     if (precoTotal) precoTotal.textContent = `R$ ${receita.preco_total ? receita.preco_total.toFixed(2) : '0,00'}`;
@@ -430,25 +450,15 @@ async function editarReceitaModulo(index) {
 async function excluirReceitaModulo(index) {
     try {
         const receita = window.receitasModulo.receitasCarregadas[index];
-        if (!receita) {
-            alert('Receita não encontrada');
-            return;
-        }
-
-        if (!confirm(`Tem certeza que deseja excluir a receita "${receita.descricao}"?`)) {
+        if (!receita || !confirm(`Tem certeza que deseja excluir a receita "${receita.descricao}"?`)) {
             return;
         }
 
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
 
-        // Excluir ingredientes primeiro
-        await window.supabase
-            .from('ingredientes')
-            .delete()
-            .eq('receita_id', receita.id);
-
-        // Excluir receita
+        await window.supabase.from('ingredientes').delete().eq('receita_id', receita.id);
+        
         const { error } = await window.supabase
             .from('receitas')
             .delete()
@@ -466,15 +476,13 @@ async function excluirReceitaModulo(index) {
     }
 }
 
-// =================== FUNÇÕES DE INGREDIENTES ===================
+// ===== FUNÇÕES DE INGREDIENTES =====
 
-// Abrir modal de ingredientes
 function abrirModalIngredientes() {
     document.getElementById('modalIngredientes').style.display = 'block';
     carregarListaIngredientesModulo();
 }
 
-// Carregar lista de ingredientes (produtos)
 function carregarListaIngredientesModulo() {
     const container = document.getElementById('listaIngredientes');
     if (!container) return;
@@ -497,7 +505,6 @@ function carregarListaIngredientesModulo() {
     });
 }
 
-// Filtrar ingredientes
 function filtrarIngredientes() {
     const search = document.getElementById('searchIngredientes').value.toLowerCase();
     const items = document.querySelectorAll('#listaIngredientes .ingredient-item');
@@ -508,7 +515,6 @@ function filtrarIngredientes() {
     });
 }
 
-// Adicionar ingrediente
 function adicionarIngredienteModulo(produtoIndex) {
     const produto = window.receitasModulo.produtosCarregados[produtoIndex];
     
@@ -517,7 +523,6 @@ function adicionarIngredienteModulo(produtoIndex) {
         return;
     }
     
-    // Verificar se já existe
     if (window.receitasModulo.ingredientesReceita.find(ing => ing.codigoProduto === produto.codigo)) {
         alert('Ingrediente já adicionado!');
         return;
@@ -539,7 +544,6 @@ function adicionarIngredienteModulo(produtoIndex) {
     alert('Ingrediente adicionado!');
 }
 
-// Atualizar tabela de ingredientes
 function atualizarTabelaIngredientesModulo() {
     const tbody = document.querySelector('#tabelaIngredientes tbody');
     if (!tbody) return;
@@ -575,14 +579,12 @@ function atualizarTabelaIngredientesModulo() {
     });
 }
 
-// Atualizar ingrediente
 function atualizarIngredienteModulo(index, campo, valor) {
     if (window.receitasModulo.ingredientesReceita[index]) {
         window.receitasModulo.ingredientesReceita[index][campo] = parseFloat(valor) || 0;
     }
 }
 
-// Remover ingrediente
 function removerIngredienteModulo(index) {
     if (confirm('Tem certeza que deseja remover este ingrediente?')) {
         window.receitasModulo.ingredientesReceita.splice(index, 1);
@@ -591,7 +593,6 @@ function removerIngredienteModulo(index) {
     }
 }
 
-// Calcular receita
 function calcularReceita() {
     let precoTotal = 0;
     let pesoFinal = 0;
@@ -639,7 +640,7 @@ function calcularReceita() {
     alert('Cálculos realizados!');
 }
 
-// =================== EDITOR DE RECEITAS ===================
+// ===== EDITOR DE RECEITAS =====
 
 function formatText(command, value = null) {
     const editor = document.getElementById('textoReceita');
@@ -770,7 +771,6 @@ function previewReceita() {
         return;
     }
     
-    // Criar janela de preview
     const previewWindow = window.open('', '_blank', 'width=600,height=700,scrollbars=yes');
     previewWindow.document.write(`
         <!DOCTYPE html>
@@ -831,15 +831,12 @@ function setEditorSize(size) {
     const editor = document.getElementById('recipeEditor');
     if (!editor) return;
     
-    // Remover classes de tamanho existentes
     editor.classList.remove('size-small', 'size-medium', 'size-large');
     
-    // Adicionar nova classe de tamanho
     if (size !== 'auto') {
         editor.classList.add(`size-${size}`);
     }
     
-    // Remover estilos inline para permitir que as classes CSS funcionem
     if (size !== 'auto') {
         editor.style.width = '';
         editor.style.height = '';
@@ -868,7 +865,6 @@ function initializeResizeHandle() {
         document.body.style.cursor = 'nw-resize';
         editor.classList.add('resizing');
         
-        // Remover classes de tamanho pré-definido
         editor.classList.remove('size-small', 'size-medium', 'size-large');
         
         e.preventDefault();
@@ -880,7 +876,6 @@ function initializeResizeHandle() {
         const width = startWidth + e.clientX - startX;
         const height = startHeight + e.clientY - startY;
         
-        // Limites mínimos e máximos
         if (width >= 300 && width <= 1200) {
             editor.style.width = width + 'px';
         }
@@ -928,4 +923,4 @@ window.excluirReceita = excluirReceitaModulo;
 window.salvarReceita = salvarReceitaModulo;
 window.limparFormularioReceita = limparFormularioReceitaModulo;
 
-console.log('✅ receitas.js carregado sem conflitos!');
+console.log('✅ receitas.js carregado e corrigido definitivamente!');

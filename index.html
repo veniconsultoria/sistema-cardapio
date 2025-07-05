@@ -21,8 +21,7 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="showTab('produtos-novo')">🛒 Produtos (Novo)</button>
-            <button class="tab" onclick="showTab('produtos')">Cadastro de Produtos</button>
+            <button class="tab active" onclick="showTab('produtos-novo')">🛒 Produtos</button>
             <button class="tab" onclick="showTab('receitas')">Cadastro de Receitas</button>
             <button class="tab" onclick="showTab('tipos-refeicoes')">Tipos de Refeições</button>
             <button class="tab" onclick="showTab('clientes')">Cadastro de Clientes</button>
@@ -30,7 +29,7 @@
         </div>
 
         <div class="content">
-            <!-- NOVA ABA: Produtos Melhorados -->
+            <!-- ABA: Produtos -->
             <div id="produtos-novo" class="tab-content">
                 <div class="section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -81,96 +80,6 @@
                         <p><strong>Supabase:</strong> <span id="status-supabase" style="display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #f8d7da; color: #721c24;">Verificando...</span></p>
                         <p><strong>Usuário:</strong> <span id="usuario-info">Carregando...</span></p>
                         <p><strong>Último erro:</strong> <span id="ultimo-erro">Nenhum</span></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cadastro de Produtos (Original) -->
-            <div id="produtos" class="tab-content hidden">
-                <div class="section">
-                    <h2>Cadastro de Produtos</h2>
-                    <form id="formProduto">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="codigoProduto" class="required">Código do Item</label>
-                                <input type="text" id="codigoProduto" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="descricaoProduto" class="required">Descrição do Item</label>
-                                <input type="text" id="descricaoProduto" maxlength="50" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="grupoProduto" class="required">Grupo</label>
-                                <select id="grupoProduto" required>
-                                    <option value="">Selecione...</option>
-                                    <option value="Ingredientes">Ingredientes</option>
-                                    <option value="Descartáveis">Descartáveis</option>
-                                    <option value="Outros produtos">Outros produtos</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="unidadeMedida" class="required">Unidade de Medida Básica</label>
-                                <select id="unidadeMedida" required>
-                                    <option value="">Selecione...</option>
-                                    <option value="KG">KG</option>
-                                    <option value="L">L</option>
-                                    <option value="UN">UN</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="pesoBruto">Peso Bruto</label>
-                                <input type="number" id="pesoBruto" step="0.001">
-                            </div>
-                            <div class="form-group">
-                                <label for="unidadePeso">Unidade de Peso</label>
-                                <select id="unidadePeso">
-                                    <option value="">Selecione...</option>
-                                    <option value="KG">KG</option>
-                                    <option value="gr">gr</option>
-                                    <option value="mg">mg</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="pesoLiquido">Peso Líquido</label>
-                                <input type="number" id="pesoLiquido" step="0.001">
-                            </div>
-                            <div class="form-group">
-                                <label for="volumeM3">Volume M³</label>
-                                <input type="number" id="volumeM3" step="0.001">
-                            </div>
-                            <div class="form-group">
-                                <label for="perdaPercent">Perda %</label>
-                                <input type="number" id="perdaPercent" step="0.01" max="100">
-                            </div>
-                            <div class="form-group">
-                                <label for="precoItem">Preço do Item R$</label>
-                                <input type="number" id="precoItem" step="0.01">
-                            </div>
-                        </div>
-                        <div class="actions">
-                            <button type="submit" class="btn btn-primary">Salvar Produto</button>
-                            <button type="button" class="btn btn-secondary" onclick="limparFormularioProduto()">Limpar</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="section">
-                    <h3>Lista de Produtos</h3>
-                    <div class="table-responsive">
-                        <table id="tabelaProdutos">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Descrição</th>
-                                    <th>Grupo</th>
-                                    <th>UMB</th>
-                                    <th>Preço</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -517,7 +426,7 @@
         </div>
     </div>
 
-    <!-- Modal de Produto (Novo) -->
+    <!-- Modal de Produto -->
     <div id="modal-produto" class="modal">
         <div class="modal-content">
             <span class="close" onclick="fecharModalProduto()">&times;</span>
@@ -575,7 +484,7 @@
         </div>
     </div>
 
-    <!-- Outros Modais (mantidos originais) -->
+    <!-- Outros Modais -->
     <div id="modalIngredientes" class="modal">
         <div class="modal-content">
             <span class="close" onclick="fecharModal('modalIngredientes')">&times;</span>
@@ -612,20 +521,18 @@
         </div>
     </div>
 
-    <!-- Scripts - ORDEM CORRIGIDA PARA EVITAR CONFLITOS -->
+    <!-- Scripts -->
     <script src="js/main.js"></script>
-    <script src="js/produtos.js"></script>
     <script src="js/receitas.js"></script>
     <script src="js/tipos-refeicoes.js"></script>
     <script src="js/clientes.js"></script>
     <script src="js/cardapio.js"></script>
 
-    <!-- Script inline APENAS para produtos melhorados -->
+    <!-- Script inline para produtos -->
     <script>
-        // PRODUTOS MELHORADOS - INTEGRADO NO SISTEMA (SEM CONFLITOS)
-        console.log('🚀 Iniciando sistema de produtos melhorados...');
+        // PRODUTOS - INTEGRADO NO SISTEMA
+        console.log('🚀 Iniciando sistema de produtos...');
         
-        // Variáveis locais para produtos melhorados (prefixadas para evitar conflito)
         let produtosNovoSistema = [];
         let editandoNovoSistema = null;
 
@@ -644,7 +551,6 @@
         function inicializarProdutosNovo() {
             aguardarSupabaseNovoSistema(async () => {
                 try {
-                    // Verificar usuário
                     const { data: { user } } = await window.supabase.auth.getUser();
                     if (!user) {
                         window.location.href = 'login.html';
@@ -667,7 +573,6 @@
             });
         }
 
-        // Configurar eventos para produtos melhorados
         function configurarEventosNovoSistema() {
             const buscaInput = document.getElementById('busca-produtos');
             const filtroSelect = document.getElementById('filtro-grupo');
@@ -682,7 +587,6 @@
             }
         }
 
-        // Gerar código para produtos melhorados
         async function gerarCodigoNovoSistema() {
             try {
                 const { data: { user } } = await window.supabase.auth.getUser();
@@ -703,7 +607,6 @@
             }
         }
 
-        // Carregar produtos melhorados
         async function carregarProdutosNovoSistema() {
             try {
                 const { data: { user } } = await window.supabase.auth.getUser();
@@ -723,7 +626,6 @@
             }
         }
 
-        // Renderizar tabela de produtos melhorados
         function renderizarNovoSistema() {
             const tbody = document.getElementById('produtos-tbody');
             const total = document.getElementById('total-produtos');
@@ -756,7 +658,6 @@
             });
         }
 
-        // Filtrar produtos melhorados
         function filtrarNovoSistema() {
             const busca = document.getElementById('busca-produtos')?.value.toLowerCase() || '';
             const grupo = document.getElementById('filtro-grupo')?.value || '';
@@ -790,7 +691,6 @@
             });
         }
 
-        // Abrir modal de produto melhorado
         async function abrirModalNovoProduto() {
             await gerarCodigoNovoSistema();
             document.getElementById('produto-id').value = '';
@@ -808,7 +708,6 @@
             }, 100);
         }
 
-        // Salvar produto melhorado
         async function salvarProduto() {
             try {
                 const { data: { user } } = await window.supabase.auth.getUser();
@@ -851,7 +750,6 @@
             }
         }
 
-        // Editar produto melhorado
         function editarNovoSistema(id) {
             const produto = produtosNovoSistema.find(p => p.id === id);
             if (!produto) return;
@@ -872,7 +770,6 @@
             }, 100);
         }
 
-        // Excluir produto melhorado
         async function excluirNovoSistema(id) {
             const produto = produtosNovoSistema.find(p => p.id === id);
             if (!produto || !confirm(`Excluir "${produto.descricao}"?`)) return;
@@ -894,18 +791,16 @@
             }
         }
 
-        // Fechar modal de produto
         function fecharModalProduto() {
             document.getElementById('modal-produto').style.display = 'none';
         }
 
-        // Recarregar produtos melhorados
         async function recarregarProdutos() {
             await carregarProdutosNovoSistema();
             alert('Produtos recarregados!');
         }
 
-        // Exportar funções globais (apenas as que não conflitam)
+        // Exportar funções globais
         window.abrirModalNovoProduto = abrirModalNovoProduto;
         window.salvarProduto = salvarProduto;
         window.editarNovoSistema = editarNovoSistema;
@@ -922,7 +817,7 @@
             }
         });
 
-        console.log('✅ Sistema de produtos melhorados carregado sem conflitos!');
+        console.log('✅ Sistema de produtos carregado!');
     </script>
 
     <!-- Estilos adicionais -->
@@ -932,7 +827,6 @@
             font-size: 12px;
         }
 
-        /* Melhorias no modal */
         .modal-content {
             max-width: 600px;
         }
@@ -970,18 +864,4 @@
         }
     </style>
 </body>
-</html><!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Cadastro - Produtos e Receitas</title>
-    <link rel="stylesheet" href="css/main.css">
-</head>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js"></script>
-<script src="js/auth.js"></script>
-<body>
-    <div class="container">
-        <div class="header">
+</html>

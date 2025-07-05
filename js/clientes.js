@@ -1,4 +1,4 @@
-// clientes.js - Sistema de Clientes com Supabase (VERSÃO COMPLETA CORRIGIDA)
+// clientes.js - Sistema de Clientes com Supabase (CORRIGIDO PARA RLS)
 
 console.log('📁 Carregando clientes.js...');
 
@@ -167,7 +167,7 @@ async function gerarProximoCodigoCliente() {
     }
 }
 
-// Salvar cliente (CORRIGIDO PARA SUPABASE)
+// Salvar cliente (CORRIGIDO PARA RLS)
 async function salvarCliente() {
     try {
         console.log('💾 Salvando cliente...');
@@ -236,8 +236,8 @@ async function salvarCliente() {
             clienteId = data.id;
         }
 
-        // Salvar tipos de refeição vinculados
-        await salvarTiposRefeicaoCliente(clienteId);
+        // Salvar tipos de refeição vinculados (CORRIGIDO PARA RLS)
+        await salvarTiposRefeicaoCliente(clienteId, user.id);
 
         console.log('✅ Cliente salvo com sucesso!');
         alert(window.clientesModulo.editandoCliente !== null ? 'Cliente atualizado com sucesso!' : 'Cliente criado com sucesso!');
@@ -252,8 +252,8 @@ async function salvarCliente() {
     }
 }
 
-// Salvar tipos de refeição do cliente
-async function salvarTiposRefeicaoCliente(clienteId) {
+// Salvar tipos de refeição do cliente (CORRIGIDO PARA RLS)
+async function salvarTiposRefeicaoCliente(clienteId, userId) {
     try {
         console.log('💾 Salvando tipos de refeição do cliente...');
         
@@ -267,14 +267,20 @@ async function salvarTiposRefeicaoCliente(clienteId) {
         if (window.clientesModulo.tiposRefeicaoTemp.length > 0) {
             const relacoes = window.clientesModulo.tiposRefeicaoTemp.map(tipo => ({
                 cliente_id: clienteId,
-                tipo_refeicao_id: tipo.id
+                tipo_refeicao_id: tipo.id,
+                user_id: userId // CORRIGIDO: Incluir user_id para RLS
             }));
+
+            console.log('📤 Inserindo relações:', relacoes);
 
             const { error } = await window.supabase
                 .from('cliente_tipos_refeicao')
                 .insert(relacoes);
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ Erro ao inserir relações:', error);
+                throw error;
+            }
         }
 
         console.log('✅ Tipos de refeição do cliente salvos!');
@@ -503,4 +509,4 @@ window.salvarCliente = salvarCliente;
 window.limparFormularioCliente = limparFormularioCliente;
 window.inicializarClientes = inicializarClientes;
 
-console.log('✅ clientes.js carregado com sucesso!');
+console.log('✅ clientes.js carregado e corrigido para RLS!');

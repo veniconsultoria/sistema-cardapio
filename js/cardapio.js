@@ -1,15 +1,293 @@
-// cardapio.js - Sistema de Cardápios com Supabase
-// Semana 2 - Adaptação para Supabase (Parte 1)
+// cardapio.js - Sistema de Cardápios com Supabase (VERSÃO FINAL)
+
+// Aguardar Supabase estar disponível
+function aguardarSupabaseCardapio(callback, tentativas = 0) {
+    if (window.supabase && window.supabase.auth) {
+        console.log('✅ Supabase disponível para cardapio.js');
+        callback();
+    } else if (tentativas < 50) {
+        setTimeout(() => aguardarSupabaseCardapio(callback, tentativas + 1), 100);
+    } else {
+        console.error('❌ Timeout: Supabase não ficou disponível');
+        alert('Erro: Não foi possível conectar com o Supabase.');
+    }
+}
 
 // Verificar se o usuário está logado
 async function verificarAutenticacao() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        alert('Você precisa estar logado para acessar esta página.');
-        window.location.href = 'login.html';
+    try {
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) {
+            alert('Você precisa estar logado para acessar esta página.');
+            window.location.href = 'login.html';
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error('Erro ao atualizar receita:', error);
+        alert('Erro ao atualizar receita: ' + error.message);
+    }
+}
+
+// Atualizar cardápio no Supabase
+async function atualizarCardapioSupabase(receita) {
+    try {
+        const { error } = await window.supabase
+            .from('cardapios')
+            .update({
+                comensais: receita.comensais,
+                quantidade_por_pessoa: receita.quantidadePorPessoa,
+                total_por_comensais: receita.totalPorComensais,
+                alterada: receita.alterada
+            })
+            .eq('id', receita.id);
+
+        if (error) throw error;
+
+    } catch (error) {
+        console.error('Erro ao atualizar no Supabase:', error);
+        throw error;
+    }
+}
+
+// Remover receita do cardápio
+async function removerReceitaCardapio(tipoCodigo, receitaIndex) {
+    try {
+        if (!confirm('Tem certeza que deseja remover esta receita?')) {
+            return;
+        }
+
+        const data = document.getElementById('dataCardapio').value;
+        
+        if (!cardapiosCarregados[data] || 
+            !cardapiosCarregados[data][clienteAtualCardapio.codigo] || 
+            !cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo]) {
+            return;
+        }
+
+        const receita = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo][receitaIndex];
+        if (!receita) return;
+
+        const { error } = await window.supabase
+            .from('cardapios')
+            .delete()
+            .eq('id', receita.id);
+
+        if (error) throw error;
+
+        cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo].splice(receitaIndex, 1);
+        carregarCardapioData();
+        alert('Receita removida do cardápio!');
+
+    } catch (error) {
+        console.error('Erro ao remover receita:', error);
+        alert('Erro ao remover receita: ' + error.message);
+    }
+}
+
+// Atualizar comensais para um tipo
+async function atualizarComensais(botao) {
+    try {
+        const container = botao.closest('.expandable-content');
+        const input = container.querySelector('.comensais-input');
+        const totalComensais = parseInt(input.value) || 0;
+        const tipoCodigo = container.querySelector('.receitas-container').dataset.tipo;
+        
+        if (totalComensais <= 0) {
+            alert('Informe um número válido de comensais!');
+            return;
+        }
+        
+        const data = document.getElementById('dataCardapio').value;
+        
+        if (!cardapiosCarregados[data] || 
+            !cardapiosCarregados[data][clienteAtualCardapio.codigo] || 
+            !cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo]) {
+            return;
+        }
+
+        const receitas = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo];
+        
+        for (const receita of receitas) {
+            receita.comensais = totalComensais;
+            receita.totalPorComensais = receita.quantidadePorPessoa * totalComensais;
+            await atualizarCardapioSupabase(receita);
+        }
+        
+        carregarCardapioData();
+        alert('Comensais atualizados!');
+
+    } catch (error) {
+        console.error('Erro ao atualizar comensais:', error);
+        alert('Erro ao atualizar comensais: ' + error.message);
+    }
+}
+
+// Atualizar para todos os tipos
+async function atualizarParaTodos() {
+    try {
+        const totalComensais = parseInt(document.getElementById('totalComensais').value) || 0;
+        const data = document.getElementById('dataCardapio').value;
+        
+        if (totalComensais <= 0) {
+            alert('Informe um número válido de comensais!');
+            return;
+        }
+        
+        if (!data || !clienteAtualCardapio) {
+            alert('Selecione cliente e data!');
+            return;
+        }
+        
+        document.querySelectorAll('.comensais-input').forEach(input => {
+            input.value = totalComensais;
+        });
+        
+        if (cardapiosCarregados[data] && cardapiosCarregados[data][clienteAtualCardapio.codigo]) {
+            for (const tipoCodigo of Object.keys(cardapiosCarregados[data][clienteAtualCardapio.codigo])) {
+                const receitas = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo];
+                for (const receita of receitas) {
+                    receita.comensais = totalComensais;
+                    receita.totalPorComensais = receita.quantidadePorPessoa * totalComensais;
+                    await atualizarCardapioSupabase(receita);
+                }
+            }
+        }
+        
+        carregarCardapioData();
+        alert('Comensais atualizados para todos os tipos!');
+
+    } catch (error) {
+        console.error('Erro ao atualizar para todos:', error);
+        alert('Erro ao atualizar para todos: ' + error.message);
+    }
+}
+
+// Calcular para todos
+async function calcularParaTodos() {
+    try {
+        const data = document.getElementById('dataCardapio').value;
+        
+        if (!data || !clienteAtualCardapio) {
+            alert('Selecione cliente e data!');
+            return;
+        }
+        
+        if (cardapiosCarregados[data] && cardapiosCarregados[data][clienteAtualCardapio.codigo]) {
+            for (const tipoCodigo of Object.keys(cardapiosCarregados[data][clienteAtualCardapio.codigo])) {
+                const receitas = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo];
+                for (const receita of receitas) {
+                    receita.totalPorComensais = receita.quantidadePorPessoa * receita.comensais;
+                    await atualizarCardapioSupabase(receita);
+                }
+            }
+        }
+        
+        carregarCardapioData();
+        alert('Cálculos realizados para todos os tipos!');
+
+    } catch (error) {
+        console.error('Erro ao calcular para todos:', error);
+        alert('Erro ao calcular para todos: ' + error.message);
+    }
+}
+
+// Gravar para todos
+async function gravarParaTodos() {
+    try {
+        const data = document.getElementById('dataCardapio').value;
+        const clienteIndex = document.getElementById('clienteCardapio').value;
+        
+        if (!data || clienteIndex === '') {
+            alert('Selecione cliente e data!');
+            return;
+        }
+        
+        await calcularParaTodos();
+        alert('Cardápio gravado para todos os tipos!');
+
+    } catch (error) {
+        console.error('Erro ao gravar para todos:', error);
+        alert('Erro ao gravar para todos: ' + error.message);
+    }
+}
+
+// Calcular tipo específico
+async function calcularTipoRefeicao(tipoCodigo) {
+    try {
+        const data = document.getElementById('dataCardapio').value;
+        
+        if (!data || !clienteAtualCardapio) return;
+        
+        if (cardapiosCarregados[data] && 
+            cardapiosCarregados[data][clienteAtualCardapio.codigo] && 
+            cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo]) {
+            
+            const receitas = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo];
+            for (const receita of receitas) {
+                receita.totalPorComensais = receita.quantidadePorPessoa * receita.comensais;
+                await atualizarCardapioSupabase(receita);
+            }
+        }
+        
+        carregarCardapioData();
+        alert('Cálculo realizado para este tipo de refeição!');
+
+    } catch (error) {
+        console.error('Erro ao calcular tipo:', error);
+        alert('Erro ao calcular tipo: ' + error.message);
+    }
+}
+
+// Gravar tipo específico
+async function gravarTipoRefeicao(tipoCodigo) {
+    try {
+        const data = document.getElementById('dataCardapio').value;
+        
+        if (!data || !clienteAtualCardapio) {
+            alert('Selecione cliente e data!');
+            return;
+        }
+        
+        await calcularTipoRefeicao(tipoCodigo);
+        alert('Tipo de refeição gravado!');
+
+    } catch (error) {
+        console.error('Erro ao gravar tipo:', error);
+        alert('Erro ao gravar tipo: ' + error.message);
+    }
+}
+
+// Fechar modal
+function fecharModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Exportar funções para uso global
+window.inicializarCardapio = inicializarCardapio;
+window.toggleExpandable = toggleExpandable;
+window.abrirModalReceitasTipo = abrirModalReceitasTipo;
+window.filtrarReceitas = filtrarReceitas;
+window.adicionarReceitasSelecionadas = adicionarReceitasSelecionadas;
+window.atualizarReceitaCardapio = atualizarReceitaCardapio;
+window.removerReceitaCardapio = removerReceitaCardapio;
+window.atualizarComensais = atualizarComensais;
+window.atualizarParaTodos = atualizarParaTodos;
+window.calcularParaTodos = calcularParaTodos;
+window.gravarParaTodos = gravarParaTodos;
+window.calcularTipoRefeicao = calcularTipoRefeicao;
+window.gravarTipoRefeicao = gravarTipoRefeicao;
+window.fecharModal = fecharModal;
+window.carregarClientesCardapio = carregarClientesCardapio;
+window.carregarCardapioData = carregarCardapioData;
+
+console.log('✅ cardapio.js carregado e corrigido!');) {
+        console.error('Erro na autenticação:', error);
         return false;
     }
-    return true;
 }
 
 // Variáveis globais
@@ -21,30 +299,42 @@ let clienteAtualCardapio = null;
 let tipoRefeicaoAtualCardapio = null;
 let dataAtualCardapio = null;
 
-// Inicializar página de cardápios
-document.addEventListener('DOMContentLoaded', async function() {
-    // Verificar autenticação
-    if (!await verificarAutenticacao()) {
-        return;
-    }
-    
-    // Carregar dados do Supabase
-    await carregarDadosIniciais();
-    
-    // Configurar eventos
-    configurarEventos();
-    
-    // Configurar data atual
-    const hoje = new Date().toISOString().split('T')[0];
-    const inputData = document.getElementById('dataCardapio');
-    if (inputData) {
-        inputData.value = hoje;
-    }
-});
+// Inicializar página de cardápios quando necessário
+async function inicializarCardapio() {
+    aguardarSupabaseCardapio(async () => {
+        try {
+            // Verificar autenticação
+            if (!await verificarAutenticacao()) {
+                return;
+            }
+            
+            // Carregar dados do Supabase
+            await carregarDadosIniciais();
+            
+            // Configurar eventos
+            configurarEventos();
+            
+            // Configurar data atual
+            const hoje = new Date().toISOString().split('T')[0];
+            const inputData = document.getElementById('dataCardapio');
+            if (inputData) {
+                inputData.value = hoje;
+            }
+            
+            console.log('✅ Cardápio inicializado com sucesso');
+            
+        } catch (error) {
+            console.error('❌ Erro ao inicializar cardápio:', error);
+            alert('Erro ao carregar cardápio: ' + error.message);
+        }
+    });
+}
 
 // Carregar todos os dados necessários
 async function carregarDadosIniciais() {
     try {
+        console.log('📥 Carregando dados iniciais do cardápio...');
+        
         await Promise.all([
             carregarClientes(),
             carregarReceitas(),
@@ -55,19 +345,21 @@ async function carregarDadosIniciais() {
         // Carregar clientes no select
         carregarClientesCardapio();
         
+        console.log('✅ Dados iniciais carregados');
+        
     } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
-        alert('Erro ao carregar dados: ' + error.message);
+        throw error;
     }
 }
 
 // Carregar clientes do Supabase
 async function carregarClientes() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
 
-        const { data, error } = await supabase
+        const { data, error } = await window.supabase
             .from('clientes')
             .select(`
                 *,
@@ -85,6 +377,8 @@ async function carregarClientes() {
             tiposRefeicao: cliente.cliente_tipos_refeicao.map(rel => rel.tipos_refeicoes)
         }));
         
+        console.log(`✅ ${clientesCarregados.length} clientes carregados`);
+        
     } catch (error) {
         console.error('Erro ao carregar clientes:', error);
         clientesCarregados = [];
@@ -94,10 +388,10 @@ async function carregarClientes() {
 // Carregar receitas do Supabase
 async function carregarReceitas() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
 
-        const { data, error } = await supabase
+        const { data, error } = await window.supabase
             .from('receitas')
             .select(`
                 *,
@@ -117,12 +411,14 @@ async function carregarReceitas() {
                 codigoProduto: ing.produtos.codigo,
                 nome: ing.produtos.descricao,
                 quantidade: ing.quantidade,
-                unidadeMedida: ing.unidade_medida,
+                unidadeMedida: ing.unidades_medida,
                 perdaPercent: ing.perda_percent,
                 ganhoPercent: ing.ganho_percent,
                 precoUnitario: ing.preco_unitario
             }))
         }));
+        
+        console.log(`✅ ${receitasCarregadas.length} receitas carregadas`);
         
     } catch (error) {
         console.error('Erro ao carregar receitas:', error);
@@ -133,10 +429,10 @@ async function carregarReceitas() {
 // Carregar tipos de refeição do Supabase
 async function carregarTiposRefeicao() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
 
-        const { data, error } = await supabase
+        const { data, error } = await window.supabase
             .from('tipos_refeicoes')
             .select('*')
             .eq('user_id', user.id)
@@ -145,6 +441,8 @@ async function carregarTiposRefeicao() {
         if (error) throw error;
 
         tiposRefeicaoCarregados = data || [];
+        
+        console.log(`✅ ${tiposRefeicaoCarregados.length} tipos de refeição carregados`);
         
     } catch (error) {
         console.error('Erro ao carregar tipos de refeição:', error);
@@ -155,10 +453,10 @@ async function carregarTiposRefeicao() {
 // Carregar cardápios existentes
 async function carregarCardapios() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
 
-        const { data, error } = await supabase
+        const { data, error } = await window.supabase
             .from('cardapios')
             .select(`
                 *,
@@ -199,9 +497,11 @@ async function carregarCardapios() {
                 totalPorComensais: item.total_por_comensais,
                 unidadeBasica: item.unidade_basica,
                 alterada: item.alterada || false,
-                ingredientes: [] // Será carregado quando necessário
+                ingredientes: []
             });
         });
+        
+        console.log('✅ Cardápios carregados');
         
     } catch (error) {
         console.error('Erro ao carregar cardápios:', error);
@@ -221,22 +521,6 @@ function configurarEventos() {
     const inputData = document.getElementById('dataCardapio');
     if (inputData) {
         inputData.addEventListener('change', carregarCardapioData);
-    }
-    
-    // Botões globais
-    const btnAtualizarTodos = document.getElementById('btn-atualizar-todos');
-    if (btnAtualizarTodos) {
-        btnAtualizarTodos.addEventListener('click', atualizarParaTodos);
-    }
-    
-    const btnCalcularTodos = document.getElementById('btn-calcular-todos');
-    if (btnCalcularTodos) {
-        btnCalcularTodos.addEventListener('click', calcularParaTodos);
-    }
-    
-    const btnGravarTodos = document.getElementById('btn-gravar-todos');
-    if (btnGravarTodos) {
-        btnGravarTodos.addEventListener('click', gravarParaTodos);
     }
 }
 
@@ -384,7 +668,7 @@ async function adicionarReceitasSelecionadas() {
             return;
         }
 
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: userData } = await window.supabase.auth.getUser();
         if (!userData.user) throw new Error('Usuário não autenticado');
 
         // Buscar IDs necessários
@@ -420,7 +704,7 @@ async function adicionarReceitasSelecionadas() {
         }
 
         // Inserir no Supabase
-        const { error } = await supabase
+        const { error } = await window.supabase
             .from('cardapios')
             .insert(cardapiosParaInserir);
 
@@ -497,7 +781,10 @@ function carregarCardapioData() {
     });
 }
 
-// Atualizar receita do cardápio
+// Demais funções permanecem as mesmas...
+// (Para economizar espaço, mantive apenas as principais alterações)
+
+// Funções de atualização, cálculo e gravação permanecem iguais
 async function atualizarReceitaCardapio(tipoCodigo, receitaIndex, campo, valor) {
     try {
         const data = document.getElementById('dataCardapio').value;
@@ -514,7 +801,6 @@ async function atualizarReceitaCardapio(tipoCodigo, receitaIndex, campo, valor) 
         const novoValor = parseFloat(valor) || 0;
         receita[campo] = novoValor;
         
-        // Verificar se foi alterada a quantidade por pessoa
         if (campo === 'quantidadePorPessoa') {
             const receitaOriginal = receitasCarregadas.find(r => r.codigo === receita.codigo);
             if (receitaOriginal && receitaOriginal.rendimento !== novoValor) {
@@ -522,283 +808,11 @@ async function atualizarReceitaCardapio(tipoCodigo, receitaIndex, campo, valor) 
             }
         }
         
-        // Recalcular total
         if (campo === 'comensais' || campo === 'quantidadePorPessoa') {
             receita.totalPorComensais = receita.quantidadePorPessoa * receita.comensais;
         }
         
-        // Atualizar no Supabase
         await atualizarCardapioSupabase(receita);
-        
-        // Recarregar visualização
         carregarCardapioData();
 
-    } catch (error) {
-        console.error('Erro ao atualizar receita:', error);
-        alert('Erro ao atualizar receita: ' + error.message);
-    }
-}
-
-// Atualizar cardápio no Supabase
-async function atualizarCardapioSupabase(receita) {
-    try {
-        const { error } = await supabase
-            .from('cardapios')
-            .update({
-                comensais: receita.comensais,
-                quantidade_por_pessoa: receita.quantidadePorPessoa,
-                total_por_comensais: receita.totalPorComensais,
-                alterada: receita.alterada
-            })
-            .eq('id', receita.id);
-
-        if (error) throw error;
-
-    } catch (error) {
-        console.error('Erro ao atualizar no Supabase:', error);
-        throw error;
-    }
-}
-
-// Remover receita do cardápio
-async function removerReceitaCardapio(tipoCodigo, receitaIndex) {
-    try {
-        if (!confirm('Tem certeza que deseja remover esta receita?')) {
-            return;
-        }
-
-        const data = document.getElementById('dataCardapio').value;
-        
-        if (!cardapiosCarregados[data] || 
-            !cardapiosCarregados[data][clienteAtualCardapio.codigo] || 
-            !cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo]) {
-            return;
-        }
-
-        const receita = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo][receitaIndex];
-        if (!receita) return;
-
-        // Remover do Supabase
-        const { error } = await supabase
-            .from('cardapios')
-            .delete()
-            .eq('id', receita.id);
-
-        if (error) throw error;
-
-        // Remover do array local
-        cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo].splice(receitaIndex, 1);
-        
-        // Recarregar visualização
-        carregarCardapioData();
-        
-        alert('Receita removida do cardápio!');
-
-    } catch (error) {
-        console.error('Erro ao remover receita:', error);
-        alert('Erro ao remover receita: ' + error.message);
-    }
-}
-
-// Atualizar comensais para um tipo
-async function atualizarComensais(botao) {
-    try {
-        const container = botao.closest('.expandable-content');
-        const input = container.querySelector('.comensais-input');
-        const totalComensais = parseInt(input.value) || 0;
-        const tipoCodigo = container.querySelector('.receitas-container').dataset.tipo;
-        
-        if (totalComensais <= 0) {
-            alert('Informe um número válido de comensais!');
-            return;
-        }
-        
-        const data = document.getElementById('dataCardapio').value;
-        
-        if (!cardapiosCarregados[data] || 
-            !cardapiosCarregados[data][clienteAtualCardapio.codigo] || 
-            !cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo]) {
-            return;
-        }
-
-        const receitas = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo];
-        
-        // Atualizar todas as receitas do tipo
-        for (const receita of receitas) {
-            receita.comensais = totalComensais;
-            receita.totalPorComensais = receita.quantidadePorPessoa * totalComensais;
-            await atualizarCardapioSupabase(receita);
-        }
-        
-        carregarCardapioData();
-        alert('Comensais atualizados!');
-
-    } catch (error) {
-        console.error('Erro ao atualizar comensais:', error);
-        alert('Erro ao atualizar comensais: ' + error.message);
-    }
-}
-
-// Atualizar para todos os tipos
-async function atualizarParaTodos() {
-    try {
-        const totalComensais = parseInt(document.getElementById('totalComensais').value) || 0;
-        const data = document.getElementById('dataCardapio').value;
-        
-        if (totalComensais <= 0) {
-            alert('Informe um número válido de comensais!');
-            return;
-        }
-        
-        if (!data || !clienteAtualCardapio) {
-            alert('Selecione cliente e data!');
-            return;
-        }
-        
-        // Atualizar todos os inputs de comensais
-        document.querySelectorAll('.comensais-input').forEach(input => {
-            input.value = totalComensais;
-        });
-        
-        // Atualizar nos dados e no Supabase
-        if (cardapiosCarregados[data] && cardapiosCarregados[data][clienteAtualCardapio.codigo]) {
-            for (const tipoCodigo of Object.keys(cardapiosCarregados[data][clienteAtualCardapio.codigo])) {
-                const receitas = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo];
-                for (const receita of receitas) {
-                    receita.comensais = totalComensais;
-                    receita.totalPorComensais = receita.quantidadePorPessoa * totalComensais;
-                    await atualizarCardapioSupabase(receita);
-                }
-            }
-        }
-        
-        carregarCardapioData();
-        alert('Comensais atualizados para todos os tipos!');
-
-    } catch (error) {
-        console.error('Erro ao atualizar para todos:', error);
-        alert('Erro ao atualizar para todos: ' + error.message);
-    }
-}
-
-// Calcular para todos
-async function calcularParaTodos() {
-    try {
-        const data = document.getElementById('dataCardapio').value;
-        
-        if (!data || !clienteAtualCardapio) {
-            alert('Selecione cliente e data!');
-            return;
-        }
-        
-        if (cardapiosCarregados[data] && cardapiosCarregados[data][clienteAtualCardapio.codigo]) {
-            for (const tipoCodigo of Object.keys(cardapiosCarregados[data][clienteAtualCardapio.codigo])) {
-                const receitas = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo];
-                for (const receita of receitas) {
-                    receita.totalPorComensais = receita.quantidadePorPessoa * receita.comensais;
-                    await atualizarCardapioSupabase(receita);
-                }
-            }
-        }
-        
-        carregarCardapioData();
-        alert('Cálculos realizados para todos os tipos!');
-
-    } catch (error) {
-        console.error('Erro ao calcular para todos:', error);
-        alert('Erro ao calcular para todos: ' + error.message);
-    }
-}
-
-// Gravar para todos
-async function gravarParaTodos() {
-    try {
-        const data = document.getElementById('dataCardapio').value;
-        const clienteIndex = document.getElementById('clienteCardapio').value;
-        
-        if (!data || clienteIndex === '') {
-            alert('Selecione cliente e data!');
-            return;
-        }
-        
-        // Calcular automaticamente antes de gravar
-        await calcularParaTodos();
-        
-        alert('Cardápio gravado para todos os tipos!');
-
-    } catch (error) {
-        console.error('Erro ao gravar para todos:', error);
-        alert('Erro ao gravar para todos: ' + error.message);
-    }
-}
-
-// Calcular tipo específico
-async function calcularTipoRefeicao(tipoCodigo) {
-    try {
-        const data = document.getElementById('dataCardapio').value;
-        
-        if (!data || !clienteAtualCardapio) return;
-        
-        if (cardapiosCarregados[data] && 
-            cardapiosCarregados[data][clienteAtualCardapio.codigo] && 
-            cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo]) {
-            
-            const receitas = cardapiosCarregados[data][clienteAtualCardapio.codigo][tipoCodigo];
-            for (const receita of receitas) {
-                receita.totalPorComensais = receita.quantidadePorPessoa * receita.comensais;
-                await atualizarCardapioSupabase(receita);
-            }
-        }
-        
-        carregarCardapioData();
-        alert('Cálculo realizado para este tipo de refeição!');
-
-    } catch (error) {
-        console.error('Erro ao calcular tipo:', error);
-        alert('Erro ao calcular tipo: ' + error.message);
-    }
-}
-
-// Gravar tipo específico
-async function gravarTipoRefeicao(tipoCodigo) {
-    try {
-        const data = document.getElementById('dataCardapio').value;
-        
-        if (!data || !clienteAtualCardapio) {
-            alert('Selecione cliente e data!');
-            return;
-        }
-        
-        // Calcular antes de gravar
-        await calcularTipoRefeicao(tipoCodigo);
-        
-        alert('Tipo de refeição gravado!');
-
-    } catch (error) {
-        console.error('Erro ao gravar tipo:', error);
-        alert('Erro ao gravar tipo: ' + error.message);
-    }
-}
-
-// Fechar modal
-function fecharModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-// Exportar funções para uso global
-window.toggleExpandable = toggleExpandable;
-window.abrirModalReceitasTipo = abrirModalReceitasTipo;
-window.filtrarReceitas = filtrarReceitas;
-window.adicionarReceitasSelecionadas = adicionarReceitasSelecionadas;
-window.atualizarReceitaCardapio = atualizarReceitaCardapio;
-window.removerReceitaCardapio = removerReceitaCardapio;
-window.atualizarComensais = atualizarComensais;
-window.atualizarParaTodos = atualizarParaTodos;
-window.calcularParaTodos = calcularParaTodos;
-window.gravarParaTodos = gravarParaTodos;
-window.calcularTipoRefeicao = calcularTipoRefeicao;
-window.gravarTipoRefeicao = gravarTipoRefeicao;
-window.fecharModal = fecharModal;
+    } catch (error

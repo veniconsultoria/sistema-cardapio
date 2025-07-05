@@ -1,12 +1,8 @@
-// main.js - Sistema principal sem conflitos de variáveis
+// main.js - Sistema principal corrigido
 
 console.log('📁 Carregando main.js...');
 
-// Variáveis globais do sistema principal (prefixadas para evitar conflito)
-let mainProdutos = [];
-let mainReceitas = [];
-let mainTiposRefeicoes = [];
-let mainClientes = [];
+// Variáveis globais do sistema principal
 let mainCardapios = {};
 
 // Contadores
@@ -63,7 +59,6 @@ function configurarEventosMain() {
         });
     }
 
-    // NÃO configurar formulários aqui - cada módulo cuida dos seus próprios
     console.log('✅ Eventos principais configurados');
 }
 
@@ -101,12 +96,6 @@ function showTab(tabName) {
             }
         }
         
-        if (tabName === 'produtos') {
-            if (typeof inicializarSistema === 'function') {
-                inicializarSistema();
-            }
-        }
-        
         if (tabName === 'receitas') {
             if (typeof inicializarReceitas === 'function') {
                 inicializarReceitas();
@@ -126,8 +115,8 @@ function showTab(tabName) {
         }
         
         if (tabName === 'cardapio') {
-            if (typeof carregarClientesCardapio === 'function') {
-                carregarClientesCardapio();
+            if (typeof inicializarCardapio === 'function') {
+                inicializarCardapio();
             }
         }
     }, 100);
@@ -278,4 +267,4 @@ window.toggleCalendar = toggleCalendar;
 window.mudarMes = mudarMes;
 window.selecionarDia = selecionarDia;
 
-console.log('✅ main.js carregado sem conflitos!');
+console.log('✅ main.js carregado e corrigido!');

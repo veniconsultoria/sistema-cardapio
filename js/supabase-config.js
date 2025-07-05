@@ -1,4 +1,4 @@
-// js/supabase-config.js - Configuração do Supabase (VERSÃO ÚNICA)
+// js/supabase-config.js - Configuração do Supabase (CORRIGIDA)
 
 console.log('📁 Carregando supabase-config.js...');
 
@@ -13,16 +13,18 @@ if (typeof window.supabaseConfigured === 'undefined') {
     function inicializarSupabaseConfig() {
         console.log('🔄 Inicializando Supabase...');
         
-        // Verificar se CDN carregou
-        if (typeof window.supabase === 'undefined') {
+        // Verificar se CDN carregou - CORRIGIDO
+        if (typeof window.supabase?.createClient !== 'function') {
             console.log('⏳ Aguardando CDN do Supabase...');
             setTimeout(inicializarSupabaseConfig, 100);
             return;
         }
         
         try {
-            // Criar cliente Supabase usando o método do CDN
-            window.supabase = window.supabase.createClient(supabaseUrlConfig, supabaseKeyConfig);
+            // Criar cliente Supabase usando o método correto do CDN
+            const { createClient } = window.supabase;
+            window.supabase = createClient(supabaseUrlConfig, supabaseKeyConfig);
+            
             console.log('✅ Supabase inicializado com sucesso!');
             console.log('🔗 URL:', supabaseUrlConfig);
             
