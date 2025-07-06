@@ -1320,5 +1320,14 @@ window.atualizarQtdeReceita = atualizarQtdeReceita;
 window.atualizarNumComensais = atualizarNumComensais;
 window.atualizarCalculosReceitasTipo = atualizarCalculosReceitasTipo;
 window.mostrarToast = mostrarToast;
+// ===== FUNÇÃO DE IMPRESSÃO =====
+function abrirModalImpressao() {
+    // Chamar o sistema modular de impressão
+    abrirModalImpressaoCardapios();
+}
 
+// Disponibilizar dados globalmente para o sistema de impressão
+window.clientesCarregados = clientesCarregados;
+window.tiposRefeicaoCarregados = tiposRefeicaoCarregados;
+window.receitasCarregadas = receitasCarregadas;
 console.log('✅ cardapio.js CORRIGIDO - Sistema funciona corretamente por data específica!');
