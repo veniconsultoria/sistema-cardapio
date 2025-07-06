@@ -249,18 +249,17 @@ async function salvarReceitaModulo() {
         }
 
         if (!descricao) {
-            alert('Por favor, informe a descrição da receita');
+            mostrarToast('Por favor, informe a descrição da receita', 'warning');
             document.getElementById('descricaoReceita').focus();
             return;
         }
 
         if (!codigo) {
-            alert('Por favor, informe o código da receita');
+            mostrarToast('Por favor, informe o código da receita', 'warning');
             document.getElementById('codigoReceita').focus();
             return;
         }
 
-        // CORRIGIDO: usar 'texto' ao invés de 'texto_receita'
         const receitaData = {
             codigo,
             descricao,
@@ -268,7 +267,7 @@ async function salvarReceitaModulo() {
             rendimento,
             unidade_rendimento: unidadeRendimento,
             preco_total: precoTotal,
-            texto: textoReceita, // ✅ CORRIGIDO
+            texto: textoReceita,
             user_id: user.id
         };
 
@@ -297,14 +296,19 @@ async function salvarReceitaModulo() {
 
         await salvarIngredientesReceitaModulo(receitaId);
 
-        alert(window.receitasModulo.editandoReceita !== null ? 'Receita atualizada com sucesso!' : 'Receita criada com sucesso!');
+        mostrarToast(
+            window.receitasModulo.editandoReceita !== null ? 
+            'Receita atualizada com sucesso!' : 
+            'Receita criada com sucesso!', 
+            'success'
+        );
         
         limparFormularioReceitaModulo();
         await carregarReceitasModulo();
 
     } catch (error) {
         console.error('❌ Erro ao salvar receita:', error);
-        alert('Erro ao salvar receita: ' + error.message);
+        mostrarToast('Erro ao salvar receita: ' + error.message, 'error');
     }
 }
 
@@ -519,12 +523,12 @@ function adicionarIngredienteModulo(produtoIndex) {
     const produto = window.receitasModulo.produtosCarregados[produtoIndex];
     
     if (!produto) {
-        alert('Produto não encontrado');
+        mostrarToast('Produto não encontrado', 'error');
         return;
     }
     
     if (window.receitasModulo.ingredientesReceita.find(ing => ing.codigoProduto === produto.codigo)) {
-        alert('Ingrediente já adicionado!');
+        mostrarToast('Ingrediente já adicionado!', 'warning');
         return;
     }
 
@@ -541,7 +545,7 @@ function adicionarIngredienteModulo(produtoIndex) {
 
     window.receitasModulo.ingredientesReceita.push(ingrediente);
     atualizarTabelaIngredientesModulo();
-    alert('Ingrediente adicionado!');
+    mostrarToast('Ingrediente adicionado com sucesso!', 'success');
 }
 
 function atualizarTabelaIngredientesModulo() {
@@ -566,11 +570,11 @@ function atualizarTabelaIngredientesModulo() {
         row.innerHTML = `
             <td>${ingrediente.codigoProduto}</td>
             <td>${ingrediente.nome}</td>
-            <td><input type="number" class="inline-edit" value="${ingrediente.quantidade}" onchange="atualizarIngredienteModulo(${index}, 'quantidade', this.value)" step="0.001" min="0"></td>
+            <td><input type="number" class="inline-edit" value="${ingrediente.quantidade || 0}" onchange="atualizarIngredienteModulo(${index}, 'quantidade', this.value)" step="0.001" min="0"></td>
             <td>${ingrediente.unidadeMedida}</td>
-            <td><input type="number" class="inline-edit" value="${ingrediente.perdaPercent}" onchange="atualizarIngredienteModulo(${index}, 'perdaPercent', this.value)" step="0.01" min="0"></td>
-            <td><input type="number" class="inline-edit" value="${ingrediente.ganhoPercent}" onchange="atualizarIngredienteModulo(${index}, 'ganhoPercent', this.value)" step="0.01" min="0"></td>
-            <td>R$ ${ingrediente.precoUnitario.toFixed(2)}</td>
+            <td><input type="number" class="inline-edit" value="${ingrediente.perdaPercent || 0}" onchange="atualizarIngredienteModulo(${index}, 'perdaPercent', this.value)" step="0.01" min="0"></td>
+            <td><input type="number" class="inline-edit" value="${ingrediente.ganhoPercent || 0}" onchange="atualizarIngredienteModulo(${index}, 'ganhoPercent', this.value)" step="0.01" min="0"></td>
+            <td>R$ ${parseFloat(ingrediente.precoUnitario || 0).toFixed(2)}</td>
             <td>
                 <button class="btn btn-danger btn-sm" onclick="removerIngredienteModulo(${index})">Remover</button>
             </td>
@@ -579,44 +583,81 @@ function atualizarTabelaIngredientesModulo() {
     });
 }
 
+
 function atualizarIngredienteModulo(index, campo, valor) {
     if (window.receitasModulo.ingredientesReceita[index]) {
-        window.receitasModulo.ingredientesReceita[index][campo] = parseFloat(valor) || 0;
+        const valorNumerico = parseFloat(valor) || 0;
+        window.receitasModulo.ingredientesReceita[index][campo] = valorNumerico;
+        
+        console.log(`Ingrediente ${index} atualizado - ${campo}: ${valorNumerico}`);
+        
+        // Auto-calcular após qualquer mudança
+        setTimeout(() => {
+            calcularReceita();
+        }, 100);
     }
 }
 
 function removerIngredienteModulo(index) {
     if (confirm('Tem certeza que deseja remover este ingrediente?')) {
+        const ingrediente = window.receitasModulo.ingredientesReceita[index];
         window.receitasModulo.ingredientesReceita.splice(index, 1);
         atualizarTabelaIngredientesModulo();
-        alert('Ingrediente removido!');
+        mostrarToast(`Ingrediente "${ingrediente.nome}" removido!`, 'success');
+        
+        // Recalcular após remoção
+        setTimeout(() => {
+            calcularReceita();
+        }, 100);
     }
 }
 
+// 1. FUNÇÃO DE CALCULAR CORRIGIDA - substituir a função calcularReceita existente
 function calcularReceita() {
+    console.log('🧮 Iniciando cálculo da receita...');
+    
     let precoTotal = 0;
     let pesoFinal = 0;
 
-    window.receitasModulo.ingredientesReceita.forEach(ingrediente => {
-        // Calcular preço: Quantidade * Preço Unitário
-        const precoIngrediente = ingrediente.quantidade * ingrediente.precoUnitario;
-        precoTotal += precoIngrediente;
+    // Verificar se há ingredientes
+    if (!window.receitasModulo.ingredientesReceita || window.receitasModulo.ingredientesReceita.length === 0) {
+        mostrarToast('Adicione ingredientes antes de calcular!', 'warning');
+        return;
+    }
 
-        // Calcular peso
+    window.receitasModulo.ingredientesReceita.forEach((ingrediente, index) => {
+        console.log(`Calculando ingrediente ${index}:`, ingrediente);
+        
+        // Garantir que valores sejam numéricos
+        const quantidade = parseFloat(ingrediente.quantidade) || 0;
+        const precoUnitario = parseFloat(ingrediente.precoUnitario) || 0;
+        const perdaPercent = parseFloat(ingrediente.perdaPercent) || 0;
+        const ganhoPercent = parseFloat(ingrediente.ganhoPercent) || 0;
+
+        // Calcular preço: Quantidade * Preço Unitário
+        const precoIngrediente = quantidade * precoUnitario;
+        precoTotal += precoIngrediente;
+        
+        console.log(`Ingrediente ${ingrediente.nome}: Qtd=${quantidade}, Preço=${precoUnitario}, Total=${precoIngrediente}`);
+
+        // Calcular peso (apenas para ingredientes com unidades de peso)
         if (['KG', 'gr', 'mg'].includes(ingrediente.unidadeMedida)) {
-            let peso = ingrediente.quantidade;
+            let peso = quantidade;
             
             // Converter para KG
             if (ingrediente.unidadeMedida === 'gr') peso /= 1000;
             if (ingrediente.unidadeMedida === 'mg') peso /= 1000000;
             
             // Aplicar perda e ganho
-            peso = peso - (peso * ingrediente.perdaPercent / 100);
-            peso = peso + (peso * ingrediente.ganhoPercent / 100);
+            peso = peso - (peso * perdaPercent / 100);
+            peso = peso + (peso * ganhoPercent / 100);
             
             pesoFinal += peso;
+            console.log(`Peso calculado para ${ingrediente.nome}: ${peso} KG`);
         }
     });
+
+    console.log(`Cálculo final - Preço: R$ ${precoTotal.toFixed(2)}, Peso: ${pesoFinal.toFixed(3)} KG`);
 
     // Atualizar os campos na tela
     const precoTotalEl = document.getElementById('precoTotal');
@@ -637,7 +678,7 @@ function calcularReceita() {
         window.receitaTemporaria.pesoFinal = pesoFinal;
     }
 
-    alert('Cálculos realizados!');
+    mostrarToast('Cálculos realizados com sucesso!', 'success');
 }
 
 // ===== EDITOR DE RECEITAS =====
@@ -913,6 +954,9 @@ window.limparFormularioReceitaModulo = limparFormularioReceitaModulo;
 window.handleEditorKeydown = handleEditorKeydown;
 window.updateCharCount = updateCharCount;
 window.updateToolbarButtons = updateToolbarButtons;
+window.mostrarToast = mostrarToast;
+window.atualizarTabelaIngredientesModulo = atualizarTabelaIngredientesModulo;
+
 
 // Alias para compatibilidade
 window.adicionarIngrediente = adicionarIngredienteModulo;
@@ -924,3 +968,47 @@ window.salvarReceita = salvarReceitaModulo;
 window.limparFormularioReceita = limparFormularioReceitaModulo;
 
 console.log('✅ receitas.js carregado e corrigido definitivamente!');
+
+// 4. TOAST NOTIFICATION SYSTEM - adicionar ao final do arquivo
+function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
+    // Remover toast existente se houver
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // Criar elemento toast
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${tipo}`;
+    
+    // Definir ícones por tipo
+    const icones = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    toast.innerHTML = `
+        <div class="toast-content">
+            <span class="toast-icon">${icones[tipo] || icones.info}</span>
+            <span class="toast-message">${mensagem}</span>
+            <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+        </div>
+    `;
+    
+    // Adicionar ao DOM
+    document.body.appendChild(toast);
+    
+    // Remover automaticamente
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.classList.add('toast-fade-out');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 300);
+        }
+    }, duracao);
+}
