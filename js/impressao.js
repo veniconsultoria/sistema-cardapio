@@ -1,505 +1,842 @@
-// impressao.js - Sistema de Impressão Modular e Reutilizável
+// impressao.js - Sistema de Impressão Completo e Funcional
 
-console.log('📁 Carregando impressao.js - Sistema modular...');
+console.log('📁 Carregando impressao.js - Sistema completo...');
 
-// ===== CONFIGURAÇÕES GLOBAIS =====
-const ImpressaoConfig = {
-    debug: true,
-    dateFormat: 'pt-BR',
-    timezone: 'America/Sao_Paulo'
+// ===== SISTEMA DE IMPRESSÃO PARA CARDÁPIOS =====
+
+// Variáveis globais
+let dadosImpressao = {
+    clientes: [],
+    tiposRefeicao: [],
+    cardapios: []
 };
 
-// ===== CLASSE PRINCIPAL DE IMPRESSÃO =====
-class SistemaImpressao {
-    constructor() {
-        this.modalId = 'modalImpressao';
-        this.clientesCarregados = [];
-        this.tiposRefeicaoCarregados = [];
-        this.dadosOriginais = [];
-        
-        // Configurações padrão
-        this.configPadrao = {
-            titulo: 'Relatório do Sistema',
-            subtitulo: '',
-            formato: 'resumido',
-            incluirCabecalho: true,
-            incluirRodape: true,
-            agruparPorData: true
-        };
+// ===== FUNÇÃO PRINCIPAL PARA ABRIR MODAL DE CARDÁPIOS =====
+async function abrirModalImpressaoCardapios() {
+    console.log('🖨️ Abrindo modal de impressão para cardápios...');
+    
+    // Buscar dados atualizados
+    await carregarDadosParaImpressao();
+    
+    // Criar modal se não existir
+    if (!document.getElementById('modalImpressao')) {
+        criarModalImpressao();
     }
+    
+    // Configurar modal para cardápios
+    configurarModalCardapios();
+    
+    // Mostrar modal
+    document.getElementById('modalImpressao').style.display = 'block';
+}
 
-    // ===== MÉTODOS PÚBLICOS =====
-
-    // Abrir modal de impressão para cardápios
-    async abrirModalCardapios(clientesData = [], tiposData = []) {
-        console.log('🖨️ Abrindo modal de impressão para cardápios...');
+// ===== CARREGAR DADOS PARA IMPRESSÃO =====
+async function carregarDadosParaImpressao() {
+    try {
+        console.log('📥 Carregando dados para impressão...');
         
-        this.clientesCarregados = clientesData;
-        this.tiposRefeicaoCarregados = tiposData;
-        
-        this.configurarModal({
-            titulo: 'Impressão de Cardápios',
-            subtitulo: 'Configure os filtros e período para impressão',
-            mostrarClientes: true,
-            mostrarTiposRefeicao: true,
-            mostrarPeriodo: true
-        });
-        
-        this.mostrarModal();
-    }
-
-    // Abrir modal de impressão para receitas
-    async abrirModalReceitas(receitasData = []) {
-        console.log('🖨️ Abrindo modal de impressão para receitas...');
-        
-        this.dadosOriginais = receitasData;
-        
-        this.configurarModal({
-            titulo: 'Impressão de Receitas',
-            subtitulo: 'Configure as receitas para impressão',
-            mostrarClientes: false,
-            mostrarTiposRefeicao: false,
-            mostrarPeriodo: false,
-            mostrarReceitas: true
-        });
-        
-        this.mostrarModal();
-    }
-
-    // Abrir modal de impressão para produtos
-    async abrirModalProdutos(produtosData = []) {
-        console.log('🖨️ Abrindo modal de impressão para produtos...');
-        
-        this.dadosOriginais = produtosData;
-        
-        this.configurarModal({
-            titulo: 'Impressão de Produtos',
-            subtitulo: 'Configure a lista de produtos',
-            mostrarClientes: false,
-            mostrarTiposRefeicao: false,
-            mostrarPeriodo: false,
-            mostrarGrupos: true
-        });
-        
-        this.mostrarModal();
-    }
-
-    // ===== MÉTODOS PRIVADOS =====
-
-    configurarModal(opcoes) {
-        // Criar modal se não existir
-        if (!document.getElementById(this.modalId)) {
-            this.criarModalHTML();
+        // Usar dados globais do cardápio se disponíveis
+        if (window.clientesCarregados) {
+            dadosImpressao.clientes = window.clientesCarregados;
         }
         
-        // Configurar cabeçalho
-        this.atualizarCabecalhoModal(opcoes.titulo, opcoes.subtitulo);
+        if (window.tiposRefeicaoCarregados) {
+            dadosImpressao.tiposRefeicao = window.tiposRefeicaoCarregados;
+        }
         
-        // Mostrar/ocultar seções
-        this.toggleSecao('secao-periodo', opcoes.mostrarPeriodo);
-        this.toggleSecao('secao-clientes', opcoes.mostrarClientes);
-        this.toggleSecao('secao-tipos-refeicao', opcoes.mostrarTiposRefeicao);
-        this.toggleSecao('secao-receitas', opcoes.mostrarReceitas);
-        this.toggleSecao('secao-grupos', opcoes.mostrarGrupos);
+        console.log(`✅ Dados carregados: ${dadosImpressao.clientes.length} clientes, ${dadosImpressao.tiposRefeicao.length} tipos`);
         
-        // Carregar dados nas listas
-        if (opcoes.mostrarClientes) this.carregarClientesLista();
-        if (opcoes.mostrarTiposRefeicao) this.carregarTiposRefeicaoLista();
-        
-        // Configurar data padrão
-        this.configurarDataPadrao();
+    } catch (error) {
+        console.error('❌ Erro ao carregar dados:', error);
+        dadosImpressao = { clientes: [], tiposRefeicao: [], cardapios: [] };
     }
+}
 
-    criarModalHTML() {
-        const modalHTML = `
-            <div id="${this.modalId}" class="modal">
-                <div class="modal-content" style="max-width: 700px;">
-                    <!-- Cabeçalho -->
-                    <div class="modal-header" style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; margin: -20px -20px 20px -20px;">
-                        <h2 id="modal-titulo" style="margin: 0; display: flex; align-items: center; gap: 10px;">
-                            🖨️ Sistema de Impressão
-                            <span class="close" onclick="SistemaImpressao.fecharModal()" style="margin-left: auto; cursor: pointer; font-size: 28px; font-weight: bold;">&times;</span>
-                        </h2>
-                        <p id="modal-subtitulo" style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Configure as opções de impressão</p>
-                    </div>
-                    
-                    <!-- Seção de Período -->
-                    <div id="secao-periodo" class="form-section">
-                        <h4>📅 Período</h4>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label for="dataInicioImpressao">Data Início:</label>
-                                <input type="date" id="dataInicioImpressao" required style="width: 100%; padding: 8px; border: 1px solid #e9ecef; border-radius: 4px;">
-                            </div>
-                            <div class="form-group">
-                                <label for="dataFimImpressao">Data Fim:</label>
-                                <input type="date" id="dataFimImpressao" required style="width: 100%; padding: 8px; border: 1px solid #e9ecef; border-radius: 4px;">
-                            </div>
+// ===== CRIAR MODAL HTML =====
+function criarModalImpressao() {
+    const modalHTML = `
+        <div id="modalImpressao" class="modal">
+            <div class="modal-content" style="max-width: 700px;">
+                <!-- Cabeçalho -->
+                <div class="modal-header" style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; margin: -20px -20px 20px -20px;">
+                    <h2 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                        🖨️ Impressão de Cardápios
+                        <span class="close" onclick="fecharModalImpressao()" style="margin-left: auto; cursor: pointer; font-size: 28px; font-weight: bold;">&times;</span>
+                    </h2>
+                    <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Configure os filtros e período para impressão dos cardápios</p>
+                </div>
+                
+                <!-- Seção de Período -->
+                <div class="form-section">
+                    <h4>📅 Período</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label for="dataInicioImpressao">Data Início:</label>
+                            <input type="date" id="dataInicioImpressao" required style="width: 100%; padding: 8px; border: 1px solid #e9ecef; border-radius: 4px;">
                         </div>
-                        <div style="margin-top: 10px;">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="SistemaImpressao.definirPeriodo('hoje')">Hoje</button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="SistemaImpressao.definirPeriodo('semana')">Esta Semana</button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="SistemaImpressao.definirPeriodo('mes')">Este Mês</button>
+                        <div class="form-group">
+                            <label for="dataFimImpressao">Data Fim:</label>
+                            <input type="date" id="dataFimImpressao" required style="width: 100%; padding: 8px; border: 1px solid #e9ecef; border-radius: 4px;">
                         </div>
                     </div>
-                    
-                    <!-- Seção de Clientes -->
-                    <div id="secao-clientes" class="form-section">
-                        <h4>👥 Clientes</h4>
-                        <div style="margin-bottom: 10px;">
-                            <label>
-                                <input type="radio" name="filtroCliente" value="todos" checked onchange="SistemaImpressao.toggleLista('clientes')"> 
-                                Todos os clientes
-                            </label>
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <label>
-                                <input type="radio" name="filtroCliente" value="especificos" onchange="SistemaImpressao.toggleLista('clientes')"> 
-                                Clientes específicos
-                            </label>
-                        </div>
-                        <div id="lista-clientes-container" style="display: none;">
-                            <div id="lista-clientes" class="checkbox-list"></div>
-                            <div style="margin-top: 8px;">
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="SistemaImpressao.selecionarTodos('clientes')">Selecionar Todos</button>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="SistemaImpressao.desmarcarTodos('clientes')">Desmarcar Todos</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Seção de Tipos de Refeições -->
-                    <div id="secao-tipos-refeicao" class="form-section">
-                        <h4>🍽️ Tipos de Refeições</h4>
-                        <div style="margin-bottom: 10px;">
-                            <label>
-                                <input type="radio" name="filtroTipoRefeicao" value="todos" checked onchange="SistemaImpressao.toggleLista('tipos')"> 
-                                Todos os tipos de refeições
-                            </label>
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <label>
-                                <input type="radio" name="filtroTipoRefeicao" value="especificos" onchange="SistemaImpressao.toggleLista('tipos')"> 
-                                Tipos específicos
-                            </label>
-                        </div>
-                        <div id="lista-tipos-container" style="display: none;">
-                            <div id="lista-tipos" class="checkbox-list"></div>
-                            <div style="margin-top: 8px;">
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="SistemaImpressao.selecionarTodos('tipos')">Selecionar Todos</button>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="SistemaImpressao.desmarcarTodos('tipos')">Desmarcar Todos</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Seção de Receitas -->
-                    <div id="secao-receitas" class="form-section" style="display: none;">
-                        <h4>📝 Receitas</h4>
-                        <div id="lista-receitas" class="checkbox-list" style="max-height: 200px; overflow-y: auto;"></div>
-                        <div style="margin-top: 8px;">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="SistemaImpressao.selecionarTodos('receitas')">Selecionar Todos</button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="SistemaImpressao.desmarcarTodos('receitas')">Desmarcar Todos</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Seção de Grupos -->
-                    <div id="secao-grupos" class="form-section" style="display: none;">
-                        <h4>📦 Grupos de Produtos</h4>
-                        <div id="lista-grupos" class="checkbox-list"></div>
-                    </div>
-                    
-                    <!-- Seção de Formato -->
-                    <div class="form-section">
-                        <h4>📄 Formato de Impressão</h4>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div>
-                                <label>
-                                    <input type="radio" name="formatoImpressao" value="resumido" checked> 
-                                    📋 Resumido
-                                </label>
-                                <small style="display: block; color: #666; margin-left: 20px;">Lista compacta</small>
-                            </div>
-                            <div>
-                                <label>
-                                    <input type="radio" name="formatoImpressao" value="detalhado"> 
-                                    📖 Detalhado
-                                </label>
-                                <small style="display: block; color: #666; margin-left: 20px;">Com mais informações</small>
-                            </div>
-                        </div>
-                        <div style="margin-top: 15px;">
-                            <label>
-                                <input type="checkbox" id="incluirIngredientes" checked> 
-                                🥗 Incluir ingredientes (quando aplicável)
-                            </label>
-                        </div>
-                        <div style="margin-top: 10px;">
-                            <label>
-                                <input type="checkbox" id="agruparPorData" checked> 
-                                📅 Agrupar por data
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Rodapé -->
-                    <div class="modal-footer" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #e9ecef; display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="button" class="btn btn-secondary" onclick="SistemaImpressao.fecharModal()">
-                            Cancelar
-                        </button>
-                        <button type="button" class="btn btn-info" onclick="SistemaImpressao.visualizarPreview()">
-                            👁️ Visualizar
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="SistemaImpressao.executarImpressao()">
-                            🖨️ Imprimir
-                        </button>
+                    <div style="margin-top: 10px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="definirPeriodoImpressao('hoje')">Hoje</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="definirPeriodoImpressao('semana')">Esta Semana</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="definirPeriodoImpressao('mes')">Este Mês</button>
                     </div>
                 </div>
+                
+                <!-- Seção de Clientes -->
+                <div class="form-section">
+                    <h4>👥 Clientes</h4>
+                    <div style="margin-bottom: 10px;">
+                        <label>
+                            <input type="radio" name="filtroCliente" value="todos" checked onchange="toggleListaClientes()"> 
+                            Todos os clientes
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label>
+                            <input type="radio" name="filtroCliente" value="especificos" onchange="toggleListaClientes()"> 
+                            Clientes específicos
+                        </label>
+                    </div>
+                    <div id="listaClientesImpressao" style="display: none;">
+                        <div class="checkbox-list" style="max-height: 120px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 5px; padding: 10px; background: white;">
+                            <!-- Clientes serão carregados aqui -->
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="selecionarTodosClientes()">Selecionar Todos</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="desmarcarTodosClientes()">Desmarcar Todos</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Seção de Tipos de Refeições -->
+                <div class="form-section">
+                    <h4>🍽️ Tipos de Refeições</h4>
+                    <div style="margin-bottom: 10px;">
+                        <label>
+                            <input type="radio" name="filtroTipoRefeicao" value="todos" checked onchange="toggleListaTipos()"> 
+                            Todos os tipos de refeições
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label>
+                            <input type="radio" name="filtroTipoRefeicao" value="especificos" onchange="toggleListaTipos()"> 
+                            Tipos específicos
+                        </label>
+                    </div>
+                    <div id="listaTiposRefeicaoImpressao" style="display: none;">
+                        <div class="checkbox-list" style="max-height: 120px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 5px; padding: 10px; background: white;">
+                            <!-- Tipos serão carregados aqui -->
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="selecionarTodosTipos()">Selecionar Todos</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="desmarcarTodosTipos()">Desmarcar Todos</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Seção de Formato -->
+                <div class="form-section">
+                    <h4>📄 Formato de Impressão</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label>
+                                <input type="radio" name="formatoImpressao" value="resumido" checked> 
+                                📋 Resumido
+                            </label>
+                            <small style="display: block; color: #666; margin-left: 20px;">Lista compacta</small>
+                        </div>
+                        <div>
+                            <label>
+                                <input type="radio" name="formatoImpressao" value="detalhado"> 
+                                📖 Detalhado
+                            </label>
+                            <small style="display: block; color: #666; margin-left: 20px;">Com mais informações</small>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label>
+                            <input type="checkbox" id="incluirIngredientes" checked> 
+                            🥗 Incluir ingredientes (quando aplicável)
+                        </label>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label>
+                            <input type="checkbox" id="agruparPorData" checked> 
+                            📅 Agrupar por data
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Rodapé -->
+                <div class="modal-footer" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #e9ecef; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalImpressao()">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="visualizarPreviewImpressao()">
+                        👁️ Visualizar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="executarImpressaoCardapios()">
+                        🖨️ Imprimir
+                    </button>
+                </div>
             </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        this.adicionarEstilosCSS();
-    }
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    adicionarEstilosImpressao();
+}
 
-    adicionarEstilosCSS() {
-        const styles = `
-            <style id="impressao-styles">
-                #${this.modalId} .form-section {
-                    margin-bottom: 25px;
-                    padding-bottom: 20px;
-                    border-bottom: 1px solid #e9ecef;
-                }
-                #${this.modalId} .form-section:last-child {
-                    border-bottom: none;
-                    margin-bottom: 0;
-                }
-                #${this.modalId} .form-section h4 {
-                    color: #495057;
-                    margin-bottom: 15px;
-                    font-size: 16px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                #${this.modalId} .checkbox-list {
-                    max-height: 150px;
-                    overflow-y: auto;
-                    border: 1px solid #e9ecef;
-                    border-radius: 5px;
-                    padding: 10px;
-                    background: white;
-                }
-                #${this.modalId} .checkbox-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding: 5px 0;
-                }
-                #${this.modalId} .checkbox-item input[type="checkbox"] {
+// ===== ADICIONAR ESTILOS CSS =====
+function adicionarEstilosImpressao() {
+    if (document.getElementById('impressao-styles')) return;
+    
+    const styles = `
+        <style id="impressao-styles">
+            #modalImpressao .form-section {
+                margin-bottom: 25px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #e9ecef;
+            }
+            #modalImpressao .form-section:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+            }
+            #modalImpressao .form-section h4 {
+                color: #495057;
+                margin-bottom: 15px;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            #modalImpressao .checkbox-list {
+                max-height: 150px;
+                overflow-y: auto;
+                border: 1px solid #e9ecef;
+                border-radius: 5px;
+                padding: 10px;
+                background: white;
+            }
+            #modalImpressao .checkbox-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 5px 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            #modalImpressao .checkbox-item:last-child {
+                border-bottom: none;
+            }
+            #modalImpressao .checkbox-item input[type="checkbox"] {
+                margin: 0;
+            }
+            #modalImpressao .checkbox-item label {
+                margin: 0;
+                cursor: pointer;
+                flex: 1;
+                font-size: 14px;
+            }
+            #modalImpressao .btn-sm {
+                padding: 6px 12px;
+                font-size: 12px;
+                margin-right: 8px;
+            }
+            #modalImpressao input[type="radio"] {
+                margin-right: 8px;
+            }
+            #modalImpressao label {
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+        </style>
+    `;
+    
+    document.head.insertAdjacentHTML('beforeend', styles);
+}
+
+// ===== CONFIGURAR MODAL PARA CARDÁPIOS =====
+function configurarModalCardapios() {
+    // Configurar data padrão
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('dataInicioImpressao').value = hoje;
+    document.getElementById('dataFimImpressao').value = hoje;
+    
+    // Carregar listas
+    carregarListaClientesImpressao();
+    carregarListaTiposImpressao();
+}
+
+// ===== CARREGAR LISTA DE CLIENTES =====
+function carregarListaClientesImpressao() {
+    const container = document.querySelector('#listaClientesImpressao .checkbox-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (dadosImpressao.clientes.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666; padding: 10px;">Nenhum cliente encontrado</p>';
+        return;
+    }
+    
+    dadosImpressao.clientes.forEach((cliente, index) => {
+        const div = document.createElement('div');
+        div.className = 'checkbox-item';
+        div.innerHTML = `
+            <input type="checkbox" id="cliente-imp-${index}" value="${cliente.id}" checked>
+            <label for="cliente-imp-${index}">${cliente.codigo} - ${cliente.descricao}</label>
+        `;
+        container.appendChild(div);
+    });
+    
+    console.log(`✅ ${dadosImpressao.clientes.length} clientes carregados na lista`);
+}
+
+// ===== CARREGAR LISTA DE TIPOS DE REFEIÇÕES =====
+function carregarListaTiposImpressao() {
+    const container = document.querySelector('#listaTiposRefeicaoImpressao .checkbox-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (dadosImpressao.tiposRefeicao.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666; padding: 10px;">Nenhum tipo de refeição encontrado</p>';
+        return;
+    }
+    
+    dadosImpressao.tiposRefeicao.forEach((tipo, index) => {
+        const div = document.createElement('div');
+        div.className = 'checkbox-item';
+        div.innerHTML = `
+            <input type="checkbox" id="tipo-imp-${index}" value="${tipo.id}" checked>
+            <label for="tipo-imp-${index}">${tipo.codigo} - ${tipo.descricao}</label>
+        `;
+        container.appendChild(div);
+    });
+    
+    console.log(`✅ ${dadosImpressao.tiposRefeicao.length} tipos de refeição carregados na lista`);
+}
+
+// ===== FUNÇÕES DE CONTROLE DE LISTAS =====
+
+// Toggle lista de clientes
+function toggleListaClientes() {
+    const filtro = document.querySelector('input[name="filtroCliente"]:checked')?.value;
+    const lista = document.getElementById('listaClientesImpressao');
+    
+    if (lista) {
+        lista.style.display = filtro === 'especificos' ? 'block' : 'none';
+    }
+}
+
+// Toggle lista de tipos
+function toggleListaTipos() {
+    const filtro = document.querySelector('input[name="filtroTipoRefeicao"]:checked')?.value;
+    const lista = document.getElementById('listaTiposRefeicaoImpressao');
+    
+    if (lista) {
+        lista.style.display = filtro === 'especificos' ? 'block' : 'none';
+    }
+}
+
+// Definir períodos
+function definirPeriodoImpressao(tipo) {
+    const hoje = new Date();
+    let dataInicio, dataFim;
+    
+    switch (tipo) {
+        case 'hoje':
+            dataInicio = dataFim = hoje;
+            break;
+        case 'semana':
+            dataInicio = new Date(hoje.setDate(hoje.getDate() - hoje.getDay()));
+            dataFim = new Date(hoje.setDate(hoje.getDate() - hoje.getDay() + 6));
+            break;
+        case 'mes':
+            dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            dataFim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+            break;
+    }
+    
+    document.getElementById('dataInicioImpressao').value = dataInicio.toISOString().split('T')[0];
+    document.getElementById('dataFimImpressao').value = dataFim.toISOString().split('T')[0];
+}
+
+// Selecionar todos os clientes
+function selecionarTodosClientes() {
+    const checkboxes = document.querySelectorAll('#listaClientesImpressao input[type="checkbox"]');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+}
+
+// Desmarcar todos os clientes
+function desmarcarTodosClientes() {
+    const checkboxes = document.querySelectorAll('#listaClientesImpressao input[type="checkbox"]');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+}
+
+// Selecionar todos os tipos
+function selecionarTodosTipos() {
+    const checkboxes = document.querySelectorAll('#listaTiposRefeicaoImpressao input[type="checkbox"]');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+}
+
+// Desmarcar todos os tipos
+function desmarcarTodosTipos() {
+    const checkboxes = document.querySelectorAll('#listaTiposRefeicaoImpressao input[type="checkbox"]');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+}
+
+// ===== COLETAR CONFIGURAÇÕES =====
+function coletarConfiguracoesImpressao() {
+    const dataInicio = document.getElementById('dataInicioImpressao')?.value;
+    const dataFim = document.getElementById('dataFimImpressao')?.value;
+    
+    if (!dataInicio || !dataFim) {
+        mostrarToast('Defina o período para impressão', 'warning');
+        return null;
+    }
+    
+    if (dataInicio > dataFim) {
+        mostrarToast('Data de início não pode ser maior que data de fim', 'warning');
+        return null;
+    }
+    
+    // Coletar clientes selecionados
+    const filtroCliente = document.querySelector('input[name="filtroCliente"]:checked')?.value;
+    let clientesSelecionados = [];
+    
+    if (filtroCliente === 'todos') {
+        clientesSelecionados = dadosImpressao.clientes.map(c => c.id);
+    } else {
+        const checkboxes = document.querySelectorAll('#listaClientesImpressao input[type="checkbox"]:checked');
+        clientesSelecionados = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (clientesSelecionados.length === 0) {
+            mostrarToast('Selecione pelo menos um cliente', 'warning');
+            return null;
+        }
+    }
+    
+    // Coletar tipos de refeições selecionados
+    const filtroTipoRefeicao = document.querySelector('input[name="filtroTipoRefeicao"]:checked')?.value;
+    let tiposSelecionados = [];
+    
+    if (filtroTipoRefeicao === 'todos') {
+        tiposSelecionados = dadosImpressao.tiposRefeicao.map(t => t.id);
+    } else {
+        const checkboxes = document.querySelectorAll('#listaTiposRefeicaoImpressao input[type="checkbox"]:checked');
+        tiposSelecionados = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (tiposSelecionados.length === 0) {
+            mostrarToast('Selecione pelo menos um tipo de refeição', 'warning');
+            return null;
+        }
+    }
+    
+    // Coletar outras configurações
+    const formatoImpressao = document.querySelector('input[name="formatoImpressao"]:checked')?.value || 'resumido';
+    const incluirIngredientes = document.getElementById('incluirIngredientes')?.checked || false;
+    const agruparPorData = document.getElementById('agruparPorData')?.checked || true;
+    
+    return {
+        dataInicio,
+        dataFim,
+        clientesSelecionados,
+        tiposSelecionados,
+        formatoImpressao,
+        incluirIngredientes,
+        agruparPorData
+    };
+}
+
+// ===== BUSCAR DADOS DO BANCO =====
+async function buscarDadosCardapiosImpressao(config) {
+    try {
+        console.log('📊 Buscando dados do banco para impressão...', config);
+        
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
+        
+        // Buscar cardápios no período
+        const { data: cardapios, error } = await window.supabase
+            .from('cardapios')
+            .select(`
+                *,
+                clientes (codigo, descricao),
+                tipos_refeicoes (codigo, descricao),
+                receitas (codigo, descricao, texto, rendimento, unidade_rendimento)
+            `)
+            .eq('user_id', user.id)
+            .gte('data', config.dataInicio)
+            .lte('data', config.dataFim)
+            .in('cliente_id', config.clientesSelecionados)
+            .in('tipo_refeicao_id', config.tiposSelecionados)
+            .order('data, cliente_id, tipo_refeicao_id');
+        
+        if (error) throw error;
+        
+        console.log(`✅ Encontrados ${(cardapios || []).length} registros para impressão`);
+        return cardapios || [];
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar dados:', error);
+        mostrarToast('Erro ao buscar dados: ' + error.message, 'error');
+        return [];
+    }
+}
+
+// ===== PROCESSAR DADOS PARA IMPRESSÃO =====
+function processarDadosCardapios(cardapios, config) {
+    const dadosProcessados = {};
+    
+    cardapios.forEach(item => {
+        const data = item.data;
+        const clienteNome = `${item.clientes.codigo} - ${item.clientes.descricao}`;
+        const tipoNome = `${item.tipos_refeicoes.codigo} - ${item.tipos_refeicoes.descricao}`;
+        
+        if (!dadosProcessados[data]) {
+            dadosProcessados[data] = {};
+        }
+        
+        if (!dadosProcessados[data][clienteNome]) {
+            dadosProcessados[data][clienteNome] = {};
+        }
+        
+        if (!dadosProcessados[data][clienteNome][tipoNome]) {
+            dadosProcessados[data][clienteNome][tipoNome] = [];
+        }
+        
+        dadosProcessados[data][clienteNome][tipoNome].push({
+            receita: `${item.receitas.codigo} - ${item.receitas.descricao}`,
+            comensais: item.comensais,
+            quantidadePorPessoa: item.quantidade_por_pessoa,
+            totalCalculado: item.total_por_comensais,
+            unidade: item.unidade_basica,
+            textoReceita: config.formatoImpressao === 'detalhado' ? item.receitas.texto : null
+        });
+    });
+    
+    return dadosProcessados;
+}
+
+// ===== GERAR HTML PARA IMPRESSÃO =====
+function gerarHTMLCardapios(dados, config) {
+    const dataInicioFormatada = formatarDataBrasil(config.dataInicio);
+    const dataFimFormatada = formatarDataBrasil(config.dataFim);
+    const periodo = config.dataInicio === config.dataFim ? dataInicioFormatada : `${dataInicioFormatada} a ${dataFimFormatada}`;
+    
+    let html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cardápio - ${periodo}</title>
+            <meta charset="utf-8">
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
                     margin: 0;
-                }
-                #${this.modalId} .checkbox-item label {
-                    margin: 0;
-                    cursor: pointer;
-                    flex: 1;
-                }
-                #${this.modalId} .btn-sm {
-                    padding: 6px 12px;
+                    padding: 20px;
                     font-size: 12px;
-                    margin-right: 8px;
+                    line-height: 1.4;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    padding-bottom: 20px;
+                    border-bottom: 2px solid #333;
+                }
+                .header h1 {
+                    margin: 0;
+                    font-size: 24px;
+                    color: #333;
+                }
+                .header h2 {
+                    margin: 5px 0 0 0;
+                    font-size: 16px;
+                    color: #666;
+                    font-weight: normal;
+                }
+                .data-group {
+                    margin-bottom: 30px;
+                    page-break-inside: avoid;
+                }
+                .data-title {
+                    background: #f0f0f0;
+                    padding: 10px;
+                    margin-bottom: 15px;
+                    font-weight: bold;
+                    font-size: 14px;
+                    border-left: 4px solid #667eea;
+                }
+                .cliente-group {
+                    margin-bottom: 20px;
+                    margin-left: 10px;
+                }
+                .cliente-title {
+                    font-weight: bold;
+                    color: #333;
+                    margin-bottom: 10px;
+                    font-size: 13px;
+                }
+                .tipo-group {
+                    margin-bottom: 15px;
+                    margin-left: 20px;
+                }
+                .tipo-title {
+                    font-weight: bold;
+                    color: #555;
+                    margin-bottom: 8px;
+                    text-decoration: underline;
+                }
+                .receita-item {
+                    margin-bottom: 8px;
+                    margin-left: 15px;
+                    padding: 5px;
+                    border-left: 2px solid #ddd;
+                    padding-left: 10px;
+                }
+                .receita-nome {
+                    font-weight: bold;
+                    color: #333;
+                }
+                .receita-detalhes {
+                    color: #666;
+                    font-size: 11px;
+                    margin-top: 2px;
+                }
+                .receita-texto {
+                    margin-top: 8px;
+                    padding: 8px;
+                    background: #f9f9f9;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    white-space: pre-wrap;
+                }
+                .no-data {
+                    text-align: center;
+                    color: #666;
+                    font-style: italic;
+                    padding: 20px;
+                }
+                @media print {
+                    body { margin: 0; }
+                    .data-group { page-break-inside: avoid; }
                 }
             </style>
-        `;
-        
-        if (!document.getElementById('impressao-styles')) {
-            document.head.insertAdjacentHTML('beforeend', styles);
-        }
-    }
-
-    atualizarCabecalhoModal(titulo, subtitulo) {
-        const tituloEl = document.getElementById('modal-titulo');
-        const subtituloEl = document.getElementById('modal-subtitulo');
-        
-        if (tituloEl) tituloEl.innerHTML = `🖨️ ${titulo} <span class="close" onclick="SistemaImpressao.fecharModal()" style="margin-left: auto; cursor: pointer; font-size: 28px; font-weight: bold;">&times;</span>`;
-        if (subtituloEl) subtituloEl.textContent = subtitulo;
-    }
-
-    toggleSecao(secaoId, mostrar) {
-        const secao = document.getElementById(secaoId);
-        if (secao) {
-            secao.style.display = mostrar ? 'block' : 'none';
-        }
-    }
-
-    carregarClientesLista() {
-        const container = document.getElementById('lista-clientes');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        if (this.clientesCarregados.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #666; padding: 10px;">Nenhum cliente encontrado</p>';
-            return;
-        }
-        
-        this.clientesCarregados.forEach((cliente, index) => {
-            const div = document.createElement('div');
-            div.className = 'checkbox-item';
-            div.innerHTML = `
-                <input type="checkbox" id="cliente-imp-${index}" value="${cliente.id || cliente.codigo}" checked>
-                <label for="cliente-imp-${index}">${cliente.codigo} - ${cliente.descricao}</label>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    carregarTiposRefeicaoLista() {
-        const container = document.getElementById('lista-tipos');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        if (this.tiposRefeicaoCarregados.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #666; padding: 10px;">Nenhum tipo encontrado</p>';
-            return;
-        }
-        
-        this.tiposRefeicaoCarregados.forEach((tipo, index) => {
-            const div = document.createElement('div');
-            div.className = 'checkbox-item';
-            div.innerHTML = `
-                <input type="checkbox" id="tipo-imp-${index}" value="${tipo.id || tipo.codigo}" checked>
-                <label for="tipo-imp-${index}">${tipo.codigo} - ${tipo.descricao}</label>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    configurarDataPadrao() {
-        const hoje = new Date().toISOString().split('T')[0];
-        const dataInicio = document.getElementById('dataInicioImpressao');
-        const dataFim = document.getElementById('dataFimImpressao');
-        
-        if (dataInicio) dataInicio.value = hoje;
-        if (dataFim) dataFim.value = hoje;
-    }
-
-    mostrarModal() {
-        const modal = document.getElementById(this.modalId);
-        if (modal) {
-            modal.style.display = 'block';
-        }
-    }
-
-    // ===== MÉTODOS ESTÁTICOS (PARA USAR NO HTML) =====
-
-    static fecharModal() {
-        const modal = document.getElementById('modalImpressao');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
-
-    static toggleLista(tipo) {
-        const containers = {
-            'clientes': 'lista-clientes-container',
-            'tipos': 'lista-tipos-container'
-        };
-        
-        const radioName = tipo === 'clientes' ? 'filtroCliente' : 'filtroTipoRefeicao';
-        const filtro = document.querySelector(`input[name="${radioName}"]:checked`)?.value;
-        const container = document.getElementById(containers[tipo]);
-        
-        if (container) {
-            container.style.display = filtro === 'especificos' ? 'block' : 'none';
-        }
-    }
-
-    static definirPeriodo(tipo) {
-        const hoje = new Date();
-        let dataInicio, dataFim;
-        
-        switch (tipo) {
-            case 'hoje':
-                dataInicio = dataFim = hoje;
-                break;
-            case 'semana':
-                dataInicio = new Date(hoje.setDate(hoje.getDate() - hoje.getDay()));
-                dataFim = new Date(hoje.setDate(hoje.getDate() - hoje.getDay() + 6));
-                break;
-            case 'mes':
-                dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-                dataFim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-                break;
-        }
-        
-        document.getElementById('dataInicioImpressao').value = dataInicio.toISOString().split('T')[0];
-        document.getElementById('dataFimImpressao').value = dataFim.toISOString().split('T')[0];
-    }
-
-    static selecionarTodos(tipo) {
-        const containers = {
-            'clientes': '#lista-clientes',
-            'tipos': '#lista-tipos',
-            'receitas': '#lista-receitas'
-        };
-        
-        const checkboxes = document.querySelectorAll(`${containers[tipo]} input[type="checkbox"]`);
-        checkboxes.forEach(checkbox => checkbox.checked = true);
-    }
-
-    static desmarcarTodos(tipo) {
-        const containers = {
-            'clientes': '#lista-clientes',
-            'tipos': '#lista-tipos',
-            'receitas': '#lista-receitas'
-        };
-        
-        const checkboxes = document.querySelectorAll(`${containers[tipo]} input[type="checkbox"]`);
-        checkboxes.forEach(checkbox => checkbox.checked = false);
-    }
-
-    static async visualizarPreview() {
-        // Esta função será implementada específica para cada tipo de dados
-        console.log('👁️ Visualizando preview...');
-        alert('Preview será implementado conforme o tipo de dados selecionado');
-    }
-
-    static async executarImpressao() {
-        // Esta função será implementada específica para cada tipo de dados
-        console.log('🖨️ Executando impressão...');
-        alert('Impressão será implementada conforme o tipo de dados selecionado');
-    }
-}
-
-// ===== INSTÂNCIA GLOBAL =====
-window.SistemaImpressao = SistemaImpressao;
-const impressao = new SistemaImpressao();
-
-// ===== FUNÇÕES ESPECÍFICAS PARA CARDÁPIOS =====
-async function abrirModalImpressaoCardapios() {
-    // Buscar dados necessários (assumindo que estão disponíveis globalmente)
-    const clientes = window.clientesCarregados || [];
-    const tipos = window.tiposRefeicaoCarregados || [];
+        </head>
+        <body>
+            <div class="header">
+                <h1>📋 Relatório de Cardápios</h1>
+                <h2>Período: ${periodo}</h2>
+                <p style="margin: 10px 0 0 0; color: #888; font-size: 11px;">
+                    Gerado em ${new Date().toLocaleString('pt-BR')}
+                </p>
+            </div>
+    `;
     
-    await impressao.abrirModalCardapios(clientes, tipos);
+    if (Object.keys(dados).length === 0) {
+        html += '<div class="no-data">Nenhum cardápio encontrado para os critérios selecionados.</div>';
+    } else {
+        // Gerar conteúdo agrupado por data
+        Object.keys(dados).sort().forEach(data => {
+            html += `<div class="data-group">`;
+            html += `<div class="data-title">📅 ${formatarDataBrasil(data)}</div>`;
+            
+            Object.keys(dados[data]).forEach(cliente => {
+                html += `<div class="cliente-group">`;
+                html += `<div class="cliente-title">👤 ${cliente}</div>`;
+                
+                Object.keys(dados[data][cliente]).forEach(tipo => {
+                    html += `<div class="tipo-group">`;
+                    html += `<div class="tipo-title">🍽️ ${tipo}</div>`;
+                    
+                    dados[data][cliente][tipo].forEach(receita => {
+                        html += `<div class="receita-item">`;
+                        html += `<div class="receita-nome">${receita.receita}</div>`;
+                        html += `<div class="receita-detalhes">`;
+                        html += `Comensais: ${receita.comensais} | `;
+                        html += `Qtd/pessoa: ${receita.quantidadePorPessoa} ${receita.unidade} | `;
+                        html += `Total: ${receita.totalCalculado.toFixed(3)} KG`;
+                        html += `</div>`;
+                        
+                        if (receita.textoReceita) {
+                            html += `<div class="receita-texto">${receita.textoReceita}</div>`;
+                        }
+                        
+                        html += `</div>`;
+                    });
+                    
+                    html += `</div>`;
+                });
+                
+                html += `</div>`;
+            });
+            
+            html += `</div>`;
+        });
+    }
+    
+    html += `
+        </body>
+        </html>
+    `;
+    
+    return html;
 }
 
-// ===== FUNÇÕES ESPECÍFICAS PARA RECEITAS =====
-async function abrirModalImpressaoReceitas() {
-    const receitas = window.receitasCarregadas || [];
-    await impressao.abrirModalReceitas(receitas);
+// ===== VISUALIZAR PREVIEW =====
+async function visualizarPreviewImpressao() {
+    const config = coletarConfiguracoesImpressao();
+    if (!config) return;
+    
+    console.log('👁️ Gerando preview da impressão...');
+    mostrarToast('Gerando preview...', 'info');
+    
+    try {
+        const cardapios = await buscarDadosCardapiosImpressao(config);
+        
+        if (cardapios.length === 0) {
+            mostrarToast('Nenhum cardápio encontrado para os critérios selecionados', 'warning');
+            return;
+        }
+        
+        const dados = processarDadosCardapios(cardapios, config);
+        const html = gerarHTMLCardapios(dados, config);
+        
+        // Abrir preview em nova janela
+        const previewWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+        previewWindow.document.write(html);
+        previewWindow.document.close();
+        
+        mostrarToast(`Preview gerado! ${cardapios.length} itens encontrados.`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Erro ao gerar preview:', error);
+        mostrarToast('Erro ao gerar preview: ' + error.message, 'error');
+    }
 }
 
-// ===== FUNÇÕES ESPECÍFICAS PARA PRODUTOS =====
-async function abrirModalImpressaoProdutos() {
-    const produtos = window.produtosCarregados || [];
-    await impressao.abrirModalProdutos(produtos);
+// ===== EXECUTAR IMPRESSÃO =====
+async function executarImpressaoCardapios() {
+    const config = coletarConfiguracoesImpressao();
+    if (!config) return;
+    
+    console.log('🖨️ Executando impressão...');
+    mostrarToast('Preparando impressão...', 'info');
+    
+    try {
+        const cardapios = await buscarDadosCardapiosImpressao(config);
+        
+        if (cardapios.length === 0) {
+            mostrarToast('Nenhum cardápio encontrado para imprimir', 'warning');
+            return;
+        }
+        
+        const dados = processarDadosCardapios(cardapios, config);
+        const html = gerarHTMLCardapios(dados, config);
+        
+        // Abrir janela de impressão
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        printWindow.document.write(html);
+        printWindow.document.close();
+        
+        // Aguardar carregamento e imprimir
+        printWindow.onload = function() {
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+        };
+        
+        mostrarToast(`Impressão iniciada! ${cardapios.length} itens encontrados.`, 'success');
+        fecharModalImpressao();
+        
+    } catch (error) {
+        console.error('❌ Erro ao executar impressão:', error);
+        mostrarToast('Erro ao executar impressão: ' + error.message, 'error');
+    }
 }
 
-// ===== EXPORTAR PARA USO GLOBAL =====
-window.abrirModalImpressao = abrirModalImpressaoCardapios; // Compatibilidade
+// ===== FUNÇÕES AUXILIARES =====
+
+// Formatar data para padrão brasileiro
+function formatarDataBrasil(dataISO) {
+    if (!dataISO) return '';
+    const data = new Date(dataISO + 'T00:00:00');
+    return data.toLocaleDateString('pt-BR');
+}
+
+// Fechar modal
+function fecharModalImpressao() {
+    const modal = document.getElementById('modalImpressao');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Toast notification system
+function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
+    // Usar a função do sistema principal se existir
+    if (window.mostrarToast && typeof window.mostrarToast === 'function') {
+        window.mostrarToast(mensagem, tipo, duracao);
+        return;
+    }
+    
+    // Implementação básica se não existir
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${tipo}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        background: ${tipo === 'success' ? '#d4edda' : tipo === 'error' ? '#f8d7da' : tipo === 'warning' ? '#fff3cd' : '#d1ecf1'};
+        color: ${tipo === 'success' ? '#155724' : tipo === 'error' ? '#721c24' : tipo === 'warning' ? '#856404' : '#0c5460'};
+        padding: 12px 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        font-family: inherit;
+        font-size: 14px;
+        max-width: 400px;
+    `;
+    
+    toast.innerHTML = `
+        <span style="margin-right: 10px;">${tipo === 'success' ? '✅' : tipo === 'error' ? '❌' : tipo === 'warning' ? '⚠️' : 'ℹ️'}</span>
+        ${mensagem}
+        <button onclick="this.parentElement.remove()" style="background: none; border: none; float: right; font-size: 16px; cursor: pointer; margin-left: 10px;">&times;</button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, duracao);
+}
+
+// ===== EXPORTAR FUNÇÕES PARA USO GLOBAL =====
 window.abrirModalImpressaoCardapios = abrirModalImpressaoCardapios;
-window.abrirModalImpressaoReceitas = abrirModalImpressaoReceitas;
-window.abrirModalImpressaoProdutos = abrirModalImpressaoProdutos;
+window.fecharModalImpressao = fecharModalImpressao;
+window.toggleListaClientes = toggleListaClientes;
+window.toggleListaTipos = toggleListaTipos;
+window.definirPeriodoImpressao = definirPeriodoImpressao;
+window.selecionarTodosClientes = selecionarTodosClientes;
+window.desmarcarTodosClientes = desmarcarTodosClientes;
+window.selecionarTodosTipos = selecionarTodosTipos;
+window.desmarcarTodosTipos = desmarcarTodosTipos;
+window.visualizarPreviewImpressao = visualizarPreviewImpressao;
+window.executarImpressaoCardapios = executarImpressaoCardapios;
 
-console.log('✅ Sistema de impressão modular carregado!');
+console.log('✅ Sistema de impressão completo e funcional carregado!');
