@@ -1359,3 +1359,376 @@ textarea:focus,
         text-align: center;
     }
 }
+
+/* ===== CSS ADICIONAL PARA LAYOUT TABULAR DO CARDÁPIO ===== */
+/* Adicione este CSS ao final do arquivo main.css */
+
+/* Layout tabular para receitas do cardápio */
+.receita-item-tabular {
+    display: grid;
+    grid-template-columns: 2fr 120px 120px 120px 80px;
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.receita-item-tabular:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #667eea;
+}
+
+/* Cabeçalho da tabela de receitas */
+.receitas-header {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    display: none; /* Inicialmente oculto */
+}
+
+.receitas-header.visible {
+    display: block;
+}
+
+.receitas-header-grid {
+    display: grid;
+    grid-template-columns: 2fr 120px 120px 120px 80px;
+    gap: 10px;
+    font-weight: 600;
+    color: #495057;
+    font-size: 13px;
+}
+
+.receitas-header-grid > div {
+    text-align: center;
+}
+
+.receitas-header-grid > div:first-child {
+    text-align: left;
+}
+
+/* Inputs compactos para a tabela */
+.receita-item-tabular input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.receita-item-tabular input[type="number"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* Total calculado melhorado */
+.receita-item-tabular .total-calculado {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    border: 2px solid #4caf50;
+    font-size: 13px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.receita-item-tabular .total-calculado:hover {
+    transform: scale(1.05);
+    background: #d4edda;
+}
+
+/* Botão excluir compacto */
+.receita-item-tabular .btn-danger {
+    padding: 4px 8px;
+    font-size: 11px;
+    width: 60px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.receita-item-tabular .btn-danger:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Nome da receita melhorado */
+.receita-item-tabular .receita-nome {
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+/* Small text para unidades */
+.receita-item-tabular small {
+    display: block;
+    color: #666;
+    font-size: 11px;
+    margin-top: 2px;
+    font-weight: normal;
+}
+
+/* Container de receitas melhorado */
+.receitas-container {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.receitas-container:empty {
+    display: none;
+}
+
+/* Melhorias para o accordion */
+.expandable-content.active {
+    display: block;
+    padding: 20px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Seção de comensais melhorada */
+.comensais-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.comensais-section:hover {
+    background: #fff0b3;
+}
+
+.comensais-section label {
+    font-weight: 600;
+    color: #856404;
+    margin: 0;
+    font-size: 14px;
+}
+
+.comensais-input {
+    width: 80px !important;
+    padding: 6px 8px;
+    border: 2px solid #ffc107;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.comensais-input:focus {
+    outline: none;
+    border-color: #ff9800;
+    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+}
+
+/* Actions melhoradas */
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.compact-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+    margin-right: 8px;
+    margin-bottom: 5px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.compact-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Estados de loading/carregamento */
+.receita-item-tabular.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.receita-item-tabular.loading::after {
+    content: "⟳";
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: translateY(-50%) rotate(0deg); }
+    to { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Melhorias de acessibilidade */
+.receita-item-tabular:focus-within {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Indicador de dados salvos */
+.receita-item-tabular.saved {
+    border-left: 4px solid #28a745;
+    background: #f8fff9;
+}
+
+.receita-item-tabular.modified {
+    border-left: 4px solid #ffc107;
+    background: #fffef8;
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+    .receita-item-tabular {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto auto;
+        gap: 8px;
+        padding: 15px;
+    }
+    
+    .receitas-header-grid {
+        display: none; /* Esconder cabeçalho no mobile */
+    }
+    
+    .receita-item-tabular > div {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .receita-item-tabular > div:last-child {
+        border-bottom: none;
+        justify-content: center;
+    }
+    
+    .receita-item-tabular > div::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #495057;
+        font-size: 12px;
+        min-width: 100px;
+    }
+    
+    .receita-item-tabular .receita-nome::before {
+        content: "Receita: ";
+    }
+    
+    .receita-item-tabular input[type="number"] {
+        max-width: 120px;
+    }
+    
+    .comensais-section {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+    
+    .comensais-input {
+        width: 100% !important;
+        max-width: 150px;
+        margin: 0 auto;
+    }
+    
+    .actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .compact-btn {
+        margin-right: 0;
+        margin-bottom: 8px;
+    }
+}
+
+/* Melhorias visuais adicionais */
+.expandable {
+    margin-bottom: 15px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.expandable:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+.expandable-header {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.expandable-header:hover {
+    background: linear-gradient(45deg, #5a67d8, #6b46c1);
+}
+
+/* Animações suaves para interações */
+.receita-item-tabular .total-calculado.updated {
+    animation: pulse 0.6s ease;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Melhorar visibilidade dos placeholders */
+.receita-item-tabular input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+/* Indicadores visuais para validação */
+.receita-item-tabular input.invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+}
+
+.receita-item-tabular input.valid {
+    border-color: #28a745;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+}
