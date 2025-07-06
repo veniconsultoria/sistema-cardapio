@@ -1,6 +1,6 @@
-// clientes.js - Sistema de Clientes com Supabase (CORRIGIDO PARA RLS)
+// clientes.js - Sistema de Clientes MODERNIZADO (Layout igual ao de Produtos)
 
-console.log('📁 Carregando clientes.js...');
+console.log('📁 Carregando clientes.js MODERNIZADO...');
 
 // Verificar se as variáveis já existem para evitar redeclaração
 if (typeof window.clientesModulo === 'undefined') {
@@ -66,19 +66,12 @@ async function inicializarClientes() {
 function configurarEventosClientes() {
     console.log('⚙️ Configurando eventos de clientes...');
     
-    const form = document.getElementById('formCliente');
-    if (form) {
-        // Remover listeners existentes para evitar duplicação
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        newForm.addEventListener('submit', salvarClienteHandler);
+    // Barra de pesquisa
+    const buscaInput = document.getElementById('busca-clientes');
+    if (buscaInput) {
+        buscaInput.removeEventListener('input', filtrarClientes);
+        buscaInput.addEventListener('input', filtrarClientes);
     }
-}
-
-// Handler para salvar cliente
-async function salvarClienteHandler(e) {
-    e.preventDefault();
-    await salvarCliente();
 }
 
 // Carregar clientes do Supabase
@@ -109,12 +102,13 @@ async function carregarClientes() {
         }));
         
         atualizarTabelaClientes();
+        atualizarContadores();
         
         console.log(`✅ ${window.clientesModulo.clientesCarregados.length} clientes carregados`);
         
     } catch (error) {
         console.error('❌ Erro ao carregar clientes:', error);
-        mostrarToast('Erro ao carregar clientes: ' + error.message);
+        mostrarToast('Erro ao carregar clientes: ' + error.message, 'error');
     }
 }
 
@@ -152,7 +146,7 @@ async function gerarProximoCodigoCliente() {
 
         if (error) throw error;
 
-        const input = document.getElementById('codigoCliente');
+        const input = document.getElementById('cliente-codigo');
         if (input) {
             input.value = data || 'CLI001';
             console.log('✅ Próximo código gerado:', data);
@@ -160,11 +154,37 @@ async function gerarProximoCodigoCliente() {
         
     } catch (error) {
         console.error('❌ Erro ao gerar código:', error);
-        const input = document.getElementById('codigoCliente');
+        const input = document.getElementById('cliente-codigo');
         if (input) {
             input.value = 'CLI001';
         }
     }
+}
+
+// Abrir modal para novo cliente
+async function abrirModalNovoCliente() {
+    await gerarProximoCodigoCliente();
+    
+    // Limpar formulário
+    document.getElementById('cliente-id').value = '';
+    document.getElementById('cliente-descricao').value = '';
+    document.getElementById('cliente-endereco').value = '';
+    document.getElementById('cliente-numero').value = '';
+    document.getElementById('cliente-telefone').value = '';
+    document.getElementById('cliente-email').value = '';
+    
+    // Limpar tipos vinculados
+    window.clientesModulo.tiposRefeicaoTemp = [];
+    atualizarTiposRefeicaoVinculados();
+    window.clientesModulo.editandoCliente = null;
+    
+    // Mostrar modal
+    document.getElementById('modal-cliente').style.display = 'block';
+    
+    setTimeout(() => {
+        const descInput = document.getElementById('cliente-descricao');
+        if (descInput) descInput.focus();
+    }, 100);
 }
 
 // Salvar cliente (CORRIGIDO PARA RLS)
@@ -176,23 +196,24 @@ async function salvarCliente() {
         if (!user) throw new Error('Usuário não autenticado');
 
         // Coletar dados do formulário
-        const codigo = document.getElementById('codigoCliente').value.trim();
-        const descricao = document.getElementById('descricaoCliente').value.trim();
-        const endereco = document.getElementById('enderecoCliente').value.trim();
-        const numero = document.getElementById('numeroCliente').value.trim();
-        const telefone = document.getElementById('telefoneCliente').value.trim();
-        const email = document.getElementById('emailCliente').value.trim();
+        const id = document.getElementById('cliente-id').value;
+        const codigo = document.getElementById('cliente-codigo').value.trim();
+        const descricao = document.getElementById('cliente-descricao').value.trim();
+        const endereco = document.getElementById('cliente-endereco').value.trim();
+        const numero = document.getElementById('cliente-numero').value.trim();
+        const telefone = document.getElementById('cliente-telefone').value.trim();
+        const email = document.getElementById('cliente-email').value.trim();
 
         // Validações
         if (!descricao) {
-            mostrarToast('Por favor, informe a descrição do cliente');
-            document.getElementById('descricaoCliente').focus();
+            mostrarToast('Por favor, informe a descrição do cliente', 'warning');
+            document.getElementById('cliente-descricao').focus();
             return;
         }
 
         if (!codigo) {
-            mostrarToast('Por favor, informe o código do cliente');
-            document.getElementById('codigoCliente').focus();
+            mostrarToast('Por favor, informe o código do cliente', 'warning');
+            document.getElementById('cliente-codigo').focus();
             return;
         }
 
@@ -211,18 +232,17 @@ async function salvarCliente() {
 
         let clienteId;
         
-        if (window.clientesModulo.editandoCliente !== null) {
+        if (id) {
             // Atualizar cliente existente
             console.log('🔄 Atualizando cliente existente...');
-            const clienteAtual = window.clientesModulo.clientesCarregados[window.clientesModulo.editandoCliente];
             const { error } = await window.supabase
                 .from('clientes')
                 .update(clienteData)
-                .eq('id', clienteAtual.id)
+                .eq('id', id)
                 .eq('user_id', user.id);
 
             if (error) throw error;
-            clienteId = clienteAtual.id;
+            clienteId = id;
         } else {
             // Criar novo cliente
             console.log('➕ Criando novo cliente...');
@@ -240,15 +260,15 @@ async function salvarCliente() {
         await salvarTiposRefeicaoCliente(clienteId, user.id);
 
         console.log('✅ Cliente salvo com sucesso!');
-        mostrarToast(window.clientesModulo.editandoCliente !== null ? 'Cliente atualizado com sucesso!' : 'Cliente criado com sucesso!');
+        mostrarToast(id ? 'Cliente atualizado com sucesso!' : 'Cliente criado com sucesso!', 'success');
         
-        // Limpar formulário e recarregar lista
-        limparFormularioCliente();
+        // Fechar modal e recarregar lista
+        fecharModalCliente();
         await carregarClientes();
 
     } catch (error) {
         console.error('❌ Erro ao salvar cliente:', error);
-        mostrarToast('Erro ao salvar cliente: ' + error.message);
+        mostrarToast('Erro ao salvar cliente: ' + error.message, 'error');
     }
 }
 
@@ -291,21 +311,9 @@ async function salvarTiposRefeicaoCliente(clienteId, userId) {
     }
 }
 
-// Limpar formulário
-function limparFormularioCliente() {
-    const form = document.getElementById('formCliente');
-    if (form) {
-        form.reset();
-    }
-    window.clientesModulo.tiposRefeicaoTemp = [];
-    atualizarTiposRefeicaoVinculados();
-    window.clientesModulo.editandoCliente = null;
-    gerarProximoCodigoCliente();
-}
-
-// Renderizar tabela de clientes
+// Renderizar tabela de clientes (MODERNIZADA)
 function atualizarTabelaClientes() {
-    const tbody = document.querySelector('#tabelaClientes tbody');
+    const tbody = document.getElementById('clientes-tbody');
     if (!tbody) return;
     
     tbody.innerHTML = '';
@@ -313,7 +321,7 @@ function atualizarTabelaClientes() {
     if (window.clientesModulo.clientesCarregados.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align: center; color: #666; padding: 20px;">
+                <td colspan="6" style="text-align: center; color: #666; padding: 40px;">
                     Nenhum cliente encontrado
                 </td>
             </tr>
@@ -323,17 +331,29 @@ function atualizarTabelaClientes() {
 
     window.clientesModulo.clientesCarregados.forEach((cliente, index) => {
         const row = document.createElement('tr');
+        
+        // Formatação de endereço
+        const enderecoCompleto = [cliente.endereco, cliente.numero].filter(x => x).join(', ') || '-';
+        
+        // Contagem de tipos vinculados
+        const tiposCount = cliente.tiposRefeicao ? cliente.tiposRefeicao.length : 0;
+        
         row.innerHTML = `
             <td>${cliente.codigo}</td>
             <td>${cliente.descricao}</td>
-            <td>${cliente.endereco} ${cliente.numero}</td>
-            <td>${cliente.telefone}</td>
-            <td>${cliente.email}</td>
+            <td>${enderecoCompleto}</td>
+            <td>${cliente.telefone || '-'}</td>
+            <td>${cliente.email || '-'}</td>
             <td>
-                <button onclick="editarCliente(${index})" class="btn btn-sm btn-primary">
+                <span class="badge ${tiposCount > 0 ? 'badge-success' : 'badge-warning'}">
+                    ${tiposCount} tipo(s)
+                </span>
+            </td>
+            <td>
+                <button onclick="editarCliente(${index})" class="btn btn-primary btn-sm">
                     Editar
                 </button>
-                <button onclick="excluirCliente(${index})" class="btn btn-sm btn-danger">
+                <button onclick="excluirCliente(${index})" class="btn btn-danger btn-sm">
                     Excluir
                 </button>
             </td>
@@ -342,26 +362,104 @@ function atualizarTabelaClientes() {
     });
 }
 
+// Filtrar clientes
+function filtrarClientes() {
+    const busca = document.getElementById('busca-clientes')?.value.toLowerCase() || '';
+    
+    let filtrados = window.clientesModulo.clientesCarregados.filter(cliente => {
+        return !busca || 
+               cliente.descricao.toLowerCase().includes(busca) || 
+               cliente.codigo.toLowerCase().includes(busca) ||
+               (cliente.email && cliente.email.toLowerCase().includes(busca));
+    });
+    
+    const tbody = document.getElementById('clientes-tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (filtrados.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; color: #666; padding: 40px;">
+                    Nenhum cliente encontrado para "${busca}"
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    filtrados.forEach((cliente, originalIndex) => {
+        // Encontrar o índice original
+        const index = window.clientesModulo.clientesCarregados.indexOf(cliente);
+        
+        const row = document.createElement('tr');
+        const enderecoCompleto = [cliente.endereco, cliente.numero].filter(x => x).join(', ') || '-';
+        const tiposCount = cliente.tiposRefeicao ? cliente.tiposRefeicao.length : 0;
+        
+        row.innerHTML = `
+            <td>${cliente.codigo}</td>
+            <td>${cliente.descricao}</td>
+            <td>${enderecoCompleto}</td>
+            <td>${cliente.telefone || '-'}</td>
+            <td>${cliente.email || '-'}</td>
+            <td>
+                <span class="badge ${tiposCount > 0 ? 'badge-success' : 'badge-warning'}">
+                    ${tiposCount} tipo(s)
+                </span>
+            </td>
+            <td>
+                <button onclick="editarCliente(${index})" class="btn btn-primary btn-sm">
+                    Editar
+                </button>
+                <button onclick="excluirCliente(${index})" class="btn btn-danger btn-sm">
+                    Excluir
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Atualizar contador
+    document.getElementById('total-clientes').textContent = filtrados.length;
+}
+
+// Atualizar contadores
+function atualizarContadores() {
+    const totalElement = document.getElementById('total-clientes');
+    if (totalElement) {
+        totalElement.textContent = window.clientesModulo.clientesCarregados.length;
+    }
+}
+
 // Editar cliente
 async function editarCliente(index) {
     const cliente = window.clientesModulo.clientesCarregados[index];
     if (!cliente) {
-        mostrarToast('Cliente não encontrado');
+        mostrarToast('Cliente não encontrado', 'error');
         return;
     }
 
-    document.getElementById('codigoCliente').value = cliente.codigo;
-    document.getElementById('descricaoCliente').value = cliente.descricao;
-    document.getElementById('enderecoCliente').value = cliente.endereco || '';
-    document.getElementById('numeroCliente').value = cliente.numero || '';
-    document.getElementById('telefoneCliente').value = cliente.telefone || '';
-    document.getElementById('emailCliente').value = cliente.email || '';
+    // Preencher formulário
+    document.getElementById('cliente-id').value = cliente.id;
+    document.getElementById('cliente-codigo').value = cliente.codigo;
+    document.getElementById('cliente-descricao').value = cliente.descricao;
+    document.getElementById('cliente-endereco').value = cliente.endereco || '';
+    document.getElementById('cliente-numero').value = cliente.numero || '';
+    document.getElementById('cliente-telefone').value = cliente.telefone || '';
+    document.getElementById('cliente-email').value = cliente.email || '';
     
+    // Carregar tipos vinculados
     window.clientesModulo.tiposRefeicaoTemp = [...(cliente.tiposRefeicao || [])];
     atualizarTiposRefeicaoVinculados();
     window.clientesModulo.editandoCliente = index;
     
-    document.getElementById('descricaoCliente').focus();
+    // Mostrar modal
+    document.getElementById('modal-cliente').style.display = 'block';
+    
+    setTimeout(() => {
+        document.getElementById('cliente-descricao').focus();
+    }, 100);
 }
 
 // Excluir cliente
@@ -369,7 +467,7 @@ async function excluirCliente(index) {
     try {
         const cliente = window.clientesModulo.clientesCarregados[index];
         if (!cliente) {
-            mostrarToast('Cliente não encontrado');
+            mostrarToast('Cliente não encontrado', 'error');
             return;
         }
 
@@ -398,24 +496,26 @@ async function excluirCliente(index) {
         if (error) throw error;
 
         console.log('✅ Cliente excluído com sucesso!');
-        mostrarToast('Cliente excluído com sucesso!');
+        mostrarToast('Cliente excluído com sucesso!', 'success');
         await carregarClientes();
 
     } catch (error) {
         console.error('❌ Erro ao excluir cliente:', error);
-        mostrarToast('Erro ao excluir cliente: ' + error.message);
+        mostrarToast('Erro ao excluir cliente: ' + error.message, 'error');
     }
 }
 
+// ===== GESTÃO DE TIPOS DE REFEIÇÃO =====
+
 // Abrir modal de tipos de refeição
 function abrirModalTiposRefeicao() {
-    document.getElementById('modalTiposRefeicao').style.display = 'block';
+    document.getElementById('modal-tipos-refeicao').style.display = 'block';
     carregarListaTiposRefeicao();
 }
 
 // Carregar lista de tipos de refeição no modal
 function carregarListaTiposRefeicao() {
-    const container = document.getElementById('listaTiposRefeicao');
+    const container = document.getElementById('lista-tipos-modal');
     if (!container) return;
     
     container.innerHTML = '';
@@ -427,55 +527,153 @@ function carregarListaTiposRefeicao() {
         return;
     }
 
+    // Header com ações globais
+    const headerActions = document.createElement('div');
+    headerActions.className = 'modal-header-actions';
+    headerActions.style.cssText = 'padding: 10px 0; border-bottom: 1px solid #e9ecef; margin-bottom: 15px;';
+    headerActions.innerHTML = `
+        <button type="button" class="btn btn-secondary btn-sm" onclick="selecionarTodosTipos()">
+            Selecionar Todos
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="desmarcarTodosTipos()">
+            Desmarcar Todos
+        </button>
+        <button type="button" class="btn btn-primary" onclick="adicionarTiposSelecionados()">
+            Adicionar Selecionados
+        </button>
+    `;
+    container.appendChild(headerActions);
+
     tiposDisponiveis.forEach((tipo, index) => {
+        const jaAdicionado = window.clientesModulo.tiposRefeicaoTemp.find(t => t.id === tipo.id);
+        
         const div = document.createElement('div');
-        div.className = 'ingredient-item';
+        div.className = 'tipo-item';
+        div.style.cssText = `
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            padding: 10px; 
+            border: 1px solid #e9ecef; 
+            border-radius: 5px; 
+            margin-bottom: 8px; 
+            background: ${jaAdicionado ? '#f8f9fa' : 'white'};
+        `;
+        
         div.innerHTML = `
-            <span>${tipo.codigo} - ${tipo.descricao}</span>
-            <button class="btn btn-primary" onclick="adicionarTipoRefeicao(${index})">Adicionar</button>
+            <input type="checkbox" id="tipo-${index}" value="${index}" ${jaAdicionado ? 'disabled checked' : ''}>
+            <label for="tipo-${index}" style="flex: 1; margin: 0; cursor: pointer; color: ${jaAdicionado ? '#6c757d' : '#333'}">
+                ${tipo.codigo} - ${tipo.descricao}${jaAdicionado ? ' ✅' : ''}
+            </label>
         `;
         container.appendChild(div);
     });
 }
 
-// Adicionar tipo de refeição ao cliente
+// Selecionar todos os tipos
+function selecionarTodosTipos() {
+    const checkboxes = document.querySelectorAll('#lista-tipos-modal input[type="checkbox"]:not(:disabled)');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+// Desmarcar todos os tipos
+function desmarcarTodosTipos() {
+    const checkboxes = document.querySelectorAll('#lista-tipos-modal input[type="checkbox"]:not(:disabled)');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+// Adicionar tipos selecionados
+function adicionarTiposSelecionados() {
+    const checkboxes = document.querySelectorAll('#lista-tipos-modal input[type="checkbox"]:checked:not(:disabled)');
+    
+    if (checkboxes.length === 0) {
+        mostrarToast('Selecione pelo menos um tipo de refeição', 'warning');
+        return;
+    }
+    
+    let adicionados = 0;
+    
+    checkboxes.forEach(checkbox => {
+        const tipoIndex = parseInt(checkbox.value);
+        const tipo = window.tiposRefeicoesPadrao[tipoIndex];
+        
+        if (!tipo) return;
+        
+        // Verificar se já existe
+        if (window.clientesModulo.tiposRefeicaoTemp.find(t => t.id === tipo.id)) {
+            return; // Já adicionado
+        }
+
+        window.clientesModulo.tiposRefeicaoTemp.push(tipo);
+        adicionados++;
+    });
+    
+    if (adicionados > 0) {
+        atualizarTiposRefeicaoVinculados();
+        mostrarToast(`${adicionados} tipo(s) de refeição adicionado(s)!`, 'success');
+        fecharModalTipos();
+    } else {
+        mostrarToast('Todos os tipos selecionados já foram adicionados', 'info');
+    }
+}
+
+// Adicionar tipo de refeição individual (mantido para compatibilidade)
 function adicionarTipoRefeicao(index) {
     const tiposDisponiveis = window.tiposRefeicoesPadrao || [];
     const tipo = tiposDisponiveis[index];
     
     if (!tipo) {
-        mostrarToast('Tipo de refeição não encontrado');
+        mostrarToast('Tipo de refeição não encontrado', 'error');
         return;
     }
     
     if (window.clientesModulo.tiposRefeicaoTemp.find(t => t.id === tipo.id)) {
-        mostrarToast('Tipo de refeição já adicionado!');
+        mostrarToast('Tipo de refeição já adicionado!', 'warning');
         return;
     }
 
     window.clientesModulo.tiposRefeicaoTemp.push(tipo);
     atualizarTiposRefeicaoVinculados();
-    mostrarToast('Tipo de refeição adicionado!');
+    mostrarToast('Tipo de refeição adicionado!', 'success');
 }
 
 // Atualizar lista de tipos vinculados
 function atualizarTiposRefeicaoVinculados() {
-    const container = document.getElementById('tiposRefeicaoVinculados');
+    const container = document.getElementById('tipos-vinculados-lista');
     if (!container) return;
     
     container.innerHTML = '';
 
     if (window.clientesModulo.tiposRefeicaoTemp.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #666; padding: 10px;">Nenhum tipo de refeição vinculado</p>';
+        container.innerHTML = '<p style="text-align: center; color: #666; padding: 15px; background: #f8f9fa; border-radius: 5px;">Nenhum tipo de refeição vinculado</p>';
         return;
     }
 
     window.clientesModulo.tiposRefeicaoTemp.forEach((tipo, index) => {
         const div = document.createElement('div');
-        div.className = 'ingredient-item';
+        div.className = 'tipo-vinculado-item';
+        div.style.cssText = `
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 10px 15px; 
+            background: #e8f5e8; 
+            border: 1px solid #28a745; 
+            border-radius: 5px; 
+            margin-bottom: 8px;
+        `;
+        
         div.innerHTML = `
-            <span>${tipo.codigo} - ${tipo.descricao}</span>
-            <button class="btn btn-danger" onclick="removerTipoRefeicao(${index})">Excluir</button>
+            <span style="font-weight: 500; color: #155724;">
+                ${tipo.codigo} - ${tipo.descricao}
+            </span>
+            <button class="btn btn-danger btn-sm" onclick="removerTipoRefeicao(${index})" style="padding: 4px 8px; font-size: 12px;">
+                Remover
+            </button>
         `;
         container.appendChild(div);
     });
@@ -484,13 +682,29 @@ function atualizarTiposRefeicaoVinculados() {
 // Remover tipo de refeição do cliente
 function removerTipoRefeicao(index) {
     if (confirm('Tem certeza que deseja remover este tipo de refeição?')) {
+        const tipo = window.clientesModulo.tiposRefeicaoTemp[index];
         window.clientesModulo.tiposRefeicaoTemp.splice(index, 1);
         atualizarTiposRefeicaoVinculados();
-        mostrarToast('Tipo de refeição removido!');
+        mostrarToast(`Tipo "${tipo.descricao}" removido!`, 'success');
     }
 }
 
-// Fechar modal
+// Recarregar clientes
+async function recarregarClientes() {
+    await carregarClientes();
+    mostrarToast('Clientes recarregados!', 'success');
+}
+
+// Fechar modais
+function fecharModalCliente() {
+    document.getElementById('modal-cliente').style.display = 'none';
+}
+
+function fecharModalTipos() {
+    document.getElementById('modal-tipos-refeicao').style.display = 'none';
+}
+
+// Fechar modal genérico
 function fecharModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
@@ -498,15 +712,102 @@ function fecharModal(modalId) {
     }
 }
 
-// Exportar funções para uso global
+// Toast notification system
+function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
+    // Usar função global se existir
+    if (window.mostrarToast && typeof window.mostrarToast === 'function') {
+        window.mostrarToast(mensagem, tipo, duracao);
+        return;
+    }
+    
+    // Implementação básica
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${tipo}`;
+    
+    const icones = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    toast.innerHTML = `
+        <div class="toast-content">
+            <span class="toast-icon">${icones[tipo] || icones.info}</span>
+            <span class="toast-message">${mensagem}</span>
+            <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.classList.add('toast-fade-out');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 300);
+        }
+    }, duracao);
+}
+
+// ===== EXPORTAR TODAS AS FUNÇÕES PARA USO GLOBAL =====
 window.editarCliente = editarCliente;
 window.excluirCliente = excluirCliente;
 window.abrirModalTiposRefeicao = abrirModalTiposRefeicao;
+window.abrirModalNovoCliente = abrirModalNovoCliente;
 window.adicionarTipoRefeicao = adicionarTipoRefeicao;
 window.removerTipoRefeicao = removerTipoRefeicao;
 window.fecharModal = fecharModal;
+window.fecharModalCliente = fecharModalCliente;
+window.fecharModalTipos = fecharModalTipos;
 window.salvarCliente = salvarCliente;
-window.limparFormularioCliente = limparFormularioCliente;
+window.recarregarClientes = recarregarClientes;
 window.inicializarClientes = inicializarClientes;
+window.selecionarTodosTipos = selecionarTodosTipos;
+window.desmarcarTodosTipos = desmarcarTodosTipos;
+window.adicionarTiposSelecionados = adicionarTiposSelecionados;
 
-console.log('✅ clientes.js carregado e corrigido para RLS!');
+// ===== GARANTIR QUE AS FUNÇÕES ESTÃO DISPONÍVEIS IMEDIATAMENTE =====
+// Definir funções no escopo global imediatamente
+if (typeof window.abrirModalNovoCliente === 'undefined') {
+    window.abrirModalNovoCliente = async function() {
+        if (typeof abrirModalNovoCliente === 'function') {
+            return await abrirModalNovoCliente();
+        } else {
+            console.warn('Função abrirModalNovoCliente ainda não carregada, tentando inicializar...');
+            if (typeof inicializarClientes === 'function') {
+                await inicializarClientes();
+                if (typeof abrirModalNovoCliente === 'function') {
+                    return await abrirModalNovoCliente();
+                }
+            }
+        }
+    };
+}
+
+if (typeof window.recarregarClientes === 'undefined') {
+    window.recarregarClientes = async function() {
+        if (typeof recarregarClientes === 'function') {
+            return await recarregarClientes();
+        } else {
+            console.warn('Função recarregarClientes ainda não carregada, tentando inicializar...');
+            if (typeof inicializarClientes === 'function') {
+                await inicializarClientes();
+                if (typeof recarregarClientes === 'function') {
+                    return await recarregarClientes();
+                }
+            }
+        }
+    };
+}
+
+console.log('✅ clientes.js MODERNIZADO carregado com layout igual ao de produtos!');
+console.log('📋 Funções exportadas:', Object.keys(window).filter(key => key.includes('Cliente')));

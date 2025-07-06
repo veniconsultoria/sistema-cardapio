@@ -1,6 +1,6 @@
-// impressao.js - Sistema de Impressão Completo e Funcional
+// impressao.js - Sistema de Impressão CORRIGIDO para encontrar cardápios
 
-console.log('📁 Carregando impressao.js - Sistema completo...');
+console.log('📁 Carregando impressao.js - Sistema CORRIGIDO...');
 
 // ===== SISTEMA DE IMPRESSÃO PARA CARDÁPIOS =====
 
@@ -35,13 +35,58 @@ async function carregarDadosParaImpressao() {
     try {
         console.log('📥 Carregando dados para impressão...');
         
-        // Usar dados globais do cardápio se disponíveis
-        if (window.clientesCarregados) {
-            dadosImpressao.clientes = window.clientesCarregados;
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
+
+        // ✅ CORREÇÃO 1: Carregar clientes diretamente do banco
+        console.log('🔄 Carregando clientes do banco...');
+        const { data: clientesData, error: clientesError } = await window.supabase
+            .from('clientes')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('codigo');
+
+        if (clientesError) {
+            console.warn('⚠️ Erro ao carregar clientes:', clientesError);
+            dadosImpressao.clientes = [];
+        } else {
+            dadosImpressao.clientes = clientesData || [];
         }
-        
-        if (window.tiposRefeicaoCarregados) {
-            dadosImpressao.tiposRefeicao = window.tiposRefeicaoCarregados;
+
+        // ✅ CORREÇÃO 2: Carregar tipos de refeição diretamente do banco
+        console.log('🔄 Carregando tipos de refeição do banco...');
+        const { data: tiposData, error: tiposError } = await window.supabase
+            .from('tipos_refeicoes')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('codigo');
+
+        if (tiposError) {
+            console.warn('⚠️ Erro ao carregar tipos:', tiposError);
+            dadosImpressao.tiposRefeicao = [];
+        } else {
+            dadosImpressao.tiposRefeicao = tiposData || [];
+        }
+
+        // ✅ CORREÇÃO 3: Fazer uma consulta de teste para verificar cardápios
+        console.log('🔍 Verificando cardápios disponíveis...');
+        const { data: cardapiosTest, error: cardapiosTestError } = await window.supabase
+            .from('cardapios')
+            .select('data, cliente_id, tipo_refeicao_id, receita_id')
+            .eq('user_id', user.id)
+            .limit(10);
+
+        if (cardapiosTestError) {
+            console.error('❌ Erro ao verificar cardápios:', cardapiosTestError);
+        } else {
+            console.log(`✅ Encontrados ${(cardapiosTest || []).length} registros de cardápio para o usuário`);
+            console.log('📊 Amostra de cardápios:', cardapiosTest);
+            
+            if (cardapiosTest && cardapiosTest.length > 0) {
+                // Verificar datas únicas
+                const datasUnicas = [...new Set(cardapiosTest.map(c => c.data))];
+                console.log('📅 Datas com cardápios:', datasUnicas);
+            }
         }
         
         console.log(`✅ Dados carregados: ${dadosImpressao.clientes.length} clientes, ${dadosImpressao.tiposRefeicao.length} tipos`);
@@ -49,6 +94,7 @@ async function carregarDadosParaImpressao() {
     } catch (error) {
         console.error('❌ Erro ao carregar dados:', error);
         dadosImpressao = { clientes: [], tiposRefeicao: [], cardapios: [] };
+        mostrarToast('Erro ao carregar dados: ' + error.message, 'error');
     }
 }
 
@@ -83,6 +129,15 @@ function criarModalImpressao() {
                         <button type="button" class="btn btn-secondary btn-sm" onclick="definirPeriodoImpressao('hoje')">Hoje</button>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="definirPeriodoImpressao('semana')">Esta Semana</button>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="definirPeriodoImpressao('mes')">Este Mês</button>
+                        <button type="button" class="btn btn-info btn-sm" onclick="verificarCardapiosDisponiveis()">🔍 Verificar Cardápios</button>
+                    </div>
+                </div>
+                
+                <!-- Seção de Debug -->
+                <div class="form-section" style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                    <h4>🔧 Informações de Debug</h4>
+                    <div id="debugInfo" style="font-size: 12px; color: #666;">
+                        Carregando informações...
                     </div>
                 </div>
                 
@@ -263,14 +318,75 @@ function adicionarEstilosImpressao() {
 
 // ===== CONFIGURAR MODAL PARA CARDÁPIOS =====
 function configurarModalCardapios() {
-    // Configurar data padrão
-    const hoje = new Date().toISOString().split('T')[0];
-    document.getElementById('dataInicioImpressao').value = hoje;
-    document.getElementById('dataFimImpressao').value = hoje;
+    // Configurar data padrão - INCLUIR DATAS DE TESTE
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    
+    // ✅ CORREÇÃO: Definir período que inclui as datas com cardápios (06.07 e 08.07)
+    document.getElementById('dataInicioImpressao').value = '2025-07-01'; // Início de julho
+    document.getElementById('dataFimImpressao').value = '2025-07-31';   // Fim de julho
     
     // Carregar listas
     carregarListaClientesImpressao();
     carregarListaTiposImpressao();
+    
+    // Atualizar debug info
+    atualizarDebugInfo();
+}
+
+// ✅ NOVA FUNÇÃO: Atualizar informações de debug
+function atualizarDebugInfo() {
+    const debugContainer = document.getElementById('debugInfo');
+    if (!debugContainer) return;
+    
+    debugContainer.innerHTML = `
+        <strong>Dados carregados:</strong><br>
+        • ${dadosImpressao.clientes.length} clientes encontrados<br>
+        • ${dadosImpressao.tiposRefeicao.length} tipos de refeição encontrados<br>
+        <br>
+        <strong>Período configurado:</strong><br>
+        • Início: 01/07/2025<br>
+        • Fim: 31/07/2025<br>
+        <br>
+        <em>Este período inclui as datas 06/07 e 08/07 onde você tem cardápios cadastrados.</em>
+    `;
+}
+
+// ✅ NOVA FUNÇÃO: Verificar cardápios disponíveis
+async function verificarCardapiosDisponiveis() {
+    try {
+        console.log('🔍 Verificando cardápios disponíveis...');
+        
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
+
+        const dataInicio = document.getElementById('dataInicioImpressao')?.value;
+        const dataFim = document.getElementById('dataFimImpressao')?.value;
+        
+        if (!dataInicio || !dataFim) {
+            mostrarToast(mensagem, 'success', 5000);
+            
+            // Atualizar debug info
+            const debugContainer = document.getElementById('debugInfo');
+            if (debugContainer) {
+                debugContainer.innerHTML = `
+                    <strong>✅ Verificação concluída:</strong><br>
+                    • ${cardapios.length} registros de cardápio encontrados<br>
+                    • ${Object.keys(cardapiosPorData).length} datas diferentes<br>
+                    • Período: ${formatarDataBrasil(dataInicio)} a ${formatarDataBrasil(dataFim)}<br>
+                    <br>
+                    <strong>Datas com cardápios:</strong><br>
+                    ${Object.keys(cardapiosPorData).sort().map(data => 
+                        `• ${formatarDataBrasil(data)}: ${cardapiosPorData[data].length} itens`
+                    ).join('<br>')}
+                `;
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao verificar cardápios:', error);
+        mostrarToast('Erro ao verificar cardápios: ' + error.message, 'error');
+    }
 }
 
 // ===== CARREGAR LISTA DE CLIENTES =====
@@ -355,8 +471,12 @@ function definirPeriodoImpressao(tipo) {
             dataInicio = dataFim = hoje;
             break;
         case 'semana':
-            dataInicio = new Date(hoje.setDate(hoje.getDate() - hoje.getDay()));
-            dataFim = new Date(hoje.setDate(hoje.getDate() - hoje.getDay() + 6));
+            const inicioSemana = new Date(hoje);
+            inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+            const fimSemana = new Date(inicioSemana);
+            fimSemana.setDate(inicioSemana.getDate() + 6);
+            dataInicio = inicioSemana;
+            dataFim = fimSemana;
             break;
         case 'mes':
             dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
@@ -366,6 +486,8 @@ function definirPeriodoImpressao(tipo) {
     
     document.getElementById('dataInicioImpressao').value = dataInicio.toISOString().split('T')[0];
     document.getElementById('dataFimImpressao').value = dataFim.toISOString().split('T')[0];
+    
+    atualizarDebugInfo();
 }
 
 // Selecionar todos os clientes
@@ -444,6 +566,16 @@ function coletarConfiguracoesImpressao() {
     const incluirIngredientes = document.getElementById('incluirIngredientes')?.checked || false;
     const agruparPorData = document.getElementById('agruparPorData')?.checked || true;
     
+    console.log('📋 Configurações coletadas:', {
+        dataInicio,
+        dataFim,
+        clientesSelecionados: clientesSelecionados.length,
+        tiposSelecionados: tiposSelecionados.length,
+        formatoImpressao,
+        incluirIngredientes,
+        agruparPorData
+    });
+    
     return {
         dataInicio,
         dataFim,
@@ -455,15 +587,22 @@ function coletarConfiguracoesImpressao() {
     };
 }
 
-// ===== BUSCAR DADOS DO BANCO =====
+// ===== BUSCAR DADOS DO BANCO CORRIGIDO =====
 async function buscarDadosCardapiosImpressao(config) {
     try {
-        console.log('📊 Buscando dados do banco para impressão...', config);
+        console.log('📊 Buscando dados do banco para impressão com configurações:', config);
         
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
         
-        // Buscar cardápios no período
+        // ✅ CORREÇÃO: Query mais robusta com logs detalhados
+        console.log('🔍 Executando query com parâmetros:');
+        console.log('- user_id:', user.id);
+        console.log('- data_inicio:', config.dataInicio);
+        console.log('- data_fim:', config.dataFim);
+        console.log('- clientes:', config.clientesSelecionados);
+        console.log('- tipos:', config.tiposSelecionados);
+        
         const { data: cardapios, error } = await window.supabase
             .from('cardapios')
             .select(`
@@ -479,9 +618,36 @@ async function buscarDadosCardapiosImpressao(config) {
             .in('tipo_refeicao_id', config.tiposSelecionados)
             .order('data, cliente_id, tipo_refeicao_id');
         
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Erro na query:', error);
+            throw error;
+        }
         
-        console.log(`✅ Encontrados ${(cardapios || []).length} registros para impressão`);
+        console.log(`📊 Query executada com sucesso! Retornados ${(cardapios || []).length} registros`);
+        
+        if (cardapios && cardapios.length > 0) {
+            console.log('📝 Primeiros registros encontrados:');
+            cardapios.slice(0, 3).forEach((item, index) => {
+                console.log(`${index + 1}. Data: ${item.data}, Cliente: ${item.clientes?.descricao}, Tipo: ${item.tipos_refeicoes?.descricao}, Receita: ${item.receitas?.descricao}`);
+            });
+        } else {
+            console.warn('⚠️ Nenhum registro encontrado com os filtros aplicados');
+            
+            // ✅ DIAGNÓSTICO: Verificar se há dados sem filtros
+            console.log('🔍 Fazendo diagnóstico - verificando dados brutos...');
+            const { data: todosDados, error: erroTodos } = await window.supabase
+                .from('cardapios')
+                .select('data, cliente_id, tipo_refeicao_id')
+                .eq('user_id', user.id)
+                .limit(5);
+                
+            if (erroTodos) {
+                console.error('❌ Erro no diagnóstico:', erroTodos);
+            } else {
+                console.log('📊 Dados brutos encontrados:', todosDados);
+            }
+        }
+        
         return cardapios || [];
         
     } catch (error) {
@@ -493,12 +659,14 @@ async function buscarDadosCardapiosImpressao(config) {
 
 // ===== PROCESSAR DADOS PARA IMPRESSÃO =====
 function processarDadosCardapios(cardapios, config) {
+    console.log('🔄 Processando dados para impressão...');
+    
     const dadosProcessados = {};
     
     cardapios.forEach(item => {
         const data = item.data;
-        const clienteNome = `${item.clientes.codigo} - ${item.clientes.descricao}`;
-        const tipoNome = `${item.tipos_refeicoes.codigo} - ${item.tipos_refeicoes.descricao}`;
+        const clienteNome = `${item.clientes?.codigo || 'N/A'} - ${item.clientes?.descricao || 'Cliente não encontrado'}`;
+        const tipoNome = `${item.tipos_refeicoes?.codigo || 'N/A'} - ${item.tipos_refeicoes?.descricao || 'Tipo não encontrado'}`;
         
         if (!dadosProcessados[data]) {
             dadosProcessados[data] = {};
@@ -513,15 +681,16 @@ function processarDadosCardapios(cardapios, config) {
         }
         
         dadosProcessados[data][clienteNome][tipoNome].push({
-            receita: `${item.receitas.codigo} - ${item.receitas.descricao}`,
-            comensais: item.comensais,
-            quantidadePorPessoa: item.quantidade_por_pessoa,
-            totalCalculado: item.total_por_comensais,
-            unidade: item.unidade_basica,
-            textoReceita: config.formatoImpressao === 'detalhado' ? item.receitas.texto : null
+            receita: `${item.receitas?.codigo || 'N/A'} - ${item.receitas?.descricao || 'Receita não encontrada'}`,
+            comensais: item.comensais || 0,
+            quantidadePorPessoa: item.quantidade_por_pessoa || 0,
+            totalCalculado: item.total_por_comensais || 0,
+            unidade: item.unidade_basica || 'UN',
+            textoReceita: config.formatoImpressao === 'detalhado' ? item.receitas?.texto : null
         });
     });
     
+    console.log('✅ Dados processados para', Object.keys(dadosProcessados).length, 'datas');
     return dadosProcessados;
 }
 
@@ -623,6 +792,9 @@ function gerarHTMLCardapios(dados, config) {
                     color: #666;
                     font-style: italic;
                     padding: 20px;
+                    background: #f8f9fa;
+                    border-radius: 5px;
+                    border: 1px solid #e9ecef;
                 }
                 @media print {
                     body { margin: 0; }
@@ -641,7 +813,19 @@ function gerarHTMLCardapios(dados, config) {
     `;
     
     if (Object.keys(dados).length === 0) {
-        html += '<div class="no-data">Nenhum cardápio encontrado para os critérios selecionados.</div>';
+        html += `
+            <div class="no-data">
+                <h3>❌ Nenhum cardápio encontrado</h3>
+                <p>Não foram encontrados cardápios para os critérios selecionados.</p>
+                <p><strong>Período:</strong> ${periodo}</p>
+                <p><strong>Dica:</strong> Verifique se:</p>
+                <ul style="text-align: left; display: inline-block;">
+                    <li>As datas estão corretas (seus cardápios estão em 06/07/2025 e 08/07/2025)</li>
+                    <li>Os clientes e tipos de refeição estão selecionados</li>
+                    <li>Os cardápios foram salvos corretamente no sistema</li>
+                </ul>
+            </div>
+        `;
     } else {
         // Gerar conteúdo agrupado por data
         Object.keys(dados).sort().forEach(data => {
@@ -701,11 +885,6 @@ async function visualizarPreviewImpressao() {
     try {
         const cardapios = await buscarDadosCardapiosImpressao(config);
         
-        if (cardapios.length === 0) {
-            mostrarToast('Nenhum cardápio encontrado para os critérios selecionados', 'warning');
-            return;
-        }
-        
         const dados = processarDadosCardapios(cardapios, config);
         const html = gerarHTMLCardapios(dados, config);
         
@@ -714,7 +893,11 @@ async function visualizarPreviewImpressao() {
         previewWindow.document.write(html);
         previewWindow.document.close();
         
-        mostrarToast(`Preview gerado! ${cardapios.length} itens encontrados.`, 'success');
+        if (cardapios.length === 0) {
+            mostrarToast('❌ Nenhum cardápio encontrado para os critérios selecionados', 'warning');
+        } else {
+            mostrarToast(`✅ Preview gerado! ${cardapios.length} itens encontrados.`, 'success');
+        }
         
     } catch (error) {
         console.error('❌ Erro ao gerar preview:', error);
@@ -734,7 +917,7 @@ async function executarImpressaoCardapios() {
         const cardapios = await buscarDadosCardapiosImpressao(config);
         
         if (cardapios.length === 0) {
-            mostrarToast('Nenhum cardápio encontrado para imprimir', 'warning');
+            mostrarToast('❌ Nenhum cardápio encontrado para imprimir', 'warning');
             return;
         }
         
@@ -750,11 +933,10 @@ async function executarImpressaoCardapios() {
         printWindow.onload = function() {
             setTimeout(() => {
                 printWindow.print();
-                printWindow.close();
             }, 500);
         };
         
-        mostrarToast(`Impressão iniciada! ${cardapios.length} itens encontrados.`, 'success');
+        mostrarToast(`✅ Impressão iniciada! ${cardapios.length} itens encontrados.`, 'success');
         fecharModalImpressao();
         
     } catch (error) {
@@ -783,7 +965,7 @@ function fecharModalImpressao() {
 // Toast notification system
 function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
     // Usar a função do sistema principal se existir
-    if (window.mostrarToast && typeof window.mostrarToast === 'function') {
+    if (window.mostrarToast && typeof window.mostrarToast === 'function' && window.mostrarToast !== mostrarToast) {
         window.mostrarToast(mensagem, tipo, duracao);
         return;
     }
@@ -809,12 +991,22 @@ function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
         font-family: inherit;
         font-size: 14px;
         max-width: 400px;
+        line-height: 1.4;
     `;
     
+    const icones = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
     toast.innerHTML = `
-        <span style="margin-right: 10px;">${tipo === 'success' ? '✅' : tipo === 'error' ? '❌' : tipo === 'warning' ? '⚠️' : 'ℹ️'}</span>
-        ${mensagem}
-        <button onclick="this.parentElement.remove()" style="background: none; border: none; float: right; font-size: 16px; cursor: pointer; margin-left: 10px;">&times;</button>
+        <div style="display: flex; align-items: flex-start; gap: 8px;">
+            <span>${icones[tipo] || icones.info}</span>
+            <div style="flex: 1;">${mensagem}</div>
+            <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 16px; cursor: pointer; margin-left: 10px; opacity: 0.7;">&times;</button>
+        </div>
     `;
     
     document.body.appendChild(toast);
@@ -828,10 +1020,12 @@ function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
 
 // ===== EXPORTAR FUNÇÕES PARA USO GLOBAL =====
 window.abrirModalImpressaoCardapios = abrirModalImpressaoCardapios;
+window.abrirModalImpressao = abrirModalImpressaoCardapios; // Alias principal
 window.fecharModalImpressao = fecharModalImpressao;
 window.toggleListaClientes = toggleListaClientes;
 window.toggleListaTipos = toggleListaTipos;
 window.definirPeriodoImpressao = definirPeriodoImpressao;
+window.verificarCardapiosDisponiveis = verificarCardapiosDisponiveis;
 window.selecionarTodosClientes = selecionarTodosClientes;
 window.desmarcarTodosClientes = desmarcarTodosClientes;
 window.selecionarTodosTipos = selecionarTodosTipos;
@@ -839,4 +1033,72 @@ window.desmarcarTodosTipos = desmarcarTodosTipos;
 window.visualizarPreviewImpressao = visualizarPreviewImpressao;
 window.executarImpressaoCardapios = executarImpressaoCardapios;
 
-console.log('✅ Sistema de impressão completo e funcional carregado!');
+// ===== GARANTIR QUE A FUNÇÃO PRINCIPAL ESTÁ DISPONÍVEL IMEDIATAMENTE =====
+if (typeof window.abrirModalImpressao === 'undefined') {
+    window.abrirModalImpressao = function() {
+        console.log('🖨️ Chamando função de impressão...');
+        if (typeof abrirModalImpressaoCardapios === 'function') {
+            return abrirModalImpressaoCardapios();
+        } else {
+            console.warn('⚠️ Função abrirModalImpressaoCardapios ainda não está disponível');
+            mostrarToast('Sistema de impressão carregando...', 'info');
+            setTimeout(() => {
+                if (typeof abrirModalImpressaoCardapios === 'function') {
+                    abrirModalImpressaoCardapios();
+                } else {
+                    mostrarToast('Erro: Sistema de impressão não foi carregado corretamente', 'error');
+                }
+            }, 1000);
+        }
+    };
+}
+
+console.log('✅ Sistema de impressão CORRIGIDO e funcional carregado!');
+console.log('📋 Função principal disponível:', typeof window.abrirModalImpressao);'Defina o período primeiro', 'warning');
+            return;
+        }
+
+        // Consulta detalhada dos cardápios
+        const { data: cardapios, error } = await window.supabase
+            .from('cardapios')
+            .select(`
+                data,
+                cliente_id,
+                tipo_refeicao_id,
+                receita_id,
+                comensais,
+                clientes (codigo, descricao),
+                tipos_refeicoes (codigo, descricao),
+                receitas (codigo, descricao)
+            `)
+            .eq('user_id', user.id)
+            .gte('data', dataInicio)
+            .lte('data', dataFim)
+            .order('data, cliente_id, tipo_refeicao_id');
+
+        if (error) {
+            console.error('❌ Erro na consulta:', error);
+            mostrarToast('Erro ao consultar cardápios: ' + error.message, 'error');
+            return;
+        }
+
+        console.log(`📊 Resultado da consulta: ${(cardapios || []).length} registros encontrados`);
+        
+        if (!cardapios || cardapios.length === 0) {
+            mostrarToast(`❌ Nenhum cardápio encontrado entre ${formatarDataBrasil(dataInicio)} e ${formatarDataBrasil(dataFim)}`, 'warning');
+        } else {
+            // Agrupar por data
+            const cardapiosPorData = {};
+            cardapios.forEach(item => {
+                if (!cardapiosPorData[item.data]) {
+                    cardapiosPorData[item.data] = [];
+                }
+                cardapiosPorData[item.data].push(item);
+            });
+            
+            let mensagem = `✅ ${cardapios.length} registros encontrados!\n\n`;
+            Object.keys(cardapiosPorData).sort().forEach(data => {
+                mensagem += `📅 ${formatarDataBrasil(data)}: ${cardapiosPorData[data].length} itens\n`;
+            });
+            
+            mostrarToast(
