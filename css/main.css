@@ -1732,3 +1732,199 @@ textarea:focus,
     border-color: #28a745;
     box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
 }
+
+/* ===== CSS PARA INDICADORES DE DATA ===== */
+/* Adicione este CSS ao final do arquivo main.css */
+
+/* Indicadores visuais para o campo de data */
+#dataCardapio.data-hoje {
+    border: 2px solid #28a745;
+    background: #f8fff9;
+    color: #155724;
+    font-weight: 600;
+}
+
+#dataCardapio.data-passada {
+    border: 2px solid #6c757d;
+    background: #f8f9fa;
+    color: #495057;
+}
+
+#dataCardapio.data-futura {
+    border: 2px solid #007bff;
+    background: #e7f3ff;
+    color: #004085;
+    font-weight: 600;
+}
+
+/* ===== CSS PARA INDICADORES DE DATA ===== */
+/* Adicione este CSS ao final do arquivo main.css */
+
+/* Indicadores visuais para o campo de data */
+#dataCardapio.data-hoje {
+    border: 2px solid #28a745;
+    background: #f8fff9;
+    color: #155724;
+    font-weight: 600;
+}
+
+#dataCardapio.data-passada {
+    border: 2px solid #6c757d;
+    background: #f8f9fa;
+    color: #495057;
+}
+
+#dataCardapio.data-futura {
+    border: 2px solid #007bff;
+    background: #e7f3ff;
+    color: #004085;
+    font-weight: 600;
+}
+
+/* Melhorias para o header de informações */
+.cardapio-info-header {
+    background: #e7f3ff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2196f3;
+    animation: slideIn 0.3s ease;
+}
+
+.cardapio-info-header h4 {
+    margin: 0 0 8px 0;
+    color: #1976d2;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cardapio-info-header p {
+    margin: 0;
+    color: #333;
+    font-size: 14px;
+}
+
+/* Animação de entrada */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Indicador de dados salvos vs novos */
+.receita-item-tabular.saved {
+    border-left: 4px solid #28a745;
+    background: #f8fff9;
+}
+
+.receita-item-tabular.new {
+    border-left: 4px solid #007bff;
+    background: #e7f3ff;
+}
+
+.receita-item-tabular.modified {
+    border-left: 4px solid #ffc107;
+    background: #fffef8;
+}
+
+/* Melhorias no layout geral */
+.cardapio-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 200px 150px;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: end;
+}
+
+/* Responsividade para o indicador de data */
+@media (max-width: 768px) {
+    .cardapio-form-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .cardapio-info-header {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .cardapio-info-header h4 {
+        font-size: 14px;
+    }
+    
+    .cardapio-info-header p {
+        font-size: 13px;
+    }
+}
+
+/* Estados de loading para quando está salvando */
+.saving-indicator {
+    position: relative;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.saving-indicator::after {
+    content: "💾 Salvando...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 1000;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Melhorias visuais para botões de ação por data */
+.data-actions {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border: 1px solid #e9ecef;
+}
+
+.data-actions .btn {
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+/* Indicador visual quando tem cardápio salvo */
+.has-saved-data {
+    position: relative;
+}
+
+.has-saved-data::before {
+    content: "💾";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
