@@ -22,7 +22,7 @@ function aguardarSupabaseClientes(callback, tentativas = 0) {
         setTimeout(() => aguardarSupabaseClientes(callback, tentativas + 1), 100);
     } else {
         console.error('❌ Timeout: Supabase não ficou disponível');
-        alert('Erro: Não foi possível conectar com o Supabase.');
+        mostrarToast('Erro: Não foi possível conectar com o Supabase.');
     }
 }
 
@@ -31,7 +31,7 @@ async function verificarAutenticacaoClientes() {
     try {
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) {
-            alert('Você precisa estar logado para acessar esta página.');
+            mostrarToast('Você precisa estar logado para acessar esta página.');
             window.location.href = 'login.html';
             return false;
         }
@@ -114,7 +114,7 @@ async function carregarClientes() {
         
     } catch (error) {
         console.error('❌ Erro ao carregar clientes:', error);
-        alert('Erro ao carregar clientes: ' + error.message);
+        mostrarToast('Erro ao carregar clientes: ' + error.message);
     }
 }
 
@@ -185,13 +185,13 @@ async function salvarCliente() {
 
         // Validações
         if (!descricao) {
-            alert('Por favor, informe a descrição do cliente');
+            mostrarToast('Por favor, informe a descrição do cliente');
             document.getElementById('descricaoCliente').focus();
             return;
         }
 
         if (!codigo) {
-            alert('Por favor, informe o código do cliente');
+            mostrarToast('Por favor, informe o código do cliente');
             document.getElementById('codigoCliente').focus();
             return;
         }
@@ -240,7 +240,7 @@ async function salvarCliente() {
         await salvarTiposRefeicaoCliente(clienteId, user.id);
 
         console.log('✅ Cliente salvo com sucesso!');
-        alert(window.clientesModulo.editandoCliente !== null ? 'Cliente atualizado com sucesso!' : 'Cliente criado com sucesso!');
+        mostrarToast(window.clientesModulo.editandoCliente !== null ? 'Cliente atualizado com sucesso!' : 'Cliente criado com sucesso!');
         
         // Limpar formulário e recarregar lista
         limparFormularioCliente();
@@ -248,7 +248,7 @@ async function salvarCliente() {
 
     } catch (error) {
         console.error('❌ Erro ao salvar cliente:', error);
-        alert('Erro ao salvar cliente: ' + error.message);
+        mostrarToast('Erro ao salvar cliente: ' + error.message);
     }
 }
 
@@ -346,7 +346,7 @@ function atualizarTabelaClientes() {
 async function editarCliente(index) {
     const cliente = window.clientesModulo.clientesCarregados[index];
     if (!cliente) {
-        alert('Cliente não encontrado');
+        mostrarToast('Cliente não encontrado');
         return;
     }
 
@@ -369,7 +369,7 @@ async function excluirCliente(index) {
     try {
         const cliente = window.clientesModulo.clientesCarregados[index];
         if (!cliente) {
-            alert('Cliente não encontrado');
+            mostrarToast('Cliente não encontrado');
             return;
         }
 
@@ -398,12 +398,12 @@ async function excluirCliente(index) {
         if (error) throw error;
 
         console.log('✅ Cliente excluído com sucesso!');
-        alert('Cliente excluído com sucesso!');
+        mostrarToast('Cliente excluído com sucesso!');
         await carregarClientes();
 
     } catch (error) {
         console.error('❌ Erro ao excluir cliente:', error);
-        alert('Erro ao excluir cliente: ' + error.message);
+        mostrarToast('Erro ao excluir cliente: ' + error.message);
     }
 }
 
@@ -444,18 +444,18 @@ function adicionarTipoRefeicao(index) {
     const tipo = tiposDisponiveis[index];
     
     if (!tipo) {
-        alert('Tipo de refeição não encontrado');
+        mostrarToast('Tipo de refeição não encontrado');
         return;
     }
     
     if (window.clientesModulo.tiposRefeicaoTemp.find(t => t.id === tipo.id)) {
-        alert('Tipo de refeição já adicionado!');
+        mostrarToast('Tipo de refeição já adicionado!');
         return;
     }
 
     window.clientesModulo.tiposRefeicaoTemp.push(tipo);
     atualizarTiposRefeicaoVinculados();
-    alert('Tipo de refeição adicionado!');
+    mostrarToast('Tipo de refeição adicionado!');
 }
 
 // Atualizar lista de tipos vinculados
@@ -486,7 +486,7 @@ function removerTipoRefeicao(index) {
     if (confirm('Tem certeza que deseja remover este tipo de refeição?')) {
         window.clientesModulo.tiposRefeicaoTemp.splice(index, 1);
         atualizarTiposRefeicaoVinculados();
-        alert('Tipo de refeição removido!');
+        mostrarToast('Tipo de refeição removido!');
     }
 }
 

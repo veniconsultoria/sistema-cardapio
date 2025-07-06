@@ -15,7 +15,7 @@ function aguardarSupabaseTipos(callback, tentativas = 0) {
         setTimeout(() => aguardarSupabaseTipos(callback, tentativas + 1), 100);
     } else {
         console.error('❌ Timeout: Supabase não ficou disponível');
-        alert('Erro: Não foi possível conectar com o Supabase.');
+        mostrarToast('Erro: Não foi possível conectar com o Supabase.');
     }
 }
 
@@ -24,7 +24,7 @@ async function verificarAutenticacaoTipos() {
     try {
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) {
-            alert('Você precisa estar logado para acessar esta página.');
+            mostrarToast('Você precisa estar logado para acessar esta página.');
             window.location.href = 'login.html';
             return false;
         }
@@ -88,7 +88,7 @@ async function carregarTiposRefeicoes() {
         
     } catch (error) {
         console.error('❌ Erro ao carregar tipos de refeições:', error);
-        alert('Erro ao carregar tipos de refeições: ' + error.message);
+        mostrarToast('Erro ao carregar tipos de refeições: ' + error.message);
     }
 }
 
@@ -133,13 +133,13 @@ async function salvarTipoRefeicao() {
 
         // Validações
         if (!descricao) {
-            alert('Por favor, informe a descrição do tipo de refeição');
+            mostrarToast('Por favor, informe a descrição do tipo de refeição');
             document.getElementById('descricaoTipoRefeicao').focus();
             return;
         }
 
         if (!codigo) {
-            alert('Por favor, informe o código do tipo de refeição');
+            mostrarToast('Por favor, informe o código do tipo de refeição');
             document.getElementById('codigoTipoRefeicao').focus();
             return;
         }
@@ -174,7 +174,7 @@ async function salvarTipoRefeicao() {
         if (result.error) throw result.error;
 
         console.log('✅ Tipo de refeição salvo com sucesso!');
-        alert(editandoTipoRefeicao !== null ? 'Tipo de refeição atualizado com sucesso!' : 'Tipo de refeição criado com sucesso!');
+        mostrarToast(editandoTipoRefeicao !== null ? 'Tipo de refeição atualizado com sucesso!' : 'Tipo de refeição criado com sucesso!');
         
         // Limpar formulário e recarregar lista
         limparFormularioTipoRefeicao();
@@ -182,7 +182,7 @@ async function salvarTipoRefeicao() {
 
     } catch (error) {
         console.error('❌ Erro ao salvar tipo de refeição:', error);
-        alert('Erro ao salvar tipo de refeição: ' + error.message);
+        mostrarToast('Erro ao salvar tipo de refeição: ' + error.message);
     }
 }
 
@@ -236,7 +236,7 @@ function atualizarTabelaTiposRefeicoes() {
 function editarTipoRefeicao(index) {
     const tipo = tiposRefeicoesCarregados[index];
     if (!tipo) {
-        alert('Tipo de refeição não encontrado');
+        mostrarToast('Tipo de refeição não encontrado');
         return;
     }
 
@@ -252,7 +252,7 @@ async function excluirTipoRefeicao(index) {
     try {
         const tipo = tiposRefeicoesCarregados[index];
         if (!tipo) {
-            alert('Tipo de refeição não encontrado');
+            mostrarToast('Tipo de refeição não encontrado');
             return;
         }
 
@@ -274,12 +274,12 @@ async function excluirTipoRefeicao(index) {
         if (error) throw error;
 
         console.log('✅ Tipo de refeição excluído com sucesso!');
-        alert('Tipo de refeição excluído com sucesso!');
+        mostrarToast('Tipo de refeição excluído com sucesso!');
         await carregarTiposRefeicoes();
 
     } catch (error) {
         console.error('❌ Erro ao excluir tipo de refeição:', error);
-        alert('Erro ao excluir tipo de refeição: ' + error.message);
+        mostrarToast('Erro ao excluir tipo de refeição: ' + error.message);
     }
 }
 

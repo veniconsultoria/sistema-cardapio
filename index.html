@@ -36,7 +36,7 @@
                         <h2>🛒 Gestão de Produtos</h2>
                         <div>
                             <button class="btn btn-primary" onclick="abrirModalNovoProduto()">+ Novo Produto</button>
-                            <button class="btn btn-secondary" onclick="recarregarProdutos()">🔄 Recarregar</button>
+                            <button class="btn btn-secondary" onclick="recarregarProdutos()">📋 Listar Produtos</button>
                         </div>
                     </div>
 
@@ -229,20 +229,21 @@
                     </div>
                 </div>
 
-                <div class="section">
-                    <h3>Cálculos</h3>
-                    <button type="button" class="btn btn-success" onclick="calcularReceita()">Calcular</button>
-                    <div id="resultadosCalculos" class="form-grid">
-                        <div class="card">
-                            <h4>Preço Total</h4>
-                            <p id="precoTotal">R$ 0,00</p>
-                        </div>
-                        <div class="card">
-                            <h4>Peso Final</h4>
-                            <p id="pesoFinalCalculado">0,000 KG</p>
-                        </div>
-                    </div>
-                </div>
+<!-- Substituir a div inteira de Cálculos por: -->
+<div class="section">
+    <h3>Cálculos</h3>
+    <button type="button" class="btn btn-success" onclick="calcularReceita()">Atualizar e Calcular</button>
+    <div id="resultadosCalculos" class="form-grid">
+        <div class="card">
+            <h4>Preço Total</h4>
+            <p id="precoTotal">R$ 0,00</p>
+        </div>
+        <div class="card">
+            <h4>Peso Final</h4>
+            <p id="pesoFinalCalculado">0,000 KG</p>
+        </div>
+    </div>
+</div>
 
                 <div class="section">
                     <h3>Lista de Receitas</h3>
@@ -786,7 +787,7 @@
                 alert('Produto excluído com sucesso!');
                 await carregarProdutosNovoSistema();
             } catch (error) {
-                alert('Erro: ' + error.message);
+                mostrarToast('Erro: ' + error.message);
                 document.getElementById('ultimo-erro').textContent = error.message;
             }
         }
@@ -863,5 +864,69 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
     </style>
+
+    <script>
+// Função showTab de emergência - ADICIONAR ANTES DA TAG </body>
+function showTab(tabName) {
+    console.log('📂 Navegando para:', tabName);
+    
+    // Ocultar todas as abas
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+    });
+    
+    // Remover active de todos os botões
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Mostrar aba selecionada
+    const tabContent = document.getElementById(tabName);
+    if (tabContent) {
+        tabContent.classList.remove('hidden');
+    }
+    
+    // Marcar botão como ativo
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+    
+    // Inicializar módulos específicos
+    setTimeout(() => {
+        switch(tabName) {
+            case 'produtos-novo':
+                if (typeof inicializarProdutosNovo === 'function') {
+                    inicializarProdutosNovo();
+                }
+                break;
+            case 'receitas':
+                if (typeof inicializarReceitas === 'function') {
+                    inicializarReceitas();
+                }
+                break;
+            case 'tipos-refeicoes':
+                if (typeof inicializarTiposRefeicoes === 'function') {
+                    inicializarTiposRefeicoes();
+                }
+                break;
+            case 'clientes':
+                if (typeof inicializarClientes === 'function') {
+                    inicializarClientes();
+                }
+                break;
+            case 'cardapio':
+                if (typeof inicializarCardapio === 'function') {
+                    inicializarCardapio();
+                }
+                break;
+        }
+    }, 100);
+}
+
+// Garantir que está disponível globalmente
+window.showTab = showTab;
+
+console.log('✅ showTab carregado!');
+</script>
 </body>
 </html>

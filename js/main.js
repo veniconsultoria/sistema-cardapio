@@ -515,3 +515,156 @@ console.log('✅ main.js carregado e corrigido!');
         text-align: center;
     }
 }
+
+// ===== CORREÇÃO PARA FUNÇÃO SHOWTAB =====
+// Adicionar ao final do arquivo js/main.js OU como script no index.html
+
+// Função showTab corrigida e melhorada
+function showTab(tabName) {
+    console.log('📂 Abrindo aba:', tabName);
+    
+    try {
+        // Ocultar todas as abas
+        const allTabs = document.querySelectorAll('.tab-content');
+        allTabs.forEach(tab => {
+            tab.classList.add('hidden');
+        });
+        
+        // Remover active de todos os botões de aba
+        const allTabButtons = document.querySelectorAll('.tab');
+        allTabButtons.forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Mostrar aba selecionada
+        const tabContent = document.getElementById(tabName);
+        if (tabContent) {
+            tabContent.classList.remove('hidden');
+            console.log('✅ Aba mostrada:', tabName);
+        } else {
+            console.error('❌ Aba não encontrada:', tabName);
+            return;
+        }
+        
+        // Marcar botão como ativo (encontrar pelo evento ou pelo texto)
+        const clickedButton = event?.target;
+        if (clickedButton && clickedButton.classList.contains('tab')) {
+            clickedButton.classList.add('active');
+        }
+        
+        // Inicializar módulos específicos quando necessário
+        setTimeout(() => {
+            initializeTabModule(tabName);
+        }, 100);
+        
+    } catch (error) {
+        console.error('❌ Erro ao mostrar aba:', error);
+        mostrarToast?.('Erro ao navegar entre as abas', 'error');
+    }
+}
+
+// Função para inicializar módulos específicos de cada aba
+function initializeTabModule(tabName) {
+    console.log('🚀 Inicializando módulo:', tabName);
+    
+    try {
+        switch(tabName) {
+            case 'produtos-novo':
+                if (typeof inicializarProdutosNovo === 'function') {
+                    inicializarProdutosNovo();
+                } else {
+                    console.warn('⚠️ Função inicializarProdutosNovo não encontrada');
+                }
+                break;
+                
+            case 'receitas':
+                if (typeof inicializarReceitas === 'function') {
+                    inicializarReceitas();
+                } else {
+                    console.warn('⚠️ Função inicializarReceitas não encontrada');
+                }
+                break;
+                
+            case 'tipos-refeicoes':
+                if (typeof inicializarTiposRefeicoes === 'function') {
+                    inicializarTiposRefeicoes();
+                } else {
+                    console.warn('⚠️ Função inicializarTiposRefeicoes não encontrada');
+                }
+                break;
+                
+            case 'clientes':
+                if (typeof inicializarClientes === 'function') {
+                    inicializarClientes();
+                } else {
+                    console.warn('⚠️ Função inicializarClientes não encontrada');
+                }
+                break;
+                
+            case 'cardapio':
+                if (typeof inicializarCardapio === 'function') {
+                    inicializarCardapio();
+                } else {
+                    console.warn('⚠️ Função inicializarCardapio não encontrada');
+                }
+                break;
+                
+            default:
+                console.log('📄 Aba sem inicialização específica:', tabName);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao inicializar módulo:', error);
+    }
+}
+
+// Exportar função para uso global
+window.showTab = showTab;
+window.initializeTabModule = initializeTabModule;
+
+// ===== FUNÇÃO MOSTRARTOAST GLOBAL (caso não exista) =====
+if (typeof window.mostrarToast === 'undefined') {
+    window.mostrarToast = function(mensagem, tipo = 'info', duracao = 3000) {
+        // Remover toast existente se houver
+        const existingToast = document.querySelector('.toast-notification');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        // Criar elemento toast
+        const toast = document.createElement('div');
+        toast.className = `toast-notification toast-${tipo}`;
+        
+        // Definir ícones por tipo
+        const icones = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+        };
+        
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-icon">${icones[tipo] || icones.info}</span>
+                <span class="toast-message">${mensagem}</span>
+                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+        
+        // Adicionar ao DOM
+        document.body.appendChild(toast);
+        
+        // Remover automaticamente
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.classList.add('toast-fade-out');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 300);
+            }
+        }, duracao);
+    };
+}
+
+console.log('✅ Função showTab carregada e exportada!');
