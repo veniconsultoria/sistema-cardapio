@@ -358,12 +358,95 @@ tr:hover {
 .expandable-header {
     background: linear-gradient(45deg, #667eea, #764ba2);
     color: white;
-    padding: 15px;
+    padding: 15px 20px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-weight: 600;
+    transition: all 0.3s ease;
 }
+
+.expandable-header:hover {
+    background: linear-gradient(45deg, #5a67d8, #6b46c1);
+}
+
+.expandable-content {
+    background: white;
+    padding: 0;
+    display: none;
+    border-top: 1px solid #e9ecef;
+}
+
+.expandable-content.active {
+    display: block;
+    padding: 20px;
+}
+
+/* Estilo para campos pequenos */
+.compact-input {
+    max-width: 120px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Melhorar aparência geral */
+.section {
+    margin-bottom: 25px;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Estilos para notas e avisos */
+.info-box {
+    background: #e7f3ff;
+    border-left: 4px solid #2196f3;
+    padding: 12px;
+    margin: 15px 0;
+    border-radius: 5px;
+}
+
+.info-box h4 {
+    margin: 0 0 8px 0;
+    color: #1976d2;
+    font-size: 14px;
+}
+
+.info-box ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #333;
+    font-size: 13px;
+}
+
+.info-box li {
+    margin-bottom: 4px;
+}
+
+/* Formatação especial para valores monetários e pesos */
+.valor-destaque {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+/* Animação para quando valores são atualizados */
+@keyframes highlight {
+    0% { background-color: #fff3cd; }
+    100% { background-color: transparent; }
+}
+
+.valor-atualizado {
+    animation: highlight 1s ease;
+}
+</style>
 
 .expandable-content {
     padding: 20px;

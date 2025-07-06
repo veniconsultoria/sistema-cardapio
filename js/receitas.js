@@ -1,4 +1,4 @@
-// receitas.js - Sistema de Receitas com Supabase (CÁLCULO CORRIGIDO)
+// receitas.js - Sistema de Receitas com Supabase (CORREÇÕES FINAIS)
 
 console.log('📁 Carregando receitas.js...');
 
@@ -230,10 +230,10 @@ async function gerarProximoCodigoReceitaModulo() {
     }
 }
 
-// Salvar receita - CORRIGIDO PARA USAR COLUNA 'texto'
+// ===== VALIDAÇÃO E SALVAMENTO CORRIGIDOS =====
 async function salvarReceitaModulo() {
     try {
-        console.log('💾 Salvando receita...');
+        console.log('💾 Tentando salvar receita...');
         
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
@@ -245,11 +245,7 @@ async function salvarReceitaModulo() {
         const unidadeRendimento = document.getElementById('unidadeRendimento').value;
         const textoReceita = getRecipeText();
 
-        let precoTotal = 0;
-        if (window.receitaTemporaria) {
-            precoTotal = window.receitaTemporaria.precoTotal || 0;
-        }
-
+        // VALIDAÇÕES OBRIGATÓRIAS
         if (!descricao) {
             mostrarToast('Por favor, informe a descrição da receita', 'warning');
             document.getElementById('descricaoReceita').focus();
@@ -262,10 +258,49 @@ async function salvarReceitaModulo() {
             return;
         }
 
+        // ✅ NOVA VALIDAÇÃO: Verificar se há ingredientes
+        if (!window.receitasModulo.ingredientesReceita || window.receitasModulo.ingredientesReceita.length === 0) {
+            mostrarToast('❌ Adicione pelo menos um ingrediente antes de salvar a receita!', 'error');
+            const btnIngredientes = document.querySelector('[onclick="abrirModalIngredientes()"]');
+            if (btnIngredientes) {
+                btnIngredientes.focus();
+            }
+            return;
+        }
+
+        // Recalcular valores antes de salvar
+        calcularReceita();
+        
+        // ✅ CORREÇÃO PRINCIPAL: Buscar preço correto dependendo se é edição ou nova receita
+        let precoTotal = 0;
+        if (window.receitasModulo.editandoReceita !== null) {
+            // Se estamos editando, pegar da receita carregada
+            const receitaAtual = window.receitasModulo.receitasCarregadas[window.receitasModulo.editandoReceita];
+            precoTotal = receitaAtual?.preco_total || 0;
+            console.log('📝 Editando receita - Preço total:', precoTotal);
+        } else {
+            // Se é nova receita, pegar da temporária
+            precoTotal = window.receitaTemporaria?.precoTotal || 0;
+            console.log('➕ Nova receita - Preço total:', precoTotal);
+        }
+
+        // ✅ CORREÇÃO: Buscar peso final correto dependendo se é edição ou nova receita
+        let pesoFinalSalvar = 0;
+        if (window.receitasModulo.editandoReceita !== null) {
+            // Se estamos editando, pegar da receita carregada
+            const receitaAtual = window.receitasModulo.receitasCarregadas[window.receitasModulo.editandoReceita];
+            pesoFinalSalvar = receitaAtual?.peso_final || pesoFinal;
+            console.log('📝 Editando receita - Peso final:', pesoFinalSalvar);
+        } else {
+            // Se é nova receita, pegar da temporária ou usar o calculado
+            pesoFinalSalvar = window.receitaTemporaria?.pesoFinal || pesoFinal;
+            console.log('➕ Nova receita - Peso final:', pesoFinalSalvar);
+        }
+
         const receitaData = {
             codigo,
             descricao,
-            peso_final: pesoFinal,
+            peso_final: pesoFinalSalvar,
             rendimento,
             unidade_rendimento: unidadeRendimento,
             preco_total: precoTotal,
@@ -300,8 +335,8 @@ async function salvarReceitaModulo() {
 
         mostrarToast(
             window.receitasModulo.editandoReceita !== null ? 
-            'Receita atualizada com sucesso!' : 
-            'Receita criada com sucesso!', 
+            '✅ Receita atualizada com sucesso!' : 
+            '✅ Receita criada com sucesso!', 
             'success'
         );
         
@@ -425,7 +460,7 @@ function atualizarTabelaReceitasModulo() {
     });
 }
 
-// Editar receita - CORRIGIDO PARA USAR 'texto'
+// ===== EDITAR RECEITA CORRIGIDA =====
 async function editarReceitaModulo(index) {
     const receita = window.receitasModulo.receitasCarregadas[index];
     if (!receita) {
@@ -433,23 +468,30 @@ async function editarReceitaModulo(index) {
         return;
     }
 
+    console.log('✏️ Editando receita:', receita.descricao);
+
     document.getElementById('codigoReceita').value = receita.codigo;
     document.getElementById('descricaoReceita').value = receita.descricao;
     document.getElementById('pesoFinal').value = receita.peso_final ? receita.peso_final.toFixed(3) : '0';
     document.getElementById('rendimento').value = receita.rendimento ? receita.rendimento.toFixed(3) : '0';
     document.getElementById('unidadeRendimento').value = receita.unidade_rendimento || 'UN';
     
+    // ✅ CORREÇÃO PRINCIPAL: Carregar ingredientes na memória temporária
     window.receitasModulo.ingredientesReceita = [...(receita.ingredientes || [])];
     atualizarTabelaIngredientesModulo();
     setRecipeText(receita.texto || '');
     
-    const precoTotal = document.getElementById('precoTotal');
-    const pesoCalculado = document.getElementById('pesoFinalCalculado');
-    if (precoTotal) precoTotal.textContent = `R$ ${receita.preco_total ? receita.preco_total.toFixed(2) : '0,00'}`;
-    if (pesoCalculado) pesoCalculado.textContent = `${receita.peso_final ? receita.peso_final.toFixed(3) : '0,000'} KG`;
-    
+    // ✅ CORREÇÃO: Definir receita como editando ANTES de calcular
     window.receitasModulo.editandoReceita = index;
+    
+    // ✅ IMPORTANTE: Calcular valores após carregar ingredientes
+    setTimeout(() => {
+        calcularReceita();
+    }, 100);
+    
     document.getElementById('descricaoReceita').focus();
+    
+    console.log('✅ Receita carregada para edição com', window.receitasModulo.ingredientesReceita.length, 'ingredientes');
 }
 
 // Excluir receita
@@ -482,13 +524,14 @@ async function excluirReceitaModulo(index) {
     }
 }
 
-// ===== FUNÇÕES DE INGREDIENTES =====
+// ===== FUNÇÕES DE INGREDIENTES MELHORADAS =====
 
 function abrirModalIngredientes() {
     document.getElementById('modalIngredientes').style.display = 'block';
     carregarListaIngredientesModulo();
 }
 
+// ✅ NOVA FUNÇÃO: Carregar lista com checkboxes
 function carregarListaIngredientesModulo() {
     const container = document.getElementById('listaIngredientes');
     if (!container) return;
@@ -500,15 +543,101 @@ function carregarListaIngredientesModulo() {
         return;
     }
 
+    // ✅ MELHORADO: Adicionar botões de seleção global
+    const headerControls = document.createElement('div');
+    headerControls.style.cssText = 'padding: 10px; border-bottom: 1px solid #e9ecef; margin-bottom: 10px; display: flex; gap: 10px; align-items: center;';
+    headerControls.innerHTML = `
+        <button type="button" class="btn btn-secondary btn-sm" onclick="selecionarTodosIngredientes()">Selecionar Todos</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="desmarcarTodosIngredientes()">Desmarcar Todos</button>
+        <button type="button" class="btn btn-primary" onclick="adicionarIngredientesSelecionados()">Adicionar Selecionados</button>
+    `;
+    container.appendChild(headerControls);
+
+    // ✅ MELHORADO: Lista com checkboxes
     window.receitasModulo.produtosCarregados.forEach((produto, index) => {
         const div = document.createElement('div');
         div.className = 'ingredient-item';
+        div.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid #e9ecef; border-radius: 5px; margin-bottom: 5px; background: white;';
+        
+        // Verificar se ingrediente já foi adicionado
+        const jaAdicionado = window.receitasModulo.ingredientesReceita.find(ing => ing.codigoProduto === produto.codigo);
+        
         div.innerHTML = `
-            <span>${produto.codigo} - ${produto.descricao}</span>
-            <button class="btn btn-primary" onclick="adicionarIngredienteModulo(${index})">Adicionar</button>
+            <input type="checkbox" id="produto-${index}" value="${index}" ${jaAdicionado ? 'disabled checked' : ''}>
+            <label for="produto-${index}" style="flex: 1; margin: 0; cursor: pointer; ${jaAdicionado ? 'color: #6c757d;' : ''}">${produto.codigo} - ${produto.descricao}${jaAdicionado ? ' ✅' : ''}</label>
+            <span style="font-size: 12px; color: #666;">R$ ${parseFloat(produto.preco || 0).toFixed(2)}</span>
         `;
         container.appendChild(div);
     });
+}
+
+// ✅ NOVA FUNÇÃO: Selecionar todos os ingredientes
+function selecionarTodosIngredientes() {
+    const checkboxes = document.querySelectorAll('#listaIngredientes input[type="checkbox"]:not(:disabled)');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+// ✅ NOVA FUNÇÃO: Desmarcar todos os ingredientes
+function desmarcarTodosIngredientes() {
+    const checkboxes = document.querySelectorAll('#listaIngredientes input[type="checkbox"]:not(:disabled)');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+// ✅ NOVA FUNÇÃO: Adicionar ingredientes selecionados
+function adicionarIngredientesSelecionados() {
+    const checkboxes = document.querySelectorAll('#listaIngredientes input[type="checkbox"]:checked:not(:disabled)');
+    
+    if (checkboxes.length === 0) {
+        mostrarToast('Selecione pelo menos um ingrediente para adicionar', 'warning');
+        return;
+    }
+    
+    let adicionados = 0;
+    
+    checkboxes.forEach(checkbox => {
+        const produtoIndex = parseInt(checkbox.value);
+        const produto = window.receitasModulo.produtosCarregados[produtoIndex];
+        
+        if (!produto) return;
+        
+        // Verificar se já existe
+        if (window.receitasModulo.ingredientesReceita.find(ing => ing.codigoProduto === produto.codigo)) {
+            return; // Já adicionado
+        }
+
+        const ingrediente = {
+            codigoProduto: produto.codigo,
+            nome: produto.descricao,
+            quantidade: 0,
+            unidadeMedida: produto.unidade_medida,
+            perdaPercent: 0,
+            ganhoPercent: 0,
+            precoUnitario: produto.preco || 0,
+            produtoId: produto.id
+        };
+
+        window.receitasModulo.ingredientesReceita.push(ingrediente);
+        adicionados++;
+    });
+    
+    if (adicionados > 0) {
+        atualizarTabelaIngredientesModulo();
+        mostrarToast(`✅ ${adicionados} ingrediente(s) adicionado(s) com sucesso!`, 'success');
+        
+        // Fechar modal
+        fecharModal('modalIngredientes');
+        
+        // Recalcular após adicionar
+        setTimeout(() => {
+            calcularReceita();
+        }, 100);
+    } else {
+        mostrarToast('Todos os ingredientes selecionados já foram adicionados', 'info');
+    }
 }
 
 function filtrarIngredientes() {
@@ -521,6 +650,7 @@ function filtrarIngredientes() {
     });
 }
 
+// Função individual (mantida para compatibilidade)
 function adicionarIngredienteModulo(produtoIndex) {
     const produto = window.receitasModulo.produtosCarregados[produtoIndex];
     
@@ -560,7 +690,8 @@ function atualizarTabelaIngredientesModulo() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="8" style="text-align: center; color: #666; padding: 20px;">
-                    Nenhum ingrediente adicionado
+                    Nenhum ingrediente adicionado<br>
+                    <small>Use o botão "Selecionar Ingredientes" para adicionar produtos</small>
                 </td>
             </tr>
         `;
@@ -585,17 +716,19 @@ function atualizarTabelaIngredientesModulo() {
     });
 }
 
+// ✅ CORREÇÃO: Função de atualizar ingredientes melhorada
 function atualizarIngredienteModulo(index, campo, valor) {
     if (window.receitasModulo.ingredientesReceita[index]) {
         const valorNumerico = parseFloat(valor) || 0;
         window.receitasModulo.ingredientesReceita[index][campo] = valorNumerico;
         
-        console.log(`Ingrediente ${index} atualizado - ${campo}: ${valorNumerico}`);
+        console.log(`✅ Ingrediente ${index} atualizado - ${campo}: ${valorNumerico}`);
         
-        // Auto-calcular após qualquer mudança
-        setTimeout(() => {
+        // ✅ CORREÇÃO: Auto-calcular após qualquer mudança (com delay para evitar múltiplas chamadas)
+        clearTimeout(window.calculoTimeout);
+        window.calculoTimeout = setTimeout(() => {
             calcularReceita();
-        }, 100);
+        }, 300);
     }
 }
 
@@ -613,7 +746,7 @@ function removerIngredienteModulo(index) {
     }
 }
 
-// ===== FUNÇÃO DE CALCULAR CORRIGIDA =====
+// ===== FUNÇÃO DE CALCULAR CORRIGIDA FINAL =====
 function calcularReceita() {
     console.log('🧮 Iniciando cálculo da receita...');
     
@@ -633,8 +766,16 @@ function calcularReceita() {
         if (pesoCalculadoEl) pesoCalculadoEl.textContent = '0,000 KG';
         if (pesoFinalEl) pesoFinalEl.value = '0';
         
+        // Limpar valores temporários
+        if (window.receitaTemporaria) {
+            window.receitaTemporaria.precoTotal = 0;
+            window.receitaTemporaria.pesoFinal = 0;
+        }
+        
         return;
     }
+
+    console.log(`📊 Calculando ${window.receitasModulo.ingredientesReceita.length} ingredientes...`);
 
     window.receitasModulo.ingredientesReceita.forEach((ingrediente, index) => {
         console.log(`Calculando ingrediente ${index}:`, ingrediente);
@@ -679,11 +820,15 @@ function calcularReceita() {
     if (pesoCalculadoEl) pesoCalculadoEl.textContent = `${pesoFinal.toFixed(3)} KG`;
     if (pesoFinalEl) pesoFinalEl.value = pesoFinal.toFixed(3);
 
-    // Salvar valores calculados na memória temporária
+    // ✅ CORREÇÃO PRINCIPAL: Salvar valores na estrutura correta
     if (window.receitasModulo.editandoReceita !== null) {
         // Se estamos editando uma receita existente
-        window.receitasModulo.receitasCarregadas[window.receitasModulo.editandoReceita].preco_total = precoTotal;
-        window.receitasModulo.receitasCarregadas[window.receitasModulo.editandoReceita].peso_final = pesoFinal;
+        const receitaIndex = window.receitasModulo.editandoReceita;
+        if (window.receitasModulo.receitasCarregadas[receitaIndex]) {
+            window.receitasModulo.receitasCarregadas[receitaIndex].preco_total = precoTotal;
+            window.receitasModulo.receitasCarregadas[receitaIndex].peso_final = pesoFinal;
+            console.log(`💾 Valores salvos na receita editada (índice ${receitaIndex}): Preço=R${precoTotal.toFixed(2)}, Peso=${pesoFinal.toFixed(3)}KG`);
+        }
     } else {
         // Se é uma receita nova
         if (!window.receitaTemporaria) {
@@ -691,6 +836,7 @@ function calcularReceita() {
         }
         window.receitaTemporaria.precoTotal = precoTotal;
         window.receitaTemporaria.pesoFinal = pesoFinal;
+        console.log(`💾 Valores salvos na receita temporária: Preço=R${precoTotal.toFixed(2)}, Peso=${pesoFinal.toFixed(3)}KG`);
     }
 
     mostrarToast('✅ Cálculos realizados com sucesso!', 'success');
@@ -949,6 +1095,14 @@ function initializeResizeHandle() {
     });
 }
 
+// Fechar modal
+function fecharModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
 // Toast notification system
 function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
     // Remover toast existente se houver
@@ -1015,6 +1169,10 @@ window.updateCharCount = updateCharCount;
 window.updateToolbarButtons = updateToolbarButtons;
 window.mostrarToast = mostrarToast;
 window.atualizarTabelaIngredientesModulo = atualizarTabelaIngredientesModulo;
+window.selecionarTodosIngredientes = selecionarTodosIngredientes;
+window.desmarcarTodosIngredientes = desmarcarTodosIngredientes;
+window.adicionarIngredientesSelecionados = adicionarIngredientesSelecionados;
+window.fecharModal = fecharModal;
 
 // Alias para compatibilidade
 window.adicionarIngrediente = adicionarIngredienteModulo;
@@ -1025,4 +1183,4 @@ window.excluirReceita = excluirReceitaModulo;
 window.salvarReceita = salvarReceitaModulo;
 window.limparFormularioReceita = limparFormularioReceitaModulo;
 
-console.log('✅ receitas.js CORRIGIDO - Cálculo de preço funcionando!');
+console.log('✅ receitas.js FINAL - Todas as correções aplicadas!');

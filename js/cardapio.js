@@ -1,4 +1,4 @@
-// cardapio.js - Sistema de Cardápios com Supabase (CORRIGIDO DROPDOWN CLIENTES)
+// cardapio.js - Sistema de Cardápios com Supabase (AJUSTES PARA PLANEJAMENTO)
 
 console.log('📁 Carregando cardapio.js...');
 
@@ -112,7 +112,7 @@ async function carregarDadosIniciais() {
     }
 }
 
-// Carregar clientes do Supabase - CORRIGIDO COM LOGS DETALHADOS
+// Carregar clientes do Supabase
 async function carregarClientes() {
     try {
         console.log('📥 Carregando clientes do Supabase...');
@@ -122,7 +122,6 @@ async function carregarClientes() {
 
         console.log('👤 Usuário autenticado:', user.email);
 
-        // ESTRATÉGIA MELHORADA: Carregar clientes e depois tipos de refeição
         const { data: clientesData, error: clientesError } = await window.supabase
             .from('clientes')
             .select('*')
@@ -136,21 +135,18 @@ async function carregarClientes() {
 
         console.log(`📊 ${(clientesData || []).length} clientes encontrados no banco`);
 
-        // Se não há clientes, inicializar array vazio
         if (!clientesData || clientesData.length === 0) {
             clientesCarregados = [];
             console.log('⚠️ Nenhum cliente encontrado no banco de dados');
             return;
         }
 
-        // Agora carregar tipos de refeição para cada cliente
         const clientesComTipos = [];
         
         for (const cliente of clientesData) {
             console.log(`🔍 Processando cliente: ${cliente.codigo} - ${cliente.descricao}`);
             
             try {
-                // Buscar tipos de refeição vinculados ao cliente
                 const { data: tiposData, error: tiposError } = await window.supabase
                     .from('cliente_tipos_refeicao')
                     .select(`
@@ -171,7 +167,7 @@ async function carregarClientes() {
                 } else {
                     const tiposRefeicao = (tiposData || [])
                         .map(rel => rel.tipos_refeicoes)
-                        .filter(tipo => tipo !== null); // Filtrar tipos nulos
+                        .filter(tipo => tipo !== null);
                     
                     console.log(`✅ Cliente ${cliente.descricao}: ${tiposRefeicao.length} tipos de refeição encontrados`);
                     
@@ -191,11 +187,6 @@ async function carregarClientes() {
 
         clientesCarregados = clientesComTipos;
         console.log(`✅ ${clientesCarregados.length} clientes carregados com tipos de refeição`);
-        
-        // Log detalhado dos clientes para debug
-        clientesCarregados.forEach((cliente, index) => {
-            console.log(`📋 Cliente ${index}: ${cliente.codigo} - ${cliente.descricao} (${cliente.tiposRefeicao.length} tipos)`);
-        });
         
     } catch (error) {
         console.error('❌ Erro ao carregar clientes:', error);
@@ -227,7 +218,6 @@ async function carregarReceitas() {
         if (error) {
             console.warn('⚠️ Erro ao carregar receitas com ingredientes, tentando sem ingredientes...');
             
-            // Fallback: carregar apenas receitas
             const { data: receitasSimples, error: errorSimples } = await window.supabase
                 .from('receitas')
                 .select('*')
@@ -359,10 +349,8 @@ async function carregarCardapios() {
 function configurarEventos() {
     console.log('⚙️ Configurando eventos do cardápio...');
     
-    // Select de cliente
     const selectCliente = document.getElementById('clienteCardapio');
     if (selectCliente) {
-        // Remover event listeners existentes
         selectCliente.removeEventListener('change', carregarTiposRefeicaoCliente);
         selectCliente.addEventListener('change', carregarTiposRefeicaoCliente);
         console.log('✅ Event listener adicionado ao select de cliente');
@@ -370,7 +358,6 @@ function configurarEventos() {
         console.warn('⚠️ Elemento clienteCardapio não encontrado');
     }
     
-    // Input de data
     const inputData = document.getElementById('dataCardapio');
     if (inputData) {
         inputData.removeEventListener('change', carregarCardapioData);
@@ -381,7 +368,7 @@ function configurarEventos() {
     }
 }
 
-// Carregar clientes no select - FUNÇÃO CORRIGIDA PRINCIPAL
+// Carregar clientes no select
 function carregarClientesCardapio() {
     console.log('🔄 INICIANDO carregarClientesCardapio...');
     
@@ -393,10 +380,8 @@ function carregarClientesCardapio() {
     
     console.log('✅ Select encontrado:', select);
     
-    // Limpar opções existentes
     select.innerHTML = '';
     
-    // Adicionar opção padrão
     const optionPadrao = document.createElement('option');
     optionPadrao.value = '';
     optionPadrao.textContent = 'Selecione um cliente';
@@ -415,17 +400,15 @@ function carregarClientesCardapio() {
         return;
     }
 
-    // Adicionar todos os clientes
     let clientesAdicionados = 0;
     
     clientesCarregados.forEach((cliente, index) => {
         console.log(`➕ Adicionando cliente ${index}: ${cliente.codigo} - ${cliente.descricao}`);
         
         const option = document.createElement('option');
-        option.value = index.toString(); // Usar índice como value
+        option.value = index.toString();
         option.textContent = `${cliente.codigo} - ${cliente.descricao}`;
         
-        // Indicar visualmente se o cliente tem tipos de refeição
         if (!cliente.tiposRefeicao || cliente.tiposRefeicao.length === 0) {
             option.textContent += ' ⚠️';
             option.style.color = '#856404';
@@ -439,18 +422,9 @@ function carregarClientesCardapio() {
     });
     
     console.log(`✅ CONCLUÍDO: ${clientesAdicionados} clientes adicionados ao dropdown`);
-    
-    // Verificar se as opções foram realmente adicionadas
-    const totalOptions = select.options.length;
-    console.log(`📊 Total de opções no select após carregamento: ${totalOptions}`);
-    
-    // Log de todas as opções para debug
-    for (let i = 0; i < select.options.length; i++) {
-        console.log(`Opção ${i}: ${select.options[i].value} - ${select.options[i].textContent}`);
-    }
 }
 
-// Carregar tipos de refeição do cliente selecionado
+// ===== CARREGAR TIPOS DE REFEIÇÃO DO CLIENTE (AJUSTADO) =====
 function carregarTiposRefeicaoCliente() {
     console.log('🔄 Carregando tipos de refeição do cliente...');
     
@@ -498,7 +472,7 @@ function carregarTiposRefeicaoCliente() {
             <div class="expandable-content">
                 <div class="comensais-section">
                     <label>Comensais:</label>
-                    <input type="number" class="comensais-input" min="1" placeholder="0">
+                    <input type="number" class="comensais-input" min="1" max="99999" placeholder="0" style="width: 80px;">
                     <button class="btn btn-secondary" onclick="atualizarComensais(this)">Atualizar</button>
                 </div>
                 <button class="btn btn-primary" onclick="abrirModalReceitasTipo('${tipo.codigo}')">Adicionar Receitas</button>
@@ -514,7 +488,6 @@ function carregarTiposRefeicaoCliente() {
         console.log(`✅ Interface criada para tipo: ${tipo.descricao}`);
     });
     
-    // Carregar dados da data atual se houver
     carregarCardapioData();
 }
 
@@ -573,21 +546,7 @@ function filtrarReceitas() {
     });
 }
 
-// Fechar modal
-function fecharModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-// Carregar dados do cardápio para data específica
-function carregarCardapioData() {
-    console.log('📅 Carregando dados do cardápio para a data selecionada...');
-    // Esta função será implementada conforme necessário
-}
-
-// Adicionar receitas selecionadas
+// ===== ADICIONAR RECEITAS SELECIONADAS (AJUSTADO) =====
 function adicionarReceitasSelecionadas() {
     console.log('➕ Adicionando receitas selecionadas...');
     
@@ -601,7 +560,6 @@ function adicionarReceitasSelecionadas() {
         return;
     }
     
-    // Buscar receitas selecionadas
     const checkboxes = document.querySelectorAll('#listaReceitasModal input[type="checkbox"]:checked');
     
     if (checkboxes.length === 0) {
@@ -609,7 +567,6 @@ function adicionarReceitasSelecionadas() {
         return;
     }
     
-    // Container do tipo de refeição atual
     const tipoContainer = document.querySelector(`[data-tipo="${tipoRefeicaoAtualCardapio}"]`);
     if (!tipoContainer) {
         mostrarToast('Erro: Container do tipo de refeição não encontrado', 'error');
@@ -627,14 +584,13 @@ function adicionarReceitasSelecionadas() {
             return;
         }
         
-        // Verificar se receita já foi adicionada
         const receitaExistente = tipoContainer.querySelector(`[data-receita-codigo="${receita.codigo}"]`);
         if (receitaExistente) {
             console.log('Receita já existe:', receita.codigo);
             return;
         }
         
-        // Criar elemento da receita
+        // ✅ AJUSTADO: Nova estrutura com campos corretos
         const receitaElement = document.createElement('div');
         receitaElement.className = 'receita-item';
         receitaElement.setAttribute('data-receita-codigo', receita.codigo);
@@ -647,17 +603,23 @@ function adicionarReceitasSelecionadas() {
             </div>
             <div class="receita-detalhes">
                 <div class="receita-info">
-                    <label>Rendimento:</label>
-                    <span>${receita.rendimento || 0} ${receita.unidade_rendimento || 'UN'}</span>
+                    <label>Qtde. receita:</label>
+                    <input type="number" class="qtde-receita" value="${receita.rendimento || 1}" min="0" step="0.001" 
+                           onchange="atualizarQtdeReceita('${receita.codigo}', '${tipoRefeicaoAtualCardapio}', this.value)"
+                           style="width: 100px;">
+                    <span style="font-size: 12px; color: #666;">${receita.unidade_rendimento || 'UN'}</span>
                 </div>
                 <div class="receita-info">
-                    <label>Quantidade por pessoa:</label>
-                    <input type="number" class="quantidade-pessoa" value="1" min="0" step="0.001" 
-                           onchange="atualizarQuantidadeReceita('${receita.codigo}', '${tipoRefeicaoAtualCardapio}', this.value)">
+                    <label>Nº comensais:</label>
+                    <input type="number" class="num-comensais" value="1" min="0" max="99999" step="1" 
+                           onchange="atualizarNumComensais('${receita.codigo}', '${tipoRefeicaoAtualCardapio}', this.value)"
+                           style="width: 80px;">
                 </div>
                 <div class="receita-info">
                     <label>Total calculado:</label>
-                    <span class="total-calculado">0</span>
+                    <div class="total-calculado" style="font-weight: 600; color: #28a745;">
+                        <span class="total-peso">0,000</span> KG
+                    </div>
                 </div>
             </div>
         `;
@@ -671,15 +633,12 @@ function adicionarReceitasSelecionadas() {
     if (receitasAdicionadas > 0) {
         mostrarToast(`${receitasAdicionadas} receita(s) adicionada(s) com sucesso!`, 'success');
         
-        // Fechar modal
         fecharModal('modalReceitas');
         
-        // Limpar seleções
         checkboxes.forEach(checkbox => {
             checkbox.checked = false;
         });
         
-        // Atualizar cálculos se houver comensais definidos
         const comensaisInput = tipoContainer.closest('.expandable-content').querySelector('.comensais-input');
         if (comensaisInput && comensaisInput.value > 0) {
             atualizarCalculosReceitasTipo(tipoRefeicaoAtualCardapio);
@@ -689,75 +648,45 @@ function adicionarReceitasSelecionadas() {
     }
 }
 
-// Remover receita do cardápio
-function removerReceitaCardapio(receitaCodigo, tipoCodigo) {
-    if (!confirm('Tem certeza que deseja remover esta receita?')) {
-        return;
-    }
-    
-    const tipoContainer = document.querySelector(`[data-tipo="${tipoCodigo}"]`);
-    const receitaElement = tipoContainer?.querySelector(`[data-receita-codigo="${receitaCodigo}"]`);
-    
-    if (receitaElement) {
-        receitaElement.remove();
-        mostrarToast('Receita removida com sucesso!', 'success');
-        
-        // Recalcular totais
-        atualizarCalculosReceitasTipo(tipoCodigo);
-    }
-}
+// ===== NOVAS FUNÇÕES AJUSTADAS =====
 
-// Atualizar quantidade de receita
-function atualizarQuantidadeReceita(receitaCodigo, tipoCodigo, quantidade) {
-    console.log(`Atualizando quantidade - Receita: ${receitaCodigo}, Tipo: ${tipoCodigo}, Qtd: ${quantidade}`);
+// ✅ NOVA: Atualizar quantidade da receita
+function atualizarQtdeReceita(receitaCodigo, tipoCodigo, quantidade) {
+    console.log(`Atualizando qtde receita - Receita: ${receitaCodigo}, Tipo: ${tipoCodigo}, Qtd: ${quantidade}`);
     
     const tipoContainer = document.querySelector(`[data-tipo="${tipoCodigo}"]`);
     const receitaElement = tipoContainer?.querySelector(`[data-receita-codigo="${receitaCodigo}"]`);
     
     if (receitaElement) {
-        // Atualizar o valor no input (se necessário)
-        const input = receitaElement.querySelector('.quantidade-pessoa');
+        const input = receitaElement.querySelector('.qtde-receita');
         if (input && input.value !== quantidade) {
             input.value = quantidade;
         }
         
-        // Recalcular totais
         atualizarCalculosReceitasTipo(tipoCodigo);
-        
-        mostrarToast('Quantidade atualizada!', 'success');
+        mostrarToast('Quantidade da receita atualizada!', 'success');
     }
 }
 
-// Atualizar cálculos de um tipo de refeição
-function atualizarCalculosReceitasTipo(tipoCodigo) {
+// ✅ NOVA: Atualizar número de comensais da receita
+function atualizarNumComensais(receitaCodigo, tipoCodigo, numComensais) {
+    console.log(`Atualizando nº comensais - Receita: ${receitaCodigo}, Tipo: ${tipoCodigo}, Comensais: ${numComensais}`);
+    
     const tipoContainer = document.querySelector(`[data-tipo="${tipoCodigo}"]`);
-    if (!tipoContainer) return;
+    const receitaElement = tipoContainer?.querySelector(`[data-receita-codigo="${receitaCodigo}"]`);
     
-    // Buscar número de comensais
-    const comensaisInput = tipoContainer.closest('.expandable-content').querySelector('.comensais-input');
-    const comensais = parseInt(comensaisInput?.value) || 0;
-    
-    if (comensais === 0) {
-        console.log('Número de comensais não definido para cálculo');
-        return;
-    }
-    
-    // Atualizar cada receita
-    const receitasElements = tipoContainer.querySelectorAll('.receita-item');
-    receitasElements.forEach(receitaElement => {
-        const quantidadePorPessoa = parseFloat(receitaElement.querySelector('.quantidade-pessoa').value) || 0;
-        const totalCalculado = quantidadePorPessoa * comensais;
-        
-        const totalSpan = receitaElement.querySelector('.total-calculado');
-        if (totalSpan) {
-            totalSpan.textContent = totalCalculado.toFixed(3);
+    if (receitaElement) {
+        const input = receitaElement.querySelector('.num-comensais');
+        if (input && input.value !== numComensais) {
+            input.value = numComensais;
         }
-    });
-    
-    console.log(`Cálculos atualizados para ${tipoCodigo} com ${comensais} comensais`);
+        
+        atualizarCalculosReceitasTipo(tipoCodigo);
+        mostrarToast('Número de comensais atualizado!', 'success');
+    }
 }
 
-// Atualizar comensais
+// ✅ AJUSTADA: Atualizar comensais no acordeão
 function atualizarComensais(button) {
     const expandableContent = button.closest('.expandable-content');
     const comensaisInput = expandableContent.querySelector('.comensais-input');
@@ -776,19 +705,262 @@ function atualizarComensais(button) {
         return;
     }
     
-    // Atualizar campo global se necessário
-    const totalComensaisGlobal = document.getElementById('totalComensais');
-    if (totalComensaisGlobal && !totalComensaisGlobal.value) {
-        totalComensaisGlobal.value = comensais;
+    // ✅ NOVO: Atualizar TODOS os campos "Nº comensais" das receitas deste tipo
+    const tipoContainer = document.querySelector(`[data-tipo="${tipoCodigo}"]`);
+    const receitasElements = tipoContainer?.querySelectorAll('.receita-item');
+    
+    if (receitasElements) {
+        receitasElements.forEach(receitaElement => {
+            const numComensaisInput = receitaElement.querySelector('.num-comensais');
+            if (numComensaisInput) {
+                numComensaisInput.value = comensais;
+            }
+        });
     }
     
-    // Atualizar cálculos
     atualizarCalculosReceitasTipo(tipoCodigo);
-    
-    mostrarToast(`Comensais atualizados para ${comensais}`, 'success');
+    mostrarToast(`Comensais atualizados para ${comensais} em todas as receitas`, 'success');
 }
 
-// Calcular tipo de refeição
+// ✅ AJUSTADA: Cálculos com peso da receita
+function atualizarCalculosReceitasTipo(tipoCodigo) {
+    const tipoContainer = document.querySelector(`[data-tipo="${tipoCodigo}"]`);
+    if (!tipoContainer) return;
+    
+    console.log(`🧮 Calculando receitas para tipo: ${tipoCodigo}`);
+    
+    // Atualizar cada receita
+    const receitasElements = tipoContainer.querySelectorAll('.receita-item');
+    receitasElements.forEach(receitaElement => {
+        const qtdeReceita = parseFloat(receitaElement.querySelector('.qtde-receita').value) || 0;
+        const numComensais = parseInt(receitaElement.querySelector('.num-comensais').value) || 0;
+        
+        // ✅ NOVO CÁLCULO: Qtde. receita x Nº comensais
+        const totalCalculado = qtdeReceita * numComensais;
+        
+        const totalSpan = receitaElement.querySelector('.total-peso');
+        if (totalSpan) {
+            // ✅ FORMATO AJUSTADO: Mostrar sempre em KG com formatação brasileira
+            const totalFormatado = totalCalculado.toLocaleString('pt-BR', {
+                minimumFractionDigits: 3,
+                maximumFractionDigits: 3
+            });
+            totalSpan.textContent = totalFormatado;
+        }
+        
+        console.log(`Receita calculada: ${qtdeReceita} x ${numComensais} = ${totalCalculado.toFixed(3)} KG`);
+    });
+    
+    console.log(`✅ Cálculos atualizados para ${tipoCodigo}`);
+}
+
+// ✅ NOVA: Atualizar todos os tipos com total de comensais
+function atualizarParaTodos() {
+    console.log('🔄 Atualizando comensais para todos os tipos...');
+    
+    const totalComensaisInput = document.getElementById('totalComensais');
+    if (!totalComensaisInput) {
+        mostrarToast('Campo "Total Comensais" não encontrado', 'error');
+        return;
+    }
+    
+    const totalComensais = parseInt(totalComensaisInput.value) || 0;
+    
+    if (totalComensais <= 0) {
+        mostrarToast('Informe um número válido de comensais', 'warning');
+        totalComensaisInput.focus();
+        return;
+    }
+    
+    if (!clienteAtualCardapio || !clienteAtualCardapio.tiposRefeicao) {
+        mostrarToast('Selecione um cliente primeiro', 'warning');
+        return;
+    }
+    
+    let tiposAtualizados = 0;
+    
+    // Atualizar todos os tipos de refeição
+    clienteAtualCardapio.tiposRefeicao.forEach(tipo => {
+        const tipoContainer = document.querySelector(`[data-tipo="${tipo.codigo}"]`);
+        if (!tipoContainer) return;
+        
+        // Atualizar campo comensais do acordeão
+        const expandableContent = tipoContainer.closest('.expandable-content');
+        const comensaisInput = expandableContent?.querySelector('.comensais-input');
+        if (comensaisInput) {
+            comensaisInput.value = totalComensais;
+        }
+        
+        // Atualizar todos os campos "Nº comensais" das receitas deste tipo
+        const receitasElements = tipoContainer.querySelectorAll('.receita-item');
+        receitasElements.forEach(receitaElement => {
+            const numComensaisInput = receitaElement.querySelector('.num-comensais');
+            if (numComensaisInput) {
+                numComensaisInput.value = totalComensais;
+            }
+        });
+        
+        tiposAtualizados++;
+    });
+    
+    mostrarToast(`✅ ${totalComensais} comensais aplicados a ${tiposAtualizados} tipos de refeição`, 'success');
+}
+
+// ✅ NOVA: Calcular para todos os tipos
+function calcularParaTodos() {
+    console.log('🧮 Calculando para todos os tipos...');
+    
+    if (!clienteAtualCardapio || !clienteAtualCardapio.tiposRefeicao) {
+        mostrarToast('Selecione um cliente primeiro', 'warning');
+        return;
+    }
+    
+    let tiposCalculados = 0;
+    let totalReceitas = 0;
+    
+    clienteAtualCardapio.tiposRefeicao.forEach(tipo => {
+        const tipoContainer = document.querySelector(`[data-tipo="${tipo.codigo}"]`);
+        if (!tipoContainer) return;
+        
+        const receitasElements = tipoContainer.querySelectorAll('.receita-item');
+        if (receitasElements.length === 0) return;
+        
+        // Verificar se tem comensais definidos
+        const expandableContent = tipoContainer.closest('.expandable-content');
+        const comensaisInput = expandableContent?.querySelector('.comensais-input');
+        const comensais = parseInt(comensaisInput?.value) || 0;
+        
+        if (comensais <= 0) {
+            mostrarToast(`Defina comensais para ${tipo.descricao} antes de calcular`, 'warning');
+            return;
+        }
+        
+        atualizarCalculosReceitasTipo(tipo.codigo);
+        tiposCalculados++;
+        totalReceitas += receitasElements.length;
+    });
+    
+    if (tiposCalculados > 0) {
+        mostrarToast(`✅ Calculados ${tiposCalculados} tipos de refeição (${totalReceitas} receitas)`, 'success');
+    } else {
+        mostrarToast('Nenhum tipo de refeição foi calculado. Verifique se há receitas e comensais definidos.', 'warning');
+    }
+}
+
+// ✅ NOVA: Gravar para todos os tipos
+async function gravarParaTodos() {
+    console.log('💾 Gravando cardápio para todos os tipos...');
+    
+    if (!clienteAtualCardapio) {
+        mostrarToast('Selecione um cliente primeiro', 'error');
+        return;
+    }
+    
+    const dataCardapio = document.getElementById('dataCardapio')?.value;
+    if (!dataCardapio) {
+        mostrarToast('Selecione uma data primeiro', 'error');
+        return;
+    }
+    
+    try {
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
+        
+        let totalGravados = 0;
+        let totalReceitas = 0;
+        
+        // Processar cada tipo de refeição
+        for (const tipo of clienteAtualCardapio.tiposRefeicao) {
+            const tipoContainer = document.querySelector(`[data-tipo="${tipo.codigo}"]`);
+            if (!tipoContainer) continue;
+            
+            const receitasElements = tipoContainer.querySelectorAll('.receita-item');
+            if (receitasElements.length === 0) continue;
+            
+            // Verificar comensais
+            const expandableContent = tipoContainer.closest('.expandable-content');
+            const comensaisInput = expandableContent?.querySelector('.comensais-input');
+            const comensais = parseInt(comensaisInput?.value) || 0;
+            
+            if (comensais <= 0) {
+                console.warn(`Tipo ${tipo.descricao} sem comensais definidos, pulando...`);
+                continue;
+            }
+            
+            // Gravar cada receita deste tipo
+            for (const receitaElement of receitasElements) {
+                const receitaCodigo = receitaElement.getAttribute('data-receita-codigo');
+                const receita = receitasCarregadas.find(r => r.codigo === receitaCodigo);
+                
+                if (!receita) continue;
+                
+                const qtdeReceita = parseFloat(receitaElement.querySelector('.qtde-receita').value) || 0;
+                const numComensais = parseInt(receitaElement.querySelector('.num-comensais').value) || 0;
+                const totalCalculado = qtdeReceita * numComensais;
+                
+                // Preparar dados para gravar
+                const cardapioData = {
+                    data: dataCardapio,
+                    cliente_id: clienteAtualCardapio.id,
+                    tipo_refeicao_id: tipo.id,
+                    receita_id: receita.id,
+                    comensais: comensais,
+                    quantidade_por_pessoa: qtdeReceita,
+                    total_por_comensais: totalCalculado,
+                    unidade_basica: receita.unidade_rendimento || 'UN',
+                    alterada: false,
+                    user_id: user.id
+                };
+                
+                // Verificar se já existe para atualizar ou criar
+                const { data: existente } = await window.supabase
+                    .from('cardapios')
+                    .select('id')
+                    .eq('data', dataCardapio)
+                    .eq('cliente_id', clienteAtualCardapio.id)
+                    .eq('tipo_refeicao_id', tipo.id)
+                    .eq('receita_id', receita.id)
+                    .eq('user_id', user.id)
+                    .single();
+                
+                let result;
+                if (existente) {
+                    // Atualizar existente
+                    result = await window.supabase
+                        .from('cardapios')
+                        .update(cardapioData)
+                        .eq('id', existente.id);
+                } else {
+                    // Criar novo
+                    result = await window.supabase
+                        .from('cardapios')
+                        .insert([cardapioData]);
+                }
+                
+                if (result.error) {
+                    console.error('Erro ao gravar receita:', result.error);
+                } else {
+                    totalReceitas++;
+                }
+            }
+            
+            totalGravados++;
+        }
+        
+        if (totalGravados > 0) {
+            mostrarToast(`✅ Cardápio gravado com sucesso! ${totalGravados} tipos, ${totalReceitas} receitas`, 'success');
+            await carregarCardapios(); // Recarregar para atualizar dados
+        } else {
+            mostrarToast('Nenhum item foi gravado. Verifique se há receitas e comensais definidos.', 'warning');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao gravar cardápio:', error);
+        mostrarToast('Erro ao gravar cardápio: ' + error.message, 'error');
+    }
+}
+
+// Calcular tipo de refeição individual
 function calcularTipoRefeicao(tipoCodigo) {
     console.log('🧮 Calculando tipo de refeição:', tipoCodigo);
     
@@ -814,47 +986,159 @@ function calcularTipoRefeicao(tipoCodigo) {
         return;
     }
     
-    // Atualizar cálculos
     atualizarCalculosReceitasTipo(tipoCodigo);
-    
     mostrarToast('Cálculos realizados com sucesso!', 'success');
 }
 
-// Gravar tipo de refeição
-function gravarTipoRefeicao(tipoCodigo) {
-    console.log('💾 Gravando tipo de refeição...', tipoCodigo);
-    mostrarToast('Funcionalidade de gravação será implementada em breve', 'info');
+// Gravar tipo de refeição individual
+async function gravarTipoRefeicao(tipoCodigo) {
+    console.log('💾 Gravando tipo de refeição:', tipoCodigo);
+    
+    if (!clienteAtualCardapio) {
+        mostrarToast('Selecione um cliente primeiro', 'error');
+        return;
+    }
+    
+    const dataCardapio = document.getElementById('dataCardapio')?.value;
+    if (!dataCardapio) {
+        mostrarToast('Selecione uma data primeiro', 'error');
+        return;
+    }
+    
+    const tipo = clienteAtualCardapio.tiposRefeicao.find(t => t.codigo === tipoCodigo);
+    if (!tipo) {
+        mostrarToast('Tipo de refeição não encontrado', 'error');
+        return;
+    }
+    
+    const tipoContainer = document.querySelector(`[data-tipo="${tipoCodigo}"]`);
+    const receitasElements = tipoContainer?.querySelectorAll('.receita-item');
+    
+    if (!receitasElements || receitasElements.length === 0) {
+        mostrarToast('Adicione receitas antes de gravar', 'warning');
+        return;
+    }
+    
+    const expandableContent = tipoContainer.closest('.expandable-content');
+    const comensaisInput = expandableContent?.querySelector('.comensais-input');
+    const comensais = parseInt(comensaisInput?.value) || 0;
+    
+    if (comensais <= 0) {
+        mostrarToast('Defina o número de comensais antes de gravar', 'warning');
+        return;
+    }
+    
+    try {
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
+        
+        let receitasGravadas = 0;
+        
+        for (const receitaElement of receitasElements) {
+            const receitaCodigo = receitaElement.getAttribute('data-receita-codigo');
+            const receita = receitasCarregadas.find(r => r.codigo === receitaCodigo);
+            
+            if (!receita) continue;
+            
+            const qtdeReceita = parseFloat(receitaElement.querySelector('.qtde-receita').value) || 0;
+            const numComensais = parseInt(receitaElement.querySelector('.num-comensais').value) || 0;
+            const totalCalculado = qtdeReceita * numComensais;
+            
+            const cardapioData = {
+                data: dataCardapio,
+                cliente_id: clienteAtualCardapio.id,
+                tipo_refeicao_id: tipo.id,
+                receita_id: receita.id,
+                comensais: comensais,
+                quantidade_por_pessoa: qtdeReceita,
+                total_por_comensais: totalCalculado,
+                unidade_basica: receita.unidade_rendimento || 'UN',
+                alterada: false,
+                user_id: user.id
+            };
+            
+            // Verificar se já existe
+            const { data: existente } = await window.supabase
+                .from('cardapios')
+                .select('id')
+                .eq('data', dataCardapio)
+                .eq('cliente_id', clienteAtualCardapio.id)
+                .eq('tipo_refeicao_id', tipo.id)
+                .eq('receita_id', receita.id)
+                .eq('user_id', user.id)
+                .single();
+            
+            let result;
+            if (existente) {
+                result = await window.supabase
+                    .from('cardapios')
+                    .update(cardapioData)
+                    .eq('id', existente.id);
+            } else {
+                result = await window.supabase
+                    .from('cardapios')
+                    .insert([cardapioData]);
+            }
+            
+            if (result.error) {
+                console.error('Erro ao gravar receita:', result.error);
+            } else {
+                receitasGravadas++;
+            }
+        }
+        
+        if (receitasGravadas > 0) {
+            mostrarToast(`✅ ${receitasGravadas} receita(s) gravada(s) para ${tipo.descricao}`, 'success');
+        } else {
+            mostrarToast('Nenhuma receita foi gravada', 'warning');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao gravar tipo de refeição:', error);
+        mostrarToast('Erro ao gravar: ' + error.message, 'error');
+    }
 }
 
-// Funções globais para todos os tipos
-function atualizarParaTodos() {
-    console.log('🔄 Atualizando para todos...');
-    mostrarToast('Funcionalidade será implementada em breve', 'info');
+// Remover receita do cardápio
+function removerReceitaCardapio(receitaCodigo, tipoCodigo) {
+    if (!confirm('Tem certeza que deseja remover esta receita?')) {
+        return;
+    }
+    
+    const tipoContainer = document.querySelector(`[data-tipo="${tipoCodigo}"]`);
+    const receitaElement = tipoContainer?.querySelector(`[data-receita-codigo="${receitaCodigo}"]`);
+    
+    if (receitaElement) {
+        receitaElement.remove();
+        mostrarToast('Receita removida com sucesso!', 'success');
+        atualizarCalculosReceitasTipo(tipoCodigo);
+    }
 }
 
-function calcularParaTodos() {
-    console.log('🧮 Calculando para todos...');
-    mostrarToast('Funcionalidade será implementada em breve', 'info');
+// Carregar dados do cardápio para data específica
+function carregarCardapioData() {
+    console.log('📅 Carregando dados do cardápio para a data selecionada...');
+    // Esta função pode ser expandida para carregar dados salvos
 }
 
-function gravarParaTodos() {
-    console.log('💾 Gravando para todos...');
-    mostrarToast('Funcionalidade será implementada em breve', 'info');
+// Fechar modal
+function fecharModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // Toast notification system
 function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
-    // Remover toast existente se houver
     const existingToast = document.querySelector('.toast-notification');
     if (existingToast) {
         existingToast.remove();
     }
     
-    // Criar elemento toast
     const toast = document.createElement('div');
     toast.className = `toast-notification toast-${tipo}`;
     
-    // Definir ícones por tipo
     const icones = {
         success: '✅',
         error: '❌',
@@ -870,10 +1154,8 @@ function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
         </div>
     `;
     
-    // Adicionar ao DOM
     document.body.appendChild(toast);
     
-    // Remover automaticamente
     setTimeout(() => {
         if (toast.parentNode) {
             toast.classList.add('toast-fade-out');
@@ -903,8 +1185,9 @@ window.carregarClientesCardapio = carregarClientesCardapio;
 window.carregarCardapioData = carregarCardapioData;
 window.carregarTiposRefeicaoCliente = carregarTiposRefeicaoCliente;
 window.removerReceitaCardapio = removerReceitaCardapio;
-window.atualizarQuantidadeReceita = atualizarQuantidadeReceita;
+window.atualizarQtdeReceita = atualizarQtdeReceita;
+window.atualizarNumComensais = atualizarNumComensais;
 window.atualizarCalculosReceitasTipo = atualizarCalculosReceitasTipo;
 window.mostrarToast = mostrarToast;
 
-console.log('✅ cardapio.js CORRIGIDO - Dropdown de clientes funcionando!');
+console.log('✅ cardapio.js AJUSTADO - Planejamento melhorado!');
