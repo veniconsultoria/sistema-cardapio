@@ -544,7 +544,7 @@
             } else if (tentativas < 50) {
                 setTimeout(() => aguardarSupabaseNovoSistema(callback, tentativas + 1), 100);
             } else {
-                alert('Erro: Supabase não carregou');
+                mostrarToast('Erro: Supabase não carregou');
             }
         }
 
@@ -726,7 +726,7 @@
                 };
 
                 if (!dados.descricao) {
-                    alert('Informe a descrição');
+                    mostrarToast('Informe a descrição');
                     document.getElementById('produto-descricao').focus();
                     return;
                 }
@@ -740,13 +740,13 @@
 
                 if (result.error) throw result.error;
 
-                alert(id ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
+                mostrarToast(id ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
                 fecharModalProduto();
                 await carregarProdutosNovoSistema();
 
             } catch (error) {
                 console.error('Erro ao salvar:', error);
-                alert('Erro: ' + error.message);
+                mostrarToast('Erro: ' + error.message);
                 document.getElementById('ultimo-erro').textContent = error.message;
             }
         }
@@ -784,7 +784,7 @@
                     .eq('user_id', user.id);
                     
                 if (error) throw error;
-                alert('Produto excluído com sucesso!');
+                mostrarToast('Produto excluído com sucesso!');
                 await carregarProdutosNovoSistema();
             } catch (error) {
                 mostrarToast('Erro: ' + error.message);
@@ -798,7 +798,7 @@
 
         async function recarregarProdutos() {
             await carregarProdutosNovoSistema();
-            alert('Produtos recarregados!');
+            mostrarToast('Produtos recarregados!');
         }
 
         // Exportar funções globais
@@ -864,9 +864,9 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
     </style>
-
-    <script>
-// Função showTab de emergência - ADICIONAR ANTES DA TAG </body>
+<!-- Substituir o script no final do index.html por: -->
+<script>
+// Função showTab simplificada
 function showTab(tabName) {
     console.log('📂 Navegando para:', tabName);
     
@@ -925,7 +925,6 @@ function showTab(tabName) {
 
 // Garantir que está disponível globalmente
 window.showTab = showTab;
-
 console.log('✅ showTab carregado!');
 </script>
 </body>
