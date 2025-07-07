@@ -1,4 +1,4 @@
-// main.js - Sistema principal CORRIGIDO E LIMPO
+// main.js - Sistema principal CORRIGIDO E COMPLETO
 
 console.log('📁 Carregando main.js CORRIGIDO...');
 
@@ -31,9 +31,6 @@ function inicializarSistemaMain() {
         inputData.value = hoje;
     }
     
-    // Carregar dados do calendário
-    carregarCalendario();
-    
     console.log('✅ Sistema principal inicializado');
 }
 
@@ -65,6 +62,11 @@ function toggleCalendar() {
     const calendarContainer = document.getElementById('calendarContainer');
     const toggleText = document.getElementById('calendar-toggle-text');
     
+    if (!calendarContainer || !toggleText) {
+        console.warn('⚠️ Elementos do calendário não encontrados');
+        return;
+    }
+    
     if (calendarioVisivel) {
         calendarContainer.classList.add('hidden');
         toggleText.textContent = 'Mostrar Calendário';
@@ -83,6 +85,12 @@ function carregarCalendario() {
     if (dataInput) {
         dataInput.value = hoje.toISOString().split('T')[0];
     }
+    
+    // Inicializar variáveis do calendário
+    dataAtual = hoje;
+    mesAtual = hoje.getMonth();
+    anoAtual = hoje.getFullYear();
+    
     atualizarCalendario();
 }
 
@@ -90,7 +98,10 @@ function atualizarCalendario() {
     const mesAnoElement = document.getElementById('mesAno');
     const gridElement = document.getElementById('calendarGrid');
     
-    if (!mesAnoElement || !gridElement) return;
+    if (!mesAnoElement || !gridElement) {
+        console.warn('⚠️ Elementos do calendário não encontrados');
+        return;
+    }
     
     const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -342,6 +353,8 @@ window.mudarMes = mudarMes;
 window.selecionarDia = selecionarDia;
 window.mostrarToast = mostrarToast;
 window.showTab = showTab;
+window.carregarCalendario = carregarCalendario;
+window.atualizarCalendario = atualizarCalendario;
 
 // ===== FUNÇÕES DE COMPATIBILIDADE PARA OUTROS MÓDULOS =====
 
@@ -391,5 +404,36 @@ window.testarSistemaCompleto = function() {
     console.log('✅ Teste completo finalizado!');
 };
 
-console.log('✅ main.js CORRIGIDO carregado e limpo!');
+// ===== GARANTIR QUE AS FUNÇÕES ESTÃO DISPONÍVEIS IMEDIATAMENTE =====
+if (typeof window.showTab === 'undefined') {
+    window.showTab = showTab;
+}
+
+if (typeof window.mostrarToast === 'undefined') {
+    window.mostrarToast = mostrarToast;
+}
+
+// ===== VERIFICAÇÃO FINAL AO CARREGAR =====
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM carregado - verificando sistema...');
+    
+    setTimeout(() => {
+        console.log('🔍 === VERIFICAÇÃO DO SISTEMA ===');
+        console.log('📋 Funções principais disponíveis:');
+        console.log('  - showTab:', typeof window.showTab);
+        console.log('  - mostrarToast:', typeof window.mostrarToast);
+        console.log('  - toggleCalendar:', typeof window.toggleCalendar);
+        console.log('  - mudarMes:', typeof window.mudarMes);
+        console.log('  - selecionarDia:', typeof window.selecionarDia);
+        
+        console.log('🎯 Elementos DOM encontrados:');
+        console.log('  - Container principal:', !!document.querySelector('.container'));
+        console.log('  - Calendário:', !!document.getElementById('calendarContainer'));
+        console.log('  - Botões de tab:', document.querySelectorAll('.tab').length);
+        
+        console.log('✅ Sistema principal carregado corretamente!');
+    }, 1000);
+});
+
+console.log('✅ main.js CORRIGIDO carregado!');
 console.log('📋 Para testar o sistema completo, use: testarSistemaCompleto()');

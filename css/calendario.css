@@ -1,0 +1,432 @@
+/* calendario.css - Estilos específicos para o calendário */
+
+/* ===== POSICIONAMENTO DO CALENDÁRIO ===== */
+.calendar-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 101;
+    transition: all 0.3s ease;
+}
+
+.calendar-container {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    width: 320px;
+    height: auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    z-index: 100;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.calendar-container.hidden {
+    display: none;
+}
+
+/* ===== CABEÇALHO DO CALENDÁRIO ===== */
+.calendar-header {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 15px 20px;
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.calendar-header button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-header button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.calendar-header span {
+    flex: 1;
+    margin: 0 10px;
+    font-size: 15px;
+}
+
+/* ===== GRID DO CALENDÁRIO ===== */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    padding: 0;
+    background: #f8f9fa;
+}
+
+/* ===== DIAS DO CALENDÁRIO ===== */
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 500;
+    background: white;
+    border: none;
+    position: relative;
+    min-height: 35px;
+    color: #333;
+}
+
+/* Cabeçalho dos dias da semana */
+.calendar-day.calendar-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-weight: 600;
+    font-size: 11px;
+    cursor: default;
+    aspect-ratio: auto;
+    min-height: 30px;
+}
+
+/* Espaços vazios */
+.calendar-day.calendar-empty {
+    background: #f8f9fa;
+    cursor: default;
+}
+
+/* Estados dos dias */
+.calendar-day:not(.calendar-header):not(.calendar-empty):hover {
+    background: #e3f2fd;
+    transform: scale(1.05);
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Dia de hoje */
+.calendar-day.today {
+    background: #28a745 !important;
+    color: white !important;
+    font-weight: bold;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.5);
+}
+
+/* Dia selecionado */
+.calendar-day.active {
+    background: linear-gradient(45deg, #667eea, #764ba2) !important;
+    color: white !important;
+    font-weight: bold;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.5);
+}
+
+/* Dias com cardápio completo */
+.calendar-day.has-cardapio-completo {
+    background: #d4edda !important;
+    border-left: 3px solid #28a745;
+    color: #155724;
+    font-weight: 600;
+}
+
+/* Dias com cardápio incompleto */
+.calendar-day.has-cardapio-incompleto {
+    background: #fff3cd !important;
+    border-left: 3px solid #ffc107;
+    color: #856404;
+    font-weight: 600;
+}
+
+/* ===== INDICADORES NUMÉRICOS ===== */
+.calendar-indicator {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Indicador para cardápio completo */
+.calendar-day.has-cardapio-completo .calendar-indicator {
+    background: #28a745;
+}
+
+/* Indicador para cardápio incompleto */
+.calendar-day.has-cardapio-incompleto .calendar-indicator {
+    background: #ffc107;
+    color: #333;
+}
+
+/* ===== TOOLTIPS ===== */
+.calendar-day[title] {
+    position: relative;
+}
+
+.calendar-day[title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    white-space: pre-line;
+    font-size: 12px;
+    line-height: 1.3;
+    z-index: 1000;
+    min-width: 200px;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: tooltipFadeIn 0.2s ease;
+    pointer-events: none;
+}
+
+.calendar-day[title]:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 95%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    z-index: 1001;
+}
+
+@keyframes tooltipFadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-5px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ===== BOTÃO DE TOGGLE ===== */
+.calendar-toggle button {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.calendar-toggle button:hover {
+    background: linear-gradient(45deg, #5a67d8, #6b46c1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 768px) {
+    .calendar-toggle {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-bottom: 15px;
+        z-index: auto;
+    }
+    
+    .calendar-container {
+        position: relative;
+        top: auto;
+        right: auto;
+        width: 100%;
+        margin-bottom: 20px;
+        z-index: auto;
+    }
+    
+    .calendar-header {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+    
+    .calendar-header span {
+        font-size: 14px;
+    }
+    
+    .calendar-day {
+        min-height: 30px;
+        font-size: 12px;
+    }
+    
+    .calendar-day.calendar-header {
+        min-height: 25px;
+        font-size: 10px;
+    }
+    
+    .calendar-indicator {
+        width: 14px;
+        height: 14px;
+        font-size: 9px;
+    }
+    
+    /* Ajustar tooltips para mobile */
+    .calendar-day[title]:hover::before {
+        min-width: 150px;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-container {
+        width: 100%;
+        margin: 0 0 15px 0;
+    }
+    
+    .calendar-header {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    .calendar-day {
+        min-height: 28px;
+        font-size: 11px;
+    }
+    
+    .calendar-day.calendar-header {
+        min-height: 22px;
+        font-size: 9px;
+    }
+}
+
+/* ===== ANIMAÇÕES SUAVES ===== */
+.calendar-container {
+    animation: calendarSlideIn 0.3s ease;
+}
+
+@keyframes calendarSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+    }
+}
+
+/* Animação para mudança de mês */
+.calendar-grid.changing {
+    animation: gridFade 0.2s ease;
+}
+
+@keyframes gridFade {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* ===== MELHORIAS VISUAIS ===== */
+.calendar-container:hover {
+    box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+}
+
+.calendar-day.active:hover,
+.calendar-day.today:hover {
+    transform: scale(1.1);
+}
+
+/* Estado de carregamento */
+.calendar-loading {
+    position: relative;
+}
+
+.calendar-loading::after {
+    content: '⏳';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ===== ESTADOS ESPECIAIS ===== */
+.calendar-day.weekend {
+    background: #fff8e1;
+}
+
+.calendar-day.holiday {
+    background: #fce4ec;
+    color: #ad1457;
+}
+
+/* Melhorar contraste para acessibilidade */
+.calendar-day:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* ===== EFEITOS DE PROFUNDIDADE ===== */
+.calendar-container {
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.calendar-day {
+    border: 1px solid transparent;
+}
+
+.calendar-day:hover {
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* ===== DARK MODE COMPATIBILITY ===== */
+@media (prefers-color-scheme: dark) {
+    .calendar-container {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .calendar-day {
+        background: #2d3748;
+        color: #e2e8f0;
+        border-color: #4a5568;
+    }
+    
+    .calendar-day:hover {
+        background: #4a5568;
+    }
+    
+    .calendar-day.calendar-empty {
+        background: #1a202c;
+    }
+}

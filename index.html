@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Cadastro - Produtos e Receitas</title>
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/calendario.css">
 </head>
 <body>
     <div class="container">
@@ -339,22 +340,23 @@
                 </div>
             </div>
 
-            <!-- Planejamento de Cardápio -->
+            <!-- ✅ PLANEJAMENTO DE CARDÁPIO CORRIGIDO -->
             <div id="cardapio" class="tab-content hidden">
                 <!-- Calendário com opção de mostrar/ocultar -->
                 <div class="calendar-toggle">
-                    <button class="btn btn-secondary" onclick="toggleCalendar()">
+                    <button onclick="toggleCalendar()">
                         <span id="calendar-toggle-text">Ocultar Calendário</span>
                     </button>
                 </div>
                 
                 <div class="calendar-container" id="calendarContainer">
                     <div class="calendar-header">
-                        <button onclick="mudarMes(-1)" class="btn btn-secondary">❮</button>
-                        <span id="mesAno"></span>
-                        <button onclick="mudarMes(1)" class="btn btn-secondary">❯</button>
+                        <button onclick="mudarMes(-1)">❮</button>
+                        <span id="mesAno">Carregando...</span>
+                        <button onclick="mudarMes(1)">❯</button>
                     </div>
                     <div class="calendar-grid" id="calendarGrid">
+                        <!-- Calendário será carregado aqui -->
                     </div>
                 </div>
 
@@ -364,7 +366,7 @@
                         <div class="form-group">
                             <label for="clienteCardapio" class="required">Cliente</label>
                             <select id="clienteCardapio" required onchange="carregarTiposRefeicaoCliente()">
-                                <option value="">Selecione...</option>
+                                <option value="">Carregando clientes...</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -644,13 +646,16 @@
         </div>
     </div>
 
-    <!-- Scripts CDN -->
+    <!-- ✅ SCRIPTS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/impressao.js"></script>
 
-    <!-- Scripts do Sistema -->
+    <!-- ✅ NOVO: Script do Calendário PRIMEIRO -->
+    <script src="js/calendario.js"></script>
+
+    <!-- ✅ SCRIPTS DO SISTEMA -->
     <script src="js/main.js"></script>
     <script src="js/receitas.js"></script>
     <script src="js/tipos-refeicoes.js"></script>
@@ -696,7 +701,7 @@
             }
         }
 
-        // ✅ FUNÇÃO SHOWTAB CORRIGIDA PARA CLIENTES
+        // ✅ FUNÇÃO SHOWTAB CORRIGIDA
         function showTab(tabName) {
             console.log('📂 Navegando para aba:', tabName);
             
@@ -720,7 +725,6 @@
             if (event && event.target) {
                 event.target.classList.add('active');
             } else {
-                // Se não há event (chamada programática), encontrar o botão correspondente
                 const botaoTab = document.querySelector(`.tab[onclick*="${tabName}"]`);
                 if (botaoTab) {
                     botaoTab.classList.add('active');
@@ -753,7 +757,6 @@
                         
                     case 'clientes':
                         console.log('👥 Inicializando clientes...');
-                        // ✅ CORREÇÃO PRINCIPAL PARA CLIENTES
                         if (typeof inicializarClientes === 'function') {
                             inicializarClientes().then(() => {
                                 console.log('✅ Clientes inicializados - aguardando clique em "Listar Clientes"');
@@ -763,7 +766,6 @@
                             });
                         } else {
                             console.warn('⚠️ Função inicializarClientes não encontrada');
-                            // Tentar aguardar carregamento
                             setTimeout(() => {
                                 if (typeof inicializarClientes === 'function') {
                                     inicializarClientes();
@@ -784,7 +786,7 @@
                     default:
                         console.log('ℹ️ Aba sem inicialização específica:', tabName);
                 }
-            }, 300); // Delay maior para garantir que a aba foi mostrada
+            }, 300);
         }
 
         // ✅ GARANTIR QUE AS FUNÇÕES ESTÃO DISPONÍVEIS GLOBALMENTE
@@ -793,36 +795,23 @@
 
         // ✅ VERIFICAÇÃO FINAL AO CARREGAR
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('📄 DOM carregado - verificando sistema de clientes...');
+            console.log('📄 DOM carregado - verificando sistema...');
             
             setTimeout(() => {
                 console.log('🔍 === VERIFICAÇÃO DO SISTEMA ===');
-                console.log('📋 Funções de clientes disponíveis:');
-                console.log('  - inicializarClientes:', typeof window.inicializarClientes);
-                console.log('  - recarregarClientes:', typeof window.recarregarClientes);
-                console.log('  - abrirModalNovoCliente:', typeof window.abrirModalNovoCliente);
-                console.log('  - carregarClientes:', typeof window.carregarClientes);
+                console.log('📋 Funções principais disponíveis:');
+                console.log('  - showTab:', typeof window.showTab);
+                console.log('  - mostrarToast:', typeof window.mostrarToast);
+                console.log('  - inicializarCalendarioSistema:', typeof window.inicializarCalendarioSistema);
+                console.log('  - inicializarCardapio:', typeof window.inicializarCardapio);
                 
                 console.log('🎯 Elementos DOM encontrados:');
-                console.log('  - tbody clientes:', !!document.getElementById('clientes-tbody'));
-                console.log('  - total clientes:', !!document.getElementById('total-clientes'));
-                console.log('  - modal cliente:', !!document.getElementById('modal-cliente'));
+                console.log('  - Container principal:', !!document.querySelector('.container'));
+                console.log('  - Calendário:', !!document.getElementById('calendarContainer'));
+                console.log('  - Select clientes:', !!document.getElementById('clienteCardapio'));
+                console.log('  - Botões de tab:', document.querySelectorAll('.tab').length);
                 
-                // Testar se o sistema está funcionando
-                if (typeof window.recarregarClientes === 'function') {
-                    console.log('✅ Sistema de clientes carregado corretamente!');
-                } else {
-                    console.warn('⚠️ Sistema de clientes com problemas, tentando corrigir...');
-                    
-                    // Aguardar mais tempo e tentar novamente
-                    setTimeout(() => {
-                        if (typeof window.recarregarClientes === 'function') {
-                            console.log('✅ Sistema de clientes corrigido!');
-                        } else {
-                            console.error('❌ Sistema de clientes não pôde ser carregado');
-                        }
-                    }, 2000);
-                }
+                console.log('✅ Sistema principal carregado corretamente!');
             }, 1000);
         });
 
@@ -1003,7 +992,7 @@
             document.getElementById('produto-preco').value = '';
             document.getElementById('modal-produto').style.display = 'block';
             
-                                    setTimeout(() => {
+            setTimeout(() => {
                 const descInput = document.getElementById('produto-descricao');
                 if (descInput) descInput.focus();
             }, 100);
@@ -1177,210 +1166,5 @@
         // Disponibilizar globalmente
         window.mostrarToast = mostrarToast;
     </script>
-
-    <!-- ✅ ESTILOS PARA BADGES E MELHORIAS VISUAIS -->
-    <style>
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-align: center;
-            min-width: 60px;
-        }
-
-        .badge-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .badge-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .btn-sm {
-            padding: 5px 10px;
-            font-size: 12px;
-            margin-right: 5px;
-        }
-
-        .modal-content {
-            max-width: 600px;
-        }
-
-        .modal-content h2 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #e9ecef;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        /* ===== TOAST NOTIFICATIONS CSS ===== */
-        .toast-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            min-width: 300px;
-            max-width: 500px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            animation: toastSlideIn 0.3s ease-out;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .toast-content {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            gap: 10px;
-            position: relative;
-            border-radius: 8px;
-        }
-
-        .toast-icon {
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        .toast-message {
-            flex: 1;
-            font-size: 14px;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-
-        .toast-close {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            padding: 0;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            flex-shrink: 0;
-            transition: background-color 0.2s ease;
-        }
-
-        /* Estilos por tipo de toast */
-        .toast-success .toast-content {
-            background: #d4edda;
-            color: #155724;
-            border-left: 4px solid #28a745;
-        }
-
-        .toast-success .toast-close:hover {
-            background: rgba(21, 87, 36, 0.1);
-        }
-
-        .toast-error .toast-content {
-            background: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #dc3545;
-        }
-
-        .toast-error .toast-close:hover {
-            background: rgba(114, 28, 36, 0.1);
-        }
-
-        .toast-warning .toast-content {
-            background: #fff3cd;
-            color: #856404;
-            border-left: 4px solid #ffc107;
-        }
-
-        .toast-warning .toast-close:hover {
-            background: rgba(133, 100, 4, 0.1);
-        }
-
-        .toast-info .toast-content {
-            background: #d1ecf1;
-            color: #0c5460;
-            border-left: 4px solid #17a2b8;
-        }
-
-        .toast-info .toast-close:hover {
-            background: rgba(12, 84, 96, 0.1);
-        }
-
-        /* Animações */
-        @keyframes toastSlideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .toast-fade-out {
-            animation: toastFadeOut 0.3s ease-in forwards;
-        }
-
-        @keyframes toastFadeOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-
-        /* Responsividade */
-        @media (max-width: 768px) {
-            .toast-notification {
-                top: 10px;
-                right: 10px;
-                left: 10px;
-                min-width: auto;
-                max-width: none;
-            }
-            
-            .toast-content {
-                padding: 10px 12px;
-            }
-            
-            .toast-message {
-                font-size: 13px;
-            }
-        }
-    </style>
 </body>
 </html>
