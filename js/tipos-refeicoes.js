@@ -1,6 +1,6 @@
-// tipos-refeicoes.js - Sistema de Tipos de Refeições MODERNIZADO (Layout igual ao de Produtos)
+// tipos-refeicoes.js - Sistema de Tipos de Refeições CORRIGIDO
 
-console.log('📁 Carregando tipos-refeicoes.js MODERNIZADO...');
+console.log('📁 Carregando tipos-refeicoes.js CORRIGIDO...');
 
 // Verificar se as variáveis já existem para evitar redeclaração
 if (typeof window.tiposRefeicoesModulo === 'undefined') {
@@ -40,23 +40,43 @@ async function verificarAutenticacaoTipos() {
     }
 }
 
-// Inicializar quando aba tipos-refeicoes for aberta
+// ✅ CORREÇÃO: Inicializar SEM carregar dados automaticamente
 async function inicializarTiposRefeicoes() {
-    if (window.tiposRefeicoesModulo.inicializado) {
-        console.log('⚠️ Tipos de refeições já inicializados');
-        return;
-    }
-
+    console.log('🚀 Inicializando tipos de refeições...');
+    
     aguardarSupabaseTipos(async () => {
         if (await verificarAutenticacaoTipos()) {
-            await carregarTiposRefeicoes();
+            // ✅ MUDANÇA: Não carregar automaticamente, só preparar
             await gerarProximoCodigoTipoRefeicao();
             configurarEventosTipos();
             
+            // ✅ CORREÇÃO: Mostrar mensagem inicial em vez de carregar
+            mostrarMensagemInicial();
+            
             window.tiposRefeicoesModulo.inicializado = true;
-            console.log('✅ Tipos de refeições inicializados com sucesso');
+            console.log('✅ Tipos de refeições inicializados - clique em "Listar Tipos" para carregar');
         }
     });
+}
+
+// ✅ NOVA FUNÇÃO: Mostrar mensagem inicial
+function mostrarMensagemInicial() {
+    const tbody = document.getElementById('tipos-tbody');
+    const totalElement = document.getElementById('total-tipos');
+    
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align: center; padding: 40px; color: #666;">
+                    📋 Clique em "Listar Tipos" para carregar os dados
+                </td>
+            </tr>
+        `;
+    }
+    
+    if (totalElement) {
+        totalElement.textContent = '0';
+    }
 }
 
 // Configurar eventos
@@ -71,13 +91,15 @@ function configurarEventosTipos() {
     }
 }
 
-// Carregar tipos de refeições do Supabase
+// ✅ CORREÇÃO: Carregar tipos de refeições com logs detalhados
 async function carregarTiposRefeicoes() {
     try {
-        console.log('📥 Carregando tipos de refeições...');
+        console.log('📥 Carregando tipos de refeições do Supabase...');
         
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
+
+        console.log('👤 User ID:', user.id);
 
         const { data, error } = await window.supabase
             .from('tipos_refeicoes')
@@ -85,7 +107,13 @@ async function carregarTiposRefeicoes() {
             .eq('user_id', user.id)
             .order('codigo');
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Erro ao carregar tipos de refeições:', error);
+            throw error;
+        }
+
+        console.log('📊 Tipos de refeições encontrados:', data?.length || 0);
+        console.log('📋 Dados dos tipos:', data);
 
         window.tiposRefeicoesModulo.tiposRefeicoesCarregados = data || [];
         atualizarTabelaTiposRefeicoes();
@@ -94,11 +122,29 @@ async function carregarTiposRefeicoes() {
         // Disponibilizar globalmente para outros módulos
         window.tiposRefeicoesPadrao = window.tiposRefeicoesModulo.tiposRefeicoesCarregados;
         
-        console.log(`✅ ${window.tiposRefeicoesModulo.tiposRefeicoesCarregados.length} tipos de refeições carregados`);
+        if (data && data.length > 0) {
+            console.log(`✅ ${data.length} tipos de refeições carregados com sucesso`);
+            mostrarToast(`${data.length} tipo(s) de refeição carregado(s) com sucesso!`, 'success');
+        } else {
+            console.log('⚠️ Nenhum tipo de refeição encontrado no banco');
+            mostrarToast('Nenhum tipo de refeição encontrado', 'info');
+        }
         
     } catch (error) {
         console.error('❌ Erro ao carregar tipos de refeições:', error);
         mostrarToast('Erro ao carregar tipos de refeições: ' + error.message, 'error');
+        
+        // Mostrar erro na tabela
+        const tbody = document.getElementById('tipos-tbody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 40px; color: #dc3545;">
+                        ❌ Erro ao carregar tipos: ${error.message}
+                    </td>
+                </tr>
+            `;
+        }
     }
 }
 
@@ -207,6 +253,7 @@ async function salvarTipoRefeicao() {
         
         // Fechar modal e recarregar lista
         fecharModalTipo();
+        // ✅ Recarregar automaticamente após salvar
         await carregarTiposRefeicoes();
 
     } catch (error) {
@@ -215,10 +262,16 @@ async function salvarTipoRefeicao() {
     }
 }
 
-// Renderizar tabela de tipos de refeições (MODERNIZADA)
+// ✅ CORREÇÃO: Renderizar tabela com logs detalhados
 function atualizarTabelaTiposRefeicoes() {
+    console.log('🎨 Atualizando tabela de tipos de refeições...');
+    console.log('📊 Tipos para renderizar:', window.tiposRefeicoesModulo.tiposRefeicoesCarregados.length);
+    
     const tbody = document.getElementById('tipos-tbody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('❌ Elemento tbody não encontrado');
+        return;
+    }
     
     tbody.innerHTML = '';
 
@@ -226,14 +279,19 @@ function atualizarTabelaTiposRefeicoes() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="3" style="text-align: center; color: #666; padding: 40px;">
-                    Nenhum tipo de refeição encontrado
+                    📋 Nenhum tipo de refeição encontrado
                 </td>
             </tr>
         `;
+        console.log('⚠️ Nenhum tipo para renderizar');
         return;
     }
 
+    console.log('🔄 Renderizando tipos na tabela...');
+
     window.tiposRefeicoesModulo.tiposRefeicoesCarregados.forEach((tipo, index) => {
+        console.log(`📋 Renderizando tipo ${index + 1}:`, tipo.descricao);
+        
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${tipo.codigo}</td>
@@ -249,6 +307,8 @@ function atualizarTabelaTiposRefeicoes() {
         `;
         tbody.appendChild(row);
     });
+    
+    console.log('✅ Tabela de tipos de refeições renderizada com sucesso');
 }
 
 // Filtrar tipos de refeições
@@ -368,10 +428,11 @@ async function excluirTipoRefeicao(index) {
     }
 }
 
-// Recarregar tipos de refeições
+// ✅ NOVA FUNÇÃO: Recarregar tipos (para o botão "Listar Tipos")
 async function recarregarTipos() {
+    console.log('🔄 Recarregando tipos de refeições...');
+    mostrarToast('Carregando tipos de refeições...', 'info');
     await carregarTiposRefeicoes();
-    mostrarToast('Tipos de refeição recarregados!', 'success');
 }
 
 // Fechar modal
@@ -443,7 +504,6 @@ window.fecharModalTipo = fecharModalTipo;
 window.inicializarTiposRefeicoes = inicializarTiposRefeicoes;
 
 // ===== GARANTIR QUE AS FUNÇÕES ESTÃO DISPONÍVEIS IMEDIATAMENTE =====
-// Definir funções no escopo global imediatamente
 if (typeof window.abrirModalNovoTipo === 'undefined') {
     window.abrirModalNovoTipo = async function() {
         if (typeof abrirModalNovoTipo === 'function') {
@@ -476,5 +536,5 @@ if (typeof window.recarregarTipos === 'undefined') {
     };
 }
 
-console.log('✅ tipos-refeicoes.js MODERNIZADO carregado com layout igual ao de produtos!');
+console.log('✅ tipos-refeicoes.js CORRIGIDO - Não carrega automaticamente, aguarda clique em "Listar Tipos"!');
 console.log('📋 Funções exportadas:', Object.keys(window).filter(key => key.includes('Tipo') || key.includes('recarregarTipos')));

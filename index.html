@@ -6,13 +6,6 @@
     <title>Sistema de Cadastro - Produtos e Receitas</title>
     <link rel="stylesheet" href="css/main.css">
 </head>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/impressao.js"></script>
-
-</html>
 <body>
     <div class="container">
         <div class="header">
@@ -232,21 +225,20 @@
                     </div>
                 </div>
 
-<!-- Substituir a div inteira de Cálculos por: -->
-<div class="section">
-    <h3>Cálculos</h3>
-    <button type="button" class="btn btn-success" onclick="calcularReceita()">Atualizar e Calcular</button>
-    <div id="resultadosCalculos" class="form-grid">
-        <div class="card">
-            <h4>Preço Total</h4>
-            <p id="precoTotal">R$ 0,00</p>
-        </div>
-        <div class="card">
-            <h4>Peso Final</h4>
-            <p id="pesoFinalCalculado">0,000 KG</p>
-        </div>
-    </div>
-</div>
+                <div class="section">
+                    <h3>Cálculos</h3>
+                    <button type="button" class="btn btn-success" onclick="calcularReceita()">Atualizar e Calcular</button>
+                    <div id="resultadosCalculos" class="form-grid">
+                        <div class="card">
+                            <h4>Preço Total</h4>
+                            <p id="precoTotal">R$ 0,00</p>
+                        </div>
+                        <div class="card">
+                            <h4>Peso Final</h4>
+                            <p id="pesoFinalCalculado">0,000 KG</p>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="section">
                     <h3>Lista de Receitas</h3>
@@ -269,7 +261,7 @@
                 </div>
             </div>
 
-            <!-- ===== TIPOS DE REFEIÇÕES MODERNIZADO ===== -->
+            <!-- Tipos de Refeições -->
             <div id="tipos-refeicoes" class="tab-content hidden">
                 <div class="section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -306,14 +298,14 @@
                 </div>
             </div>
 
-            <!-- ===== CLIENTES MODERNIZADO ===== -->
+            <!-- ✅ CLIENTES - SEÇÃO CORRIGIDA -->
             <div id="clientes" class="tab-content hidden">
                 <div class="section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2>👥 Gestão de Clientes</h2>
                         <div>
-                            <button class="btn btn-primary" onclick="abrirModalNovoCliente()">+ Novo Cliente</button>
-                            <button class="btn btn-secondary" onclick="recarregarClientes()">📋 Listar Clientes</button>
+                            <button class="btn btn-primary" onclick="garantirFuncaoClientes('abrirModalNovoCliente')">+ Novo Cliente</button>
+                            <button class="btn btn-secondary" onclick="garantirFuncaoClientes('recarregarClientes')">📋 Listar Clientes</button>
                         </div>
                     </div>
 
@@ -338,22 +330,11 @@
                             <tbody id="clientes-tbody">
                                 <tr>
                                     <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
-                                        Carregando clientes...
+                                        📋 Clique em "Listar Clientes" para carregar os dados
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-
-                    <!-- Seção de Tipos Vinculados (visível apenas quando editando) -->
-                    <div class="section" id="secao-tipos-vinculados" style="display: none;">
-                        <h3>Tipos de Refeições Vinculados</h3>
-                        <div id="tipos-vinculados-lista">
-                            <!-- Tipos vinculados aparecerão aqui -->
-                        </div>
-                        <button type="button" class="btn btn-primary" onclick="abrirModalTiposRefeicao()">
-                            ➕ Adicionar Tipos de Refeição
-                        </button>
                     </div>
                 </div>
             </div>
@@ -397,7 +378,7 @@
                         </div>
                     </div>
                     
-                    <!-- ✅ BOTÕES AJUSTADOS -->
+                    <!-- Botões de Ação -->
                     <div class="actions">
                         <button type="button" class="btn btn-secondary compact-btn" onclick="atualizarParaTodos()">
                             📝 Atualizar Todos
@@ -416,7 +397,7 @@
                         </button>
                     </div>
                     
-                    <!-- ✅ NOTA EXPLICATIVA -->
+                    <!-- Nota Explicativa -->
                     <div style="background: #e7f3ff; border-left: 4px solid #2196f3; padding: 12px; margin-top: 15px; border-radius: 5px;">
                         <h4 style="margin: 0 0 8px 0; color: #1976d2;">ℹ️ Como usar:</h4>
                         <ul style="margin: 0; padding-left: 20px; color: #333; font-size: 14px;">
@@ -602,7 +583,7 @@
             </div>
         </div>
 
-        <!-- Modal de Ingredientes Melhorado -->
+        <!-- Modal de Ingredientes -->
         <div id="modalIngredientes" class="modal">
             <div class="modal-content" style="max-width: 700px;">
                 <div class="modal-header" style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; margin: -20px -20px 20px -20px;">
@@ -661,470 +642,63 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Scripts -->
-        <script src="js/main.js"></script>
-        <script src="js/receitas.js"></script>
-        <script src="js/tipos-refeicoes.js"></script>
-        <script src="js/clientes.js"></script>
-        <script src="js/cardapio.js"></script>
+    <!-- Scripts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/impressao.js"></script>
 
-        <!-- Script de correção para funções globais -->
-        <script>
-        // SCRIPT DE CORREÇÃO INLINE - Garantir que todas as funções estejam disponíveis
-        console.log('🔧 Carregando correções para funções globais...');
+    <!-- Scripts do Sistema -->
+    <script src="js/main.js"></script>
+    <script src="js/receitas.js"></script>
+    <script src="js/tipos-refeicoes.js"></script>
+    <script src="js/clientes.js"></script>
+    <script src="js/cardapio.js"></script>
 
-        // ===== CORREÇÃO PARA FUNÇÕES DE CLIENTES =====
-        document.addEventListener('DOMContentLoaded', function() {
-            // Aguardar um pouco para os módulos carregarem
-            setTimeout(() => {
-                
-                // ===== CLIENTES =====
-                if (typeof window.abrirModalNovoCliente === 'undefined') {
-                    window.abrirModalNovoCliente = function() {
-                        console.log('🔧 Corrigindo abrirModalNovoCliente...');
-                        showTab('clientes'); // Garantir que a aba está ativa
-                        setTimeout(() => {
-                            if (typeof inicializarClientes === 'function') {
-                                inicializarClientes();
-                            }
-                        }, 100);
-                    };
-                }
+    <!-- ✅ SCRIPT ESPECÍFICO PARA GARANTIR FUNCIONAMENTO DOS CLIENTES -->
+    <script>
+        console.log('🔧 Carregando script de correção para clientes...');
 
-                if (typeof window.recarregarClientes === 'undefined') {
-                    window.recarregarClientes = function() {
-                        console.log('🔧 Corrigindo recarregarClientes...');
-                        if (typeof inicializarClientes === 'function') {
-                            inicializarClientes();
-                        }
-                        mostrarToast('Clientes recarregados!', 'success');
-                    };
-                }
-
-                // ===== TIPOS DE REFEIÇÕES =====
-                if (typeof window.abrirModalNovoTipo === 'undefined') {
-                    window.abrirModalNovoTipo = function() {
-                        console.log('🔧 Corrigindo abrirModalNovoTipo...');
-                        showTab('tipos-refeicoes');
-                        setTimeout(() => {
-                            if (typeof inicializarTiposRefeicoes === 'function') {
-                                inicializarTiposRefeicoes();
-                            }
-                        }, 100);
-                    };
-                }
-
-                if (typeof window.recarregarTipos === 'undefined') {
-                    window.recarregarTipos = function() {
-                        console.log('🔧 Corrigindo recarregarTipos...');
-                        if (typeof inicializarTiposRefeicoes === 'function') {
-                            inicializarTiposRefeicoes();
-                        }
-                        mostrarToast('Tipos recarregados!', 'success');
-                    };
-                }
-
-                // ===== IMPRESSÃO =====
-                if (typeof window.abrirModalImpressao === 'undefined') {
-                    window.abrirModalImpressao = function() {
-                        console.log('🔧 Corrigindo abrirModalImpressao...');
-                        showTab('cardapio');
-                        setTimeout(() => {
-                            if (typeof abrirModalImpressaoCardapios === 'function') {
-                                abrirModalImpressaoCardapios();
-                            } else {
-                                mostrarToast('Sistema de impressão carregando...', 'info');
-                                setTimeout(() => {
-                                    if (typeof abrirModalImpressaoCardapios === 'function') {
-                                        abrirModalImpressaoCardapios();
-                                    } else {
-                                        mostrarToast('Sistema de impressão não disponível', 'error');
-                                    }
-                                }, 1000);
-                            }
-                        }, 200);
-                    };
-                }
-
-                console.log('✅ Correções aplicadas!');
-                console.log('📋 Funções disponíveis:');
-                console.log('- abrirModalNovoCliente:', typeof window.abrirModalNovoCliente);
-                console.log('- recarregarClientes:', typeof window.recarregarClientes);
-                console.log('- abrirModalNovoTipo:', typeof window.abrirModalNovoTipo);
-                console.log('- recarregarTipos:', typeof window.recarregarTipos);
-                console.log('- abrirModalImpressao:', typeof window.abrirModalImpressao);
-                
-            }, 1500); // Aguardar 1.5 segundos para garantir que tudo carregou
-        });
-
-        console.log('🔧 Script de correção carregado!');
-        </script>
-
-        <!-- Script inline para produtos -->
-        <script>
-            // PRODUTOS - INTEGRADO NO SISTEMA
-            console.log('🚀 Iniciando sistema de produtos...');
+        // ✅ FUNÇÃO PRINCIPAL: Garantir que as funções de clientes funcionem
+        function garantirFuncaoClientes(nomeFuncao) {
+            console.log(`🎯 Chamando função: ${nomeFuncao}`);
             
-            let produtosNovoSistema = [];
-            let editandoNovoSistema = null;
-
-            // Aguardar Supabase
-            function aguardarSupabaseNovoSistema(callback, tentativas = 0) {
-                if (window.supabase && window.supabase.auth) {
-                    callback();
-                } else if (tentativas < 50) {
-                    setTimeout(() => aguardarSupabaseNovoSistema(callback, tentativas + 1), 100);
-                } else {
-                    mostrarToast('Erro: Supabase não carregou');
-                }
+            // Verificar se a função existe
+            if (typeof window[nomeFuncao] === 'function') {
+                console.log(`✅ Função ${nomeFuncao} encontrada, executando...`);
+                window[nomeFuncao]();
+                return;
             }
-
-            // Inicializar quando aba produtos-novo for selecionada
-            function inicializarProdutosNovo() {
-                aguardarSupabaseNovoSistema(async () => {
-                    try {
-                        const { data: { user } } = await window.supabase.auth.getUser();
-                        if (!user) {
-                            window.location.href = 'login.html';
-                            return;
+            
+            console.warn(`⚠️ Função ${nomeFuncao} não encontrada, tentando inicializar clientes...`);
+            
+            // Se não existe, tentar inicializar primeiro
+            if (typeof window.inicializarClientes === 'function') {
+                window.inicializarClientes().then(() => {
+                    console.log(`🔄 Clientes inicializados, tentando ${nomeFuncao} novamente...`);
+                    setTimeout(() => {
+                        if (typeof window[nomeFuncao] === 'function') {
+                            window[nomeFuncao]();
+                        } else {
+                            console.error(`❌ Função ${nomeFuncao} ainda não disponível após inicialização`);
+                            mostrarToast(`Erro: Função ${nomeFuncao} não disponível`, 'error');
                         }
-                        
-                        document.getElementById('status-supabase').textContent = 'Conectado';
-                        document.getElementById('status-supabase').style.background = '#d4edda';
-                        document.getElementById('status-supabase').style.color = '#155724';
-                        document.getElementById('usuario-info').textContent = user.email;
-                        
-                        await carregarProdutosNovoSistema();
-                        await gerarCodigoNovoSistema();
-                        configurarEventosNovoSistema();
-                        
-                    } catch (error) {
-                        console.error('Erro:', error);
-                        document.getElementById('ultimo-erro').textContent = error.message;
-                    }
+                    }, 500);
+                }).catch(error => {
+                    console.error(`❌ Erro ao inicializar clientes:`, error);
+                    mostrarToast('Erro ao inicializar sistema de clientes', 'error');
                 });
+            } else {
+                console.error('❌ Função inicializarClientes não encontrada');
+                mostrarToast('Sistema de clientes não carregado corretamente', 'error');
             }
+        }
 
-            function configurarEventosNovoSistema() {
-                const buscaInput = document.getElementById('busca-produtos');
-                const filtroSelect = document.getElementById('filtro-grupo');
-                
-                if (buscaInput) {
-                    buscaInput.removeEventListener('input', filtrarNovoSistema);
-                    buscaInput.addEventListener('input', filtrarNovoSistema);
-                }
-                if (filtroSelect) {
-                    filtroSelect.removeEventListener('change', filtrarNovoSistema);
-                    filtroSelect.addEventListener('change', filtrarNovoSistema);
-                }
-            }
-
-            async function gerarCodigoNovoSistema() {
-                try {
-                    const { data: { user } } = await window.supabase.auth.getUser();
-                    const { data, error } = await window.supabase.rpc('get_next_produto_codigo', {
-                        user_uuid: user.id
-                    });
-                    if (error) throw error;
-                    
-                    const input = document.getElementById('produto-codigo');
-                    if (input) {
-                        input.value = data || 'PR000001';
-                    }
-                } catch (error) {
-                    const input = document.getElementById('produto-codigo');
-                    if (input) {
-                        input.value = 'PR000001';
-                    }
-                }
-            }
-
-            async function carregarProdutosNovoSistema() {
-                try {
-                    const { data: { user } } = await window.supabase.auth.getUser();
-                    const { data, error } = await window.supabase
-                        .from('produtos')
-                        .select('*')
-                        .eq('user_id', user.id)
-                        .order('codigo');
-
-                    if (error) throw error;
-                    produtosNovoSistema = data || [];
-                    renderizarNovoSistema();
-                    
-                } catch (error) {
-                    console.error('Erro ao carregar:', error);
-                    document.getElementById('ultimo-erro').textContent = error.message;
-                }
-            }
-
-            function renderizarNovoSistema() {
-                const tbody = document.getElementById('produtos-tbody');
-                const total = document.getElementById('total-produtos');
-                
-                if (!tbody || !total) return;
-                
-                tbody.innerHTML = '';
-                total.textContent = produtosNovoSistema.length;
-
-                if (produtosNovoSistema.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">Nenhum produto encontrado</td></tr>';
-                    return;
-                }
-
-                produtosNovoSistema.forEach(produto => {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td>${produto.codigo}</td>
-                        <td>${produto.descricao}</td>
-                        <td>${produto.grupo}</td>
-                        <td>${produto.unidade_medida}</td>
-                        <td>${produto.peso_bruto || '-'}</td>
-                        <td>${produto.peso_liquido || '-'}</td>
-                        <td>R$ ${parseFloat(produto.preco || 0).toFixed(2)}</td>
-                        <td>
-                            <button onclick="editarNovoSistema('${produto.id}')" class="btn btn-primary btn-sm">Editar</button>
-                            <button onclick="excluirNovoSistema('${produto.id}')" class="btn btn-danger btn-sm">Excluir</button>
-                        </td>
-                    `;
-                });
-            }
-
-            function filtrarNovoSistema() {
-                const busca = document.getElementById('busca-produtos')?.value.toLowerCase() || '';
-                const grupo = document.getElementById('filtro-grupo')?.value || '';
-                
-                let filtrados = produtosNovoSistema.filter(p => {
-                    const matchBusca = !busca || p.descricao.toLowerCase().includes(busca) || p.codigo.toLowerCase().includes(busca);
-                    const matchGrupo = !grupo || p.grupo === grupo;
-                    return matchBusca && matchGrupo;
-                });
-                
-                const tbody = document.getElementById('produtos-tbody');
-                if (!tbody) return;
-                
-                tbody.innerHTML = '';
-                
-                filtrados.forEach(produto => {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td>${produto.codigo}</td>
-                        <td>${produto.descricao}</td>
-                        <td>${produto.grupo}</td>
-                        <td>${produto.unidade_medida}</td>
-                        <td>${produto.peso_bruto || '-'}</td>
-                        <td>${produto.peso_liquido || '-'}</td>
-                        <td>R$ ${parseFloat(produto.preco || 0).toFixed(2)}</td>
-                        <td>
-                            <button onclick="editarNovoSistema('${produto.id}')" class="btn btn-primary btn-sm">Editar</button>
-                            <button onclick="excluirNovoSistema('${produto.id}')" class="btn btn-danger btn-sm">Excluir</button>
-                        </td>
-                    `;
-                });
-            }
-
-            async function abrirModalNovoProduto() {
-                await gerarCodigoNovoSistema();
-                document.getElementById('produto-id').value = '';
-                document.getElementById('produto-descricao').value = '';
-                document.getElementById('produto-grupo').value = 'Ingredientes';
-                document.getElementById('produto-unidade').value = 'KG';
-                document.getElementById('produto-peso-bruto').value = '';
-                document.getElementById('produto-peso-liquido').value = '';
-                document.getElementById('produto-preco').value = '';
-                document.getElementById('modal-produto').style.display = 'block';
-                
-                setTimeout(() => {
-                    const descInput = document.getElementById('produto-descricao');
-                    if (descInput) descInput.focus();
-                }, 100);
-            }
-
-            async function salvarProduto() {
-                try {
-                    const { data: { user } } = await window.supabase.auth.getUser();
-                    
-                    const id = document.getElementById('produto-id').value;
-                    const dados = {
-                        codigo: document.getElementById('produto-codigo').value.trim(),
-                        descricao: document.getElementById('produto-descricao').value.trim(),
-                        grupo: document.getElementById('produto-grupo').value,
-                        unidade_medida: document.getElementById('produto-unidade').value,
-                        peso_bruto: parseFloat(document.getElementById('produto-peso-bruto').value) || null,
-                        peso_liquido: parseFloat(document.getElementById('produto-peso-liquido').value) || null,
-                        preco: parseFloat(document.getElementById('produto-preco').value) || null,
-                        user_id: user.id
-                    };
-
-                    if (!dados.descricao) {
-                        mostrarToast('Informe a descrição');
-                        document.getElementById('produto-descricao').focus();
-                        return;
-                    }
-
-                    let result;
-                    if (id) {
-                        result = await window.supabase.from('produtos').update(dados).eq('id', id).eq('user_id', user.id);
-                    } else {
-                        result = await window.supabase.from('produtos').insert([dados]);
-                    }
-
-                    if (result.error) throw result.error;
-
-                    mostrarToast(id ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
-                    fecharModalProduto();
-                    await carregarProdutosNovoSistema();
-
-                } catch (error) {
-                    console.error('Erro ao salvar:', error);
-                    mostrarToast('Erro: ' + error.message);
-                    document.getElementById('ultimo-erro').textContent = error.message;
-                }
-            }
-
-            function editarNovoSistema(id) {
-                const produto = produtosNovoSistema.find(p => p.id === id);
-                if (!produto) return;
-
-                document.getElementById('produto-id').value = produto.id;
-                document.getElementById('produto-codigo').value = produto.codigo;
-                document.getElementById('produto-descricao').value = produto.descricao;
-                document.getElementById('produto-grupo').value = produto.grupo;
-                document.getElementById('produto-unidade').value = produto.unidade_medida;
-                document.getElementById('produto-peso-bruto').value = produto.peso_bruto || '';
-                document.getElementById('produto-peso-liquido').value = produto.peso_liquido || '';
-                document.getElementById('produto-preco').value = produto.preco || '';
-                document.getElementById('modal-produto').style.display = 'block';
-                
-                setTimeout(() => {
-                    const descInput = document.getElementById('produto-descricao');
-                    if (descInput) descInput.focus();
-                }, 100);
-            }
-
-            async function excluirNovoSistema(id) {
-                const produto = produtosNovoSistema.find(p => p.id === id);
-                if (!produto || !confirm(`Excluir "${produto.descricao}"?`)) return;
-
-                try {
-                    const { data: { user } } = await window.supabase.auth.getUser();
-                    const { error } = await window.supabase
-                        .from('produtos')
-                        .delete()
-                        .eq('id', id)
-                        .eq('user_id', user.id);
-                        
-                    if (error) throw error;
-                    mostrarToast('Produto excluído com sucesso!');
-                    await carregarProdutosNovoSistema();
-                } catch (error) {
-                    mostrarToast('Erro: ' + error.message);
-                    document.getElementById('ultimo-erro').textContent = error.message;
-                }
-            }
-
-            function fecharModalProduto() {
-                document.getElementById('modal-produto').style.display = 'none';
-            }
-
-            async function recarregarProdutos() {
-                await carregarProdutosNovoSistema();
-                mostrarToast('Produtos recarregados!');
-            }
-
-            // Exportar funções globais
-            window.abrirModalNovoProduto = abrirModalNovoProduto;
-            window.salvarProduto = salvarProduto;
-            window.editarNovoSistema = editarNovoSistema;
-            window.excluirNovoSistema = excluirNovoSistema;
-            window.fecharModalProduto = fecharModalProduto;
-            window.recarregarProdutos = recarregarProdutos;
-            window.inicializarProdutosNovo = inicializarProdutosNovo;
-
-            // Fechar modal ao clicar fora
-            window.addEventListener('click', function(event) {
-                const modal = document.getElementById('modal-produto');
-                if (event.target === modal) {
-                    fecharModalProduto();
-                }
-            });
-
-            console.log('✅ Sistema de produtos carregado!');
-        </script>
-
-        <!-- Estilos adicionais para badges -->
-        <style>
-            .badge {
-                display: inline-block;
-                padding: 4px 8px;
-                border-radius: 12px;
-                font-size: 12px;
-                font-weight: 600;
-                text-align: center;
-                min-width: 60px;
-            }
-
-            .badge-success {
-                background: #d4edda;
-                color: #155724;
-                border: 1px solid #c3e6cb;
-            }
-
-            .badge-warning {
-                background: #fff3cd;
-                color: #856404;
-                border: 1px solid #ffeaa7;
-            }
-
-            .btn-sm {
-                padding: 5px 10px;
-                font-size: 12px;
-                margin-right: 5px;
-            }
-
-            .modal-content {
-                max-width: 600px;
-            }
-
-            .modal-content h2 {
-                margin-bottom: 20px;
-                color: #333;
-            }
-
-            .form-group {
-                margin-bottom: 15px;
-            }
-
-            .form-group label {
-                display: block;
-                margin-bottom: 5px;
-                font-weight: 600;
-                color: #333;
-            }
-
-            .form-group input,
-            .form-group select {
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #e9ecef;
-                border-radius: 5px;
-                font-size: 14px;
-            }
-
-            .form-group input:focus,
-            .form-group select:focus {
-                outline: none;
-                border-color: #667eea;
-                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            }
-        </style>
-
-        <!-- Script principal -->
-        <script>
-        // Função showTab simplificada
+        // ✅ FUNÇÃO SHOWTAB CORRIGIDA PARA CLIENTES
         function showTab(tabName) {
-            console.log('📂 Navegando para:', tabName);
+            console.log('📂 Navegando para aba:', tabName);
             
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -1145,194 +719,668 @@
             // Marcar botão como ativo
             if (event && event.target) {
                 event.target.classList.add('active');
+            } else {
+                // Se não há event (chamada programática), encontrar o botão correspondente
+                const botaoTab = document.querySelector(`.tab[onclick*="${tabName}"]`);
+                if (botaoTab) {
+                    botaoTab.classList.add('active');
+                }
             }
             
-            // Inicializar módulos específicos
+            // ✅ CORREÇÃO ESPECÍFICA: Inicializar módulos específicos
             setTimeout(() => {
                 switch(tabName) {
                     case 'produtos-novo':
+                        console.log('🛒 Inicializando produtos...');
                         if (typeof inicializarProdutosNovo === 'function') {
                             inicializarProdutosNovo();
                         }
                         break;
+                        
                     case 'receitas':
+                        console.log('🍽️ Inicializando receitas...');
                         if (typeof inicializarReceitas === 'function') {
                             inicializarReceitas();
                         }
                         break;
+                        
                     case 'tipos-refeicoes':
+                        console.log('🍽️ Inicializando tipos de refeições...');
                         if (typeof inicializarTiposRefeicoes === 'function') {
                             inicializarTiposRefeicoes();
                         }
                         break;
+                        
                     case 'clientes':
+                        console.log('👥 Inicializando clientes...');
+                        // ✅ CORREÇÃO PRINCIPAL PARA CLIENTES
                         if (typeof inicializarClientes === 'function') {
-                            inicializarClientes();
+                            inicializarClientes().then(() => {
+                                console.log('✅ Clientes inicializados - aguardando clique em "Listar Clientes"');
+                            }).catch(error => {
+                                console.error('❌ Erro ao inicializar clientes:', error);
+                                mostrarToast('Erro ao inicializar clientes: ' + error.message, 'error');
+                            });
+                        } else {
+                            console.warn('⚠️ Função inicializarClientes não encontrada');
+                            // Tentar aguardar carregamento
+                            setTimeout(() => {
+                                if (typeof inicializarClientes === 'function') {
+                                    inicializarClientes();
+                                } else {
+                                    mostrarToast('Sistema de clientes não foi carregado corretamente', 'error');
+                                }
+                            }, 1000);
                         }
                         break;
+                        
                     case 'cardapio':
+                        console.log('📅 Inicializando cardápio...');
                         if (typeof inicializarCardapio === 'function') {
                             inicializarCardapio();
                         }
                         break;
+                        
+                    default:
+                        console.log('ℹ️ Aba sem inicialização específica:', tabName);
                 }
+            }, 300); // Delay maior para garantir que a aba foi mostrada
+        }
+
+        // ✅ GARANTIR QUE AS FUNÇÕES ESTÃO DISPONÍVEIS GLOBALMENTE
+        window.showTab = showTab;
+        window.garantirFuncaoClientes = garantirFuncaoClientes;
+
+        // ✅ VERIFICAÇÃO FINAL AO CARREGAR
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM carregado - verificando sistema de clientes...');
+            
+            setTimeout(() => {
+                console.log('🔍 === VERIFICAÇÃO DO SISTEMA ===');
+                console.log('📋 Funções de clientes disponíveis:');
+                console.log('  - inicializarClientes:', typeof window.inicializarClientes);
+                console.log('  - recarregarClientes:', typeof window.recarregarClientes);
+                console.log('  - abrirModalNovoCliente:', typeof window.abrirModalNovoCliente);
+                console.log('  - carregarClientes:', typeof window.carregarClientes);
+                
+                console.log('🎯 Elementos DOM encontrados:');
+                console.log('  - tbody clientes:', !!document.getElementById('clientes-tbody'));
+                console.log('  - total clientes:', !!document.getElementById('total-clientes'));
+                console.log('  - modal cliente:', !!document.getElementById('modal-cliente'));
+                
+                // Testar se o sistema está funcionando
+                if (typeof window.recarregarClientes === 'function') {
+                    console.log('✅ Sistema de clientes carregado corretamente!');
+                } else {
+                    console.warn('⚠️ Sistema de clientes com problemas, tentando corrigir...');
+                    
+                    // Aguardar mais tempo e tentar novamente
+                    setTimeout(() => {
+                        if (typeof window.recarregarClientes === 'function') {
+                            console.log('✅ Sistema de clientes corrigido!');
+                        } else {
+                            console.error('❌ Sistema de clientes não pôde ser carregado');
+                        }
+                    }, 2000);
+                }
+            }, 1000);
+        });
+
+        console.log('✅ Script de correção para clientes carregado!');
+    </script>
+
+    <!-- Script inline para produtos (mantido para compatibilidade) -->
+    <script>
+        // PRODUTOS - INTEGRADO NO SISTEMA
+        console.log('🚀 Iniciando sistema de produtos...');
+        
+        let produtosNovoSistema = [];
+        let editandoNovoSistema = null;
+
+        // Aguardar Supabase
+        function aguardarSupabaseNovoSistema(callback, tentativas = 0) {
+            if (window.supabase && window.supabase.auth) {
+                callback();
+            } else if (tentativas < 50) {
+                setTimeout(() => aguardarSupabaseNovoSistema(callback, tentativas + 1), 100);
+            } else {
+                mostrarToast('Erro: Supabase não carregou');
+            }
+        }
+
+        // Inicializar quando aba produtos-novo for selecionada
+        function inicializarProdutosNovo() {
+            aguardarSupabaseNovoSistema(async () => {
+                try {
+                    const { data: { user } } = await window.supabase.auth.getUser();
+                    if (!user) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    document.getElementById('status-supabase').textContent = 'Conectado';
+                    document.getElementById('status-supabase').style.background = '#d4edda';
+                    document.getElementById('status-supabase').style.color = '#155724';
+                    document.getElementById('usuario-info').textContent = user.email;
+                    
+                    await carregarProdutosNovoSistema();
+                    await gerarCodigoNovoSistema();
+                    configurarEventosNovoSistema();
+                    
+                } catch (error) {
+                    console.error('Erro:', error);
+                    document.getElementById('ultimo-erro').textContent = error.message;
+                }
+            });
+        }
+
+        function configurarEventosNovoSistema() {
+            const buscaInput = document.getElementById('busca-produtos');
+            const filtroSelect = document.getElementById('filtro-grupo');
+            
+            if (buscaInput) {
+                buscaInput.removeEventListener('input', filtrarNovoSistema);
+                buscaInput.addEventListener('input', filtrarNovoSistema);
+            }
+            if (filtroSelect) {
+                filtroSelect.removeEventListener('change', filtrarNovoSistema);
+                filtroSelect.addEventListener('change', filtrarNovoSistema);
+            }
+        }
+
+        async function gerarCodigoNovoSistema() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                const { data, error } = await window.supabase.rpc('get_next_produto_codigo', {
+                    user_uuid: user.id
+                });
+                if (error) throw error;
+                
+                const input = document.getElementById('produto-codigo');
+                if (input) {
+                    input.value = data || 'PR000001';
+                }
+            } catch (error) {
+                const input = document.getElementById('produto-codigo');
+                if (input) {
+                    input.value = 'PR000001';
+                }
+            }
+        }
+
+        async function carregarProdutosNovoSistema() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                const { data, error } = await window.supabase
+                    .from('produtos')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('codigo');
+
+                if (error) throw error;
+                produtosNovoSistema = data || [];
+                renderizarNovoSistema();
+                
+            } catch (error) {
+                console.error('Erro ao carregar:', error);
+                document.getElementById('ultimo-erro').textContent = error.message;
+            }
+        }
+
+        function renderizarNovoSistema() {
+            const tbody = document.getElementById('produtos-tbody');
+            const total = document.getElementById('total-produtos');
+            
+            if (!tbody || !total) return;
+            
+            tbody.innerHTML = '';
+            total.textContent = produtosNovoSistema.length;
+
+            if (produtosNovoSistema.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">Nenhum produto encontrado</td></tr>';
+                return;
+            }
+
+            produtosNovoSistema.forEach(produto => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${produto.codigo}</td>
+                    <td>${produto.descricao}</td>
+                    <td>${produto.grupo}</td>
+                    <td>${produto.unidade_medida}</td>
+                    <td>${produto.peso_bruto || '-'}</td>
+                    <td>${produto.peso_liquido || '-'}</td>
+                    <td>R$ ${parseFloat(produto.preco || 0).toFixed(2)}</td>
+                    <td>
+                        <button onclick="editarNovoSistema('${produto.id}')" class="btn btn-primary btn-sm">Editar</button>
+                        <button onclick="excluirNovoSistema('${produto.id}')" class="btn btn-danger btn-sm">Excluir</button>
+                    </td>
+                `;
+            });
+        }
+
+        function filtrarNovoSistema() {
+            const busca = document.getElementById('busca-produtos')?.value.toLowerCase() || '';
+            const grupo = document.getElementById('filtro-grupo')?.value || '';
+            
+            let filtrados = produtosNovoSistema.filter(p => {
+                const matchBusca = !busca || p.descricao.toLowerCase().includes(busca) || p.codigo.toLowerCase().includes(busca);
+                const matchGrupo = !grupo || p.grupo === grupo;
+                return matchBusca && matchGrupo;
+            });
+            
+            const tbody = document.getElementById('produtos-tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            filtrados.forEach(produto => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${produto.codigo}</td>
+                    <td>${produto.descricao}</td>
+                    <td>${produto.grupo}</td>
+                    <td>${produto.unidade_medida}</td>
+                    <td>${produto.peso_bruto || '-'}</td>
+                    <td>${produto.peso_liquido || '-'}</td>
+                    <td>R$ ${parseFloat(produto.preco || 0).toFixed(2)}</td>
+                    <td>
+                        <button onclick="editarNovoSistema('${produto.id}')" class="btn btn-primary btn-sm">Editar</button>
+                        <button onclick="excluirNovoSistema('${produto.id}')" class="btn btn-danger btn-sm">Excluir</button>
+                    </td>
+                `;
+            });
+        }
+
+        async function abrirModalNovoProduto() {
+            await gerarCodigoNovoSistema();
+            document.getElementById('produto-id').value = '';
+            document.getElementById('produto-descricao').value = '';
+            document.getElementById('produto-grupo').value = 'Ingredientes';
+            document.getElementById('produto-unidade').value = 'KG';
+            document.getElementById('produto-peso-bruto').value = '';
+            document.getElementById('produto-peso-liquido').value = '';
+            document.getElementById('produto-preco').value = '';
+            document.getElementById('modal-produto').style.display = 'block';
+            
+                                    setTimeout(() => {
+                const descInput = document.getElementById('produto-descricao');
+                if (descInput) descInput.focus();
             }, 100);
         }
 
-        // Garantir que está disponível globalmente
-        window.showTab = showTab;
-        console.log('✅ showTab carregado!');
-        </script>
+        async function salvarProduto() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                
+                const id = document.getElementById('produto-id').value;
+                const dados = {
+                    codigo: document.getElementById('produto-codigo').value.trim(),
+                    descricao: document.getElementById('produto-descricao').value.trim(),
+                    grupo: document.getElementById('produto-grupo').value,
+                    unidade_medida: document.getElementById('produto-unidade').value,
+                    peso_bruto: parseFloat(document.getElementById('produto-peso-bruto').value) || null,
+                    peso_liquido: parseFloat(document.getElementById('produto-peso-liquido').value) || null,
+                    preco: parseFloat(document.getElementById('produto-preco').value) || null,
+                    user_id: user.id
+                };
 
-        // funcoes-globais-fix.js - Correção para garantir que todas as funções estejam disponíveis
-// Adicione este script ANTES do fechamento do </body> no index.html
+                if (!dados.descricao) {
+                    mostrarToast('Informe a descrição');
+                    document.getElementById('produto-descricao').focus();
+                    return;
+                }
 
-console.log('🔧 Carregando correções para funções globais...');
+                let result;
+                if (id) {
+                    result = await window.supabase.from('produtos').update(dados).eq('id', id).eq('user_id', user.id);
+                } else {
+                    result = await window.supabase.from('produtos').insert([dados]);
+                }
 
-// ===== CORREÇÃO PARA FUNÇÕES DE CLIENTES =====
-document.addEventListener('DOMContentLoaded', function() {
-    // Aguardar um pouco para os módulos carregarem
-    setTimeout(() => {
-        
-        // ===== CLIENTES =====
-        if (typeof window.abrirModalNovoCliente === 'undefined') {
-            window.abrirModalNovoCliente = function() {
-                console.log('🔧 Corrigindo abrirModalNovoCliente...');
-                showTab('clientes'); // Garantir que a aba está ativa
-                setTimeout(() => {
-                    if (typeof inicializarClientes === 'function') {
-                        inicializarClientes().then(() => {
-                            if (window.clientesModulo && typeof window.clientesModulo.abrirModalNovoCliente === 'function') {
-                                window.clientesModulo.abrirModalNovoCliente();
-                            } else {
-                                mostrarToast('Erro ao abrir modal de cliente', 'error');
-                            }
-                        });
-                    }
-                }, 100);
-            };
+                if (result.error) throw result.error;
+
+                mostrarToast(id ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
+                fecharModalProduto();
+                await carregarProdutosNovoSistema();
+
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                mostrarToast('Erro: ' + error.message);
+                document.getElementById('ultimo-erro').textContent = error.message;
+            }
         }
 
-        if (typeof window.recarregarClientes === 'undefined') {
-            window.recarregarClientes = function() {
-                console.log('🔧 Corrigindo recarregarClientes...');
-                showTab('clientes');
-                setTimeout(() => {
-                    if (typeof inicializarClientes === 'function') {
-                        inicializarClientes();
-                        mostrarToast('Clientes recarregados!', 'success');
-                    }
-                }, 100);
-            };
+        function editarNovoSistema(id) {
+            const produto = produtosNovoSistema.find(p => p.id === id);
+            if (!produto) return;
+
+            document.getElementById('produto-id').value = produto.id;
+            document.getElementById('produto-codigo').value = produto.codigo;
+            document.getElementById('produto-descricao').value = produto.descricao;
+            document.getElementById('produto-grupo').value = produto.grupo;
+            document.getElementById('produto-unidade').value = produto.unidade_medida;
+            document.getElementById('produto-peso-bruto').value = produto.peso_bruto || '';
+            document.getElementById('produto-peso-liquido').value = produto.peso_liquido || '';
+            document.getElementById('produto-preco').value = produto.preco || '';
+            document.getElementById('modal-produto').style.display = 'block';
+            
+            setTimeout(() => {
+                const descInput = document.getElementById('produto-descricao');
+                if (descInput) descInput.focus();
+            }, 100);
         }
 
-        // ===== TIPOS DE REFEIÇÕES =====
-        if (typeof window.abrirModalNovoTipo === 'undefined') {
-            window.abrirModalNovoTipo = function() {
-                console.log('🔧 Corrigindo abrirModalNovoTipo...');
-                showTab('tipos-refeicoes');
-                setTimeout(() => {
-                    if (typeof inicializarTiposRefeicoes === 'function') {
-                        inicializarTiposRefeicoes().then(() => {
-                            if (window.tiposRefeicoesModulo && typeof window.tiposRefeicoesModulo.abrirModalNovoTipo === 'function') {
-                                window.tiposRefeicoesModulo.abrirModalNovoTipo();
-                            } else {
-                                mostrarToast('Erro ao abrir modal de tipo de refeição', 'error');
-                            }
-                        });
-                    }
-                }, 100);
-            };
+        async function excluirNovoSistema(id) {
+            const produto = produtosNovoSistema.find(p => p.id === id);
+            if (!produto || !confirm(`Excluir "${produto.descricao}"?`)) return;
+
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                const { error } = await window.supabase
+                    .from('produtos')
+                    .delete()
+                    .eq('id', id)
+                    .eq('user_id', user.id);
+                    
+                if (error) throw error;
+                mostrarToast('Produto excluído com sucesso!');
+                await carregarProdutosNovoSistema();
+            } catch (error) {
+                mostrarToast('Erro: ' + error.message);
+                document.getElementById('ultimo-erro').textContent = error.message;
+            }
         }
 
-        if (typeof window.recarregarTipos === 'undefined') {
-            window.recarregarTipos = function() {
-                console.log('🔧 Corrigindo recarregarTipos...');
-                showTab('tipos-refeicoes');
-                setTimeout(() => {
-                    if (typeof inicializarTiposRefeicoes === 'function') {
-                        inicializarTiposRefeicoes();
-                        mostrarToast('Tipos recarregados!', 'success');
-                    }
-                }, 100);
-            };
+        function fecharModalProduto() {
+            document.getElementById('modal-produto').style.display = 'none';
         }
 
-        // ===== IMPRESSÃO =====
-        if (typeof window.abrirModalImpressao === 'undefined') {
-            window.abrirModalImpressao = function() {
-                console.log('🔧 Corrigindo abrirModalImpressao...');
-                showTab('cardapio');
-                setTimeout(() => {
-                    if (typeof abrirModalImpressaoCardapios === 'function') {
-                        abrirModalImpressaoCardapios();
-                    } else if (typeof inicializarCardapio === 'function') {
-                        inicializarCardapio().then(() => {
-                            if (typeof abrirModalImpressaoCardapios === 'function') {
-                                abrirModalImpressaoCardapios();
-                            } else {
-                                mostrarToast('Sistema de impressão não disponível', 'error');
-                            }
-                        });
-                    } else {
-                        mostrarToast('Sistema de impressão não carregado', 'error');
-                    }
-                }, 200);
-            };
+        async function recarregarProdutos() {
+            await carregarProdutosNovoSistema();
+            mostrarToast('Produtos recarregados!');
         }
 
-        console.log('✅ Correções aplicadas!');
-        console.log('📋 Funções disponíveis:');
-        console.log('- abrirModalNovoCliente:', typeof window.abrirModalNovoCliente);
-        console.log('- recarregarClientes:', typeof window.recarregarClientes);
-        console.log('- abrirModalNovoTipo:', typeof window.abrirModalNovoTipo);
-        console.log('- recarregarTipos:', typeof window.recarregarTipos);
-        console.log('- abrirModalImpressao:', typeof window.abrirModalImpressao);
-        
-    }, 1000); // Aguardar 1 segundo para garantir que tudo carregou
-});
+        // Exportar funções globais
+        window.abrirModalNovoProduto = abrirModalNovoProduto;
+        window.salvarProduto = salvarProduto;
+        window.editarNovoSistema = editarNovoSistema;
+        window.excluirNovoSistema = excluirNovoSistema;
+        window.fecharModalProduto = fecharModalProduto;
+        window.recarregarProdutos = recarregarProdutos;
+        window.inicializarProdutosNovo = inicializarProdutosNovo;
 
-// ===== FUNÇÃO DE TOAST BÁSICA CASO NÃO EXISTA =====
-if (typeof window.mostrarToast === 'undefined') {
-    window.mostrarToast = function(mensagem, tipo = 'info', duracao = 3000) {
-        console.log(`${tipo.toUpperCase()}: ${mensagem}`);
-        
-        // Criar toast visual simples
-        const toast = document.createElement('div');
-        toast.style.cssText = `
+        // Fechar modal ao clicar fora
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('modal-produto');
+            if (event.target === modal) {
+                fecharModalProduto();
+            }
+        });
+
+        console.log('✅ Sistema de produtos carregado!');
+    </script>
+
+    <!-- ✅ FUNÇÃO DE TOAST NOTIFICATION -->
+    <script>
+        // Toast notification system
+        function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
+            // Remover toast existente se houver
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // Criar elemento toast
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${tipo}`;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                background: ${tipo === 'success' ? '#d4edda' : tipo === 'error' ? '#f8d7da' : tipo === 'warning' ? '#fff3cd' : '#d1ecf1'};
+                color: ${tipo === 'success' ? '#155724' : tipo === 'error' ? '#721c24' : tipo === 'warning' ? '#856404' : '#0c5460'};
+                padding: 12px 16px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                font-family: inherit;
+                font-size: 14px;
+                max-width: 400px;
+                line-height: 1.4;
+            `;
+            
+            const icones = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            toast.innerHTML = `
+                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                    <span>${icones[tipo] || icones.info}</span>
+                    <div style="flex: 1;">${mensagem}</div>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 16px; cursor: pointer; margin-left: 10px; opacity: 0.7;">&times;</button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, duracao);
+        }
+
+        // Disponibilizar globalmente
+        window.mostrarToast = mostrarToast;
+    </script>
+
+    <!-- ✅ ESTILOS PARA BADGES E MELHORIAS VISUAIS -->
+    <style>
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .modal-content {
+            max-width: 600px;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* ===== TOAST NOTIFICATIONS CSS ===== */
+        .toast-notification {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 10000;
-            background: ${tipo === 'success' ? '#d4edda' : tipo === 'error' ? '#f8d7da' : '#fff3cd'};
-            color: ${tipo === 'success' ? '#155724' : tipo === 'error' ? '#721c24' : '#856404'};
-            padding: 12px 16px;
+            min-width: 300px;
+            max-width: 500px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            font-family: inherit;
-            font-size: 14px;
-            max-width: 400px;
-        `;
-        
-        toast.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span>${tipo === 'success' ? '✅' : tipo === 'error' ? '❌' : '⚠️'}</span>
-                <span>${mensagem}</span>
-                <button onclick="this.parentElement.parentElement.remove()" 
-                        style="background: none; border: none; font-size: 16px; cursor: pointer; margin-left: 10px;">&times;</button>
-            </div>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.remove();
-            }
-        }, duracao);
-    };
-}
+            animation: toastSlideIn 0.3s ease-out;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-console.log('🔧 Script de correção carregado!');
-    </body>
+        .toast-content {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            gap: 10px;
+            position: relative;
+            border-radius: 8px;
+        }
+
+        .toast-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: background-color 0.2s ease;
+        }
+
+        /* Estilos por tipo de toast */
+        .toast-success .toast-content {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .toast-success .toast-close:hover {
+            background: rgba(21, 87, 36, 0.1);
+        }
+
+        .toast-error .toast-content {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .toast-error .toast-close:hover {
+            background: rgba(114, 28, 36, 0.1);
+        }
+
+        .toast-warning .toast-content {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .toast-warning .toast-close:hover {
+            background: rgba(133, 100, 4, 0.1);
+        }
+
+        .toast-info .toast-content {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .toast-info .toast-close:hover {
+            background: rgba(12, 84, 96, 0.1);
+        }
+
+        /* Animações */
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-fade-out {
+            animation: toastFadeOut 0.3s ease-in forwards;
+        }
+
+        @keyframes toastFadeOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .toast-notification {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+                max-width: none;
+            }
+            
+            .toast-content {
+                padding: 10px 12px;
+            }
+            
+            .toast-message {
+                font-size: 13px;
+            }
+        }
+    </style>
+</body>
 </html>
