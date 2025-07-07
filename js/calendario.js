@@ -1,6 +1,6 @@
-// js/calendario.js - Sistema de Calendário ISOLADO E FUNCIONAL
+// js/calendario.js - Sistema de Calendário TOTALMENTE CORRIGIDO
 
-console.log('📁 Carregando calendario.js...');
+console.log('📁 Carregando calendario.js CORRIGIDO...');
 
 // ===== SISTEMA DE CALENDÁRIO ISOLADO =====
 
@@ -209,13 +209,69 @@ function atualizarCalendarioSistema() {
             }
         });
         
-        // Evento de clique
-        div.onclick = () => selecionarDiaCalendario(dataStr);
+        // Evento de clique CORRIGIDO
+        div.onclick = () => selecionarDiaCalendarioSeguro(dataStr);
         
         gridElement.appendChild(div);
     }
     
     console.log('✅ Calendário atualizado');
+}
+
+// ===== FUNÇÃO CORRIGIDA: SELECIONAR DIA SEM LOOPS =====
+function selecionarDiaCalendarioSeguro(dataISO) {
+    console.log('📅 selecionarDiaCalendarioSeguro:', dataISO);
+    
+    // ✅ PREVENIR LOOP INFINITO
+    if (window._processandoSelecaoData) {
+        console.log('⚠️ Já processando seleção, ignorando...');
+        return;
+    }
+    
+    window._processandoSelecaoData = true;
+    
+    try {
+        const inputData = document.getElementById('dataCardapio');
+        if (!inputData) {
+            console.error('❌ Campo dataCardapio não encontrado');
+            return;
+        }
+        
+        // ✅ ATUALIZAR CAMPO DE DATA
+        inputData.value = dataISO;
+        
+        // ✅ ATUALIZAR VARIÁVEL GLOBAL
+        if (typeof window.dataAtualCardapio !== 'undefined') {
+            window.dataAtualCardapio = dataISO;
+        }
+        
+        // ✅ CHAMAR FUNÇÃO DE CARREGAMENTO DO CARDÁPIO
+        if (typeof window.carregarCardapioData === 'function') {
+            setTimeout(() => {
+                window.carregarCardapioData();
+            }, 100);
+        }
+        
+        // ✅ ATUALIZAR CALENDÁRIO VISUAL
+        setTimeout(() => {
+            atualizarCalendarioSistema();
+        }, 200);
+        
+        // ✅ FEEDBACK
+        if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast(`📅 Data selecionada: ${formatarDataBrasil(dataISO)}`, 'info', 2000);
+        }
+        
+        console.log('✅ Data selecionada com sucesso:', dataISO);
+        
+    } catch (error) {
+        console.error('❌ Erro ao selecionar data:', error);
+    } finally {
+        // ✅ LIBERAR FLAG
+        setTimeout(() => {
+            window._processandoSelecaoData = false;
+        }, 300);
+    }
 }
 
 // ===== VERIFICAR CARDÁPIO NA DATA =====
@@ -347,36 +403,6 @@ function mudarMesCalendario(direcao) {
     });
 }
 
-// ===== SELEÇÃO DE DIA =====
-function selecionarDiaCalendario(data) {
-    console.log(`📅 Selecionando dia: ${data}`);
-    
-    calendarioSistema.diaSelecionado = data;
-    
-    // Atualizar input de data
-    const dataInput = document.getElementById('dataCardapio');
-    if (dataInput) {
-        dataInput.value = data;
-        
-        // Disparar evento de mudança
-        const event = new Event('change', { bubbles: true });
-        dataInput.dispatchEvent(event);
-    }
-    
-    // Atualizar calendário visual
-    atualizarCalendarioSistema();
-    
-    // Chamar função de carregamento do cardápio se existir
-    if (typeof carregarCardapioData === 'function') {
-        carregarCardapioData();
-    }
-    
-    // Mostrar toast
-    if (typeof mostrarToast === 'function') {
-        mostrarToast(`📅 Data selecionada: ${formatarDataBrasil(data)}`, 'info', 2000);
-    }
-}
-
 // ===== TOGGLE DO CALENDÁRIO =====
 function toggleCalendarioSistema() {
     console.log('🔄 Toggle calendário');
@@ -407,17 +433,6 @@ function toggleCalendarioSistema() {
     }
 }
 
-// ===== FUNÇÕES AUXILIARES =====
-function formatarDataBrasil(dataISO) {
-    if (!dataISO) return '';
-    try {
-        const data = new Date(dataISO + 'T00:00:00');
-        return data.toLocaleDateString('pt-BR');
-    } catch (error) {
-        return dataISO;
-    }
-}
-
 // ===== FUNÇÃO DE FORÇAR ATUALIZAÇÃO =====
 function forcarAtualizacaoCalendario() {
     console.log('🔄 Forçando atualização do calendário...');
@@ -430,18 +445,30 @@ function forcarAtualizacaoCalendario() {
     });
 }
 
+// ===== FUNÇÕES AUXILIARES =====
+function formatarDataBrasil(dataISO) {
+    if (!dataISO) return '';
+    try {
+        const data = new Date(dataISO + 'T00:00:00');
+        return data.toLocaleDateString('pt-BR');
+    } catch (error) {
+        return dataISO;
+    }
+}
+
 // ===== EXPORTAR FUNÇÕES PARA USO GLOBAL =====
 window.inicializarCalendarioSistema = inicializarCalendarioSistema;
 window.atualizarCalendarioSistema = atualizarCalendarioSistema;
 window.mudarMesCalendario = mudarMesCalendario;
-window.selecionarDiaCalendario = selecionarDiaCalendario;
+window.selecionarDiaCalendarioSeguro = selecionarDiaCalendarioSeguro;
 window.toggleCalendarioSistema = toggleCalendarioSistema;
 window.forcarAtualizacaoCalendario = forcarAtualizacaoCalendario;
 
 // ===== ALIASES PARA COMPATIBILIDADE =====
 window.toggleCalendar = toggleCalendarioSistema;
 window.mudarMes = mudarMesCalendario;
-window.selecionarDia = selecionarDiaCalendario;
+window.selecionarDiaCalendario = selecionarDiaCalendarioSeguro;
+window.selecionarDia = selecionarDiaCalendarioSeguro;
 window.atualizarCalendario = atualizarCalendarioSistema;
 
 // ===== AUTO-INICIALIZAÇÃO QUANDO DOM ESTIVER PRONTO =====
@@ -459,4 +486,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
 });
 
-console.log('✅ calendario.js carregado com sucesso!');
+console.log('✅ calendario.js CORRIGIDO carregado com sucesso!');

@@ -1,6 +1,6 @@
-// cardapio.js - Sistema de Cardápios TOTALMENTE CORRIGIDO COM CALENDÁRIO
+// cardapio.js - Sistema de Cardápios TOTALMENTE CORRIGIDO
 
-console.log('📁 Carregando cardapio.js - VERSÃO CORRIGIDA COM CALENDÁRIO...');
+console.log('📁 Carregando cardapio.js CORRIGIDO...');
 
 // ===== VARIÁVEIS GLOBAIS =====
 let clientesCarregados = [];
@@ -15,18 +15,218 @@ let cardapioInicializado = false;
 // Receitas temporárias para o tipo selecionado
 let receitasTemporarias = {};
 
-// ===== FUNÇÕES PRINCIPAIS =====
+// ===== SISTEMA DE INICIALIZAÇÃO ORDENADA =====
+window.sistemaCardapioInicializado = false;
+window.dependenciasCarregadas = {
+    supabase: false,
+    calendario: false,
+    cardapio: false,
+    configuracao: false
+};
 
-// Aguardar Supabase estar disponível
-function aguardarSupabaseCardapio(callback, tentativas = 0) {
-    if (window.supabase && window.supabase.auth) {
-        console.log('✅ Supabase disponível para cardapio.js');
+// ===== FUNÇÃO: Aguardar dependências =====
+function aguardarDependencias(callback, tentativas = 0, maxTentativas = 50) {
+    console.log(`⏳ Aguardando dependências... Tentativa ${tentativas + 1}`);
+    
+    // Verificar Supabase
+    const supabaseOK = window.supabase && window.supabase.auth;
+    
+    // Verificar Calendário
+    const calendarioOK = typeof window.inicializarCalendarioSistema === 'function';
+    
+    // Log do status
+    console.log('📊 Status das dependências:', {
+        supabase: supabaseOK,
+        calendario: calendarioOK,
+        tentativa: tentativas + 1
+    });
+    
+    // Verificar se todas estão prontas
+    if (supabaseOK) {
+        console.log('✅ Dependências principais carregadas!');
+        
+        // Atualizar flags
+        window.dependenciasCarregadas.supabase = true;
+        window.dependenciasCarregadas.calendario = calendarioOK;
+        window.dependenciasCarregadas.cardapio = true;
+        
+        // Executar callback
         callback();
-    } else if (tentativas < 50) {
-        setTimeout(() => aguardarSupabaseCardapio(callback, tentativas + 1), 100);
+        return true;
+    }
+    
+    // Tentar novamente se não atingiu o limite
+    if (tentativas < maxTentativas) {
+        setTimeout(() => {
+            aguardarDependencias(callback, tentativas + 1, maxTentativas);
+        }, 200);
     } else {
-        console.error('❌ Timeout: Supabase não ficou disponível');
-        mostrarToast('Erro: Não foi possível conectar com o Supabase.', 'error');
+        console.error('❌ Timeout: Dependências não carregaram no tempo esperado');
+        console.log('📋 Status final:', {
+            supabase: supabaseOK,
+            calendario: calendarioOK
+        });
+        
+        // Tentar inicializar mesmo assim
+        console.log('⚠️ Tentando inicializar com dependências parciais...');
+        callback();
+    }
+    
+    return false;
+}
+
+// ===== FUNÇÃO: Inicialização segura do sistema =====
+async function inicializarSistemaSeguro() {
+    if (window.sistemaCardapioInicializado) {
+        console.log('⚠️ Sistema já inicializado');
+        return;
+    }
+    
+    console.log('🚀 Iniciando sistema de cardápio seguro...');
+    
+    try {
+        // ✅ PASSO 1: Verificar e aguardar autenticação
+        if (window.supabase && window.supabase.auth) {
+            console.log('🔐 Verificando autenticação...');
+            
+            const { data: { user } } = await window.supabase.auth.getUser();
+            if (!user) {
+                console.warn('⚠️ Usuário não autenticado');
+                if (typeof mostrarToast === 'function') {
+                    mostrarToast('Você precisa estar logado para acessar esta página.', 'error');
+                }
+                window.location.href = 'login.html';
+                return;
+            }
+            console.log('✅ Usuário autenticado');
+        }
+        
+        // ✅ PASSO 2: Carregar dados básicos
+        console.log('📥 Carregando dados iniciais...');
+        await carregarDadosIniciais();
+        
+        // ✅ PASSO 3: Configurar interface
+        console.log('🎨 Configurando interface...');
+        await carregarClientesCardapio();
+        configurarEventos();
+        
+        // ✅ PASSO 4: Inicializar calendário
+        console.log('📅 Inicializando calendário...');
+        if (typeof inicializarCalendarioSistema === 'function') {
+            const sucessoCalendario = inicializarCalendarioSistema();
+            if (sucessoCalendario) {
+                console.log('✅ Calendário inicializado');
+            } else {
+                console.warn('⚠️ Problema na inicialização do calendário');
+            }
+        }
+        
+        // ✅ PASSO 5: Configurar data atual
+        console.log('📅 Configurando data atual...');
+        const hoje = new Date();
+        const hojeStr = hoje.toISOString().split('T')[0];
+        
+        const inputData = document.getElementById('dataCardapio');
+        if (inputData) {
+            inputData.value = hojeStr;
+            dataAtualCardapio = hojeStr;
+            console.log(`📅 Data configurada: ${hojeStr}`);
+        }
+        
+        if (typeof atualizarIndicadorData === 'function') {
+            atualizarIndicadorData();
+        }
+        
+        // ✅ PASSO 6: Forçar atualização do calendário
+        console.log('🔄 Atualizando calendário...');
+        if (typeof forcarAtualizacaoCalendario === 'function') {
+            setTimeout(() => {
+                forcarAtualizacaoCalendario();
+            }, 500);
+        }
+        
+        // ✅ MARCAR COMO INICIALIZADO
+        window.sistemaCardapioInicializado = true;
+        window.dependenciasCarregadas.configuracao = true;
+        
+        console.log('✅ Sistema de cardápio inicializado com sucesso!');
+        
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('✅ Sistema carregado com sucesso!', 'success', 3000);
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro durante inicialização:', error);
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('❌ Erro ao carregar sistema: ' + error.message, 'error');
+        }
+    }
+}
+
+// ===== FUNÇÃO: Verificar se sistema pode inicializar =====
+function podeInicializarSistema() {
+    const tabCardapio = document.getElementById('cardapio');
+    const estaAtivo = tabCardapio && !tabCardapio.classList.contains('hidden');
+    
+    console.log('🔍 Verificando se pode inicializar:', {
+        tabExists: !!tabCardapio,
+        isActive: estaAtivo,
+        jaInicializado: window.sistemaCardapioInicializado
+    });
+    
+    return estaAtivo && !window.sistemaCardapioInicializado;
+}
+
+// ===== FUNÇÃO: Inicialização condicional =====
+function inicializarSeNecessario() {
+    if (podeInicializarSistema()) {
+        console.log('🎯 Inicializando sistema de cardápio...');
+        
+        aguardarDependencias(() => {
+            inicializarSistemaSeguro();
+        });
+    } else {
+        console.log('⏭️ Inicialização não necessária no momento');
+    }
+}
+
+// ===== FUNÇÃO PRINCIPAL: INICIALIZAR CARDÁPIO =====
+async function inicializarCardapio() {
+    if (cardapioInicializado) {
+        console.log('⚠️ Cardápio já inicializado');
+        return;
+    }
+
+    console.log('🚀 Inicializando cardápio...');
+    
+    try {
+        if (!await verificarAutenticacao()) {
+            return;
+        }
+        
+        console.log('📥 Carregando dados do cardápio...');
+        await carregarDadosIniciais();
+        await carregarClientesCardapio();
+        
+        configurarEventos();
+        
+        // Configurar data atual
+        const hoje = new Date();
+        const hojeStr = hoje.toISOString().split('T')[0];
+        const inputData = document.getElementById('dataCardapio');
+        if (inputData) {
+            inputData.value = hojeStr;
+            dataAtualCardapio = hojeStr;
+        }
+        
+        atualizarIndicadorData();
+        
+        cardapioInicializado = true;
+        console.log('✅ Cardápio inicializado com sucesso');
+        
+    } catch (error) {
+        console.error('❌ Erro ao inicializar cardápio:', error);
+        mostrarToast('Erro ao carregar cardápio: ' + error.message, 'error');
     }
 }
 
@@ -46,89 +246,6 @@ async function verificarAutenticacao() {
     }
 }
 
-// ===== INICIALIZAR CARDÁPIO PRINCIPAL =====
-async function inicializarCardapio() {
-    if (cardapioInicializado) {
-        console.log('⚠️ Cardápio já inicializado');
-        return;
-    }
-
-    console.log('🚀 Inicializando cardápio...');
-    
-    aguardarSupabaseCardapio(async () => {
-        try {
-            if (!await verificarAutenticacao()) {
-                return;
-            }
-            
-            console.log('📥 Carregando dados do cardápio...');
-            await carregarDadosIniciais();
-            
-            // ✅ CORREÇÃO PRINCIPAL: Carregar clientes primeiro
-            await carregarClientesCardapio();
-            
-            configurarEventos();
-            
-            // ✅ CORREÇÃO: Inicializar calendário após carregar dados
-            await inicializarCalendarioIntegrado();
-            
-            // Configurar data atual
-            const hoje = new Date();
-            const hojeStr = hoje.toISOString().split('T')[0];
-            const inputData = document.getElementById('dataCardapio');
-            if (inputData) {
-                inputData.value = hojeStr;
-                dataAtualCardapio = hojeStr;
-            }
-            
-            atualizarIndicadorData();
-            
-            cardapioInicializado = true;
-            console.log('✅ Cardápio inicializado com sucesso');
-            
-        } catch (error) {
-            console.error('❌ Erro ao inicializar cardápio:', error);
-            mostrarToast('Erro ao carregar cardápio: ' + error.message, 'error');
-        }
-    });
-}
-
-// ===== INICIALIZAR CALENDÁRIO INTEGRADO =====
-async function inicializarCalendarioIntegrado() {
-    console.log('📅 Inicializando calendário integrado...');
-    
-    try {
-        // Aguardar calendário estar disponível
-        let tentativas = 0;
-        while (typeof inicializarCalendarioSistema !== 'function' && tentativas < 20) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            tentativas++;
-        }
-        
-        if (typeof inicializarCalendarioSistema === 'function') {
-            console.log('📅 Sistema de calendário encontrado, inicializando...');
-            const sucesso = inicializarCalendarioSistema();
-            
-            if (sucesso) {
-                console.log('✅ Calendário integrado com sucesso');
-                
-                // Forçar atualização após carregar dados
-                setTimeout(() => {
-                    if (typeof forcarAtualizacaoCalendario === 'function') {
-                        forcarAtualizacaoCalendario();
-                    }
-                }, 500);
-            } else {
-                console.warn('⚠️ Falha na inicialização do calendário');
-            }
-        } else {
-            console.warn('⚠️ Sistema de calendário não disponível');
-        }
-    } catch (error) {
-        console.error('❌ Erro ao inicializar calendário integrado:', error);
-    }
-}
-
 // Carregar dados iniciais
 async function carregarDadosIniciais() {
     try {
@@ -144,7 +261,7 @@ async function carregarDadosIniciais() {
     }
 }
 
-// ===== CARREGAR CLIENTES CORRIGIDO =====
+// ===== CARREGAR CLIENTES =====
 async function carregarClientes() {
     try {
         const { data: { user } } = await window.supabase.auth.getUser();
@@ -335,7 +452,7 @@ async function carregarTiposRefeicao() {
     }
 }
 
-// ===== CARREGAR CARDÁPIOS CORRIGIDO =====
+// ===== CARREGAR CARDÁPIOS =====
 async function carregarCardapios() {
     try {
         console.log('📥 Carregando cardápios...');
@@ -423,23 +540,244 @@ function configurarEventos() {
     }
 }
 
+// ===== FUNÇÃO CORRIGIDA: CARREGAR CARDÁPIO POR DATA =====
 function carregarCardapioData() {
     const dataInput = document.getElementById('dataCardapio');
     if (!dataInput) return;
     
     const novaData = dataInput.value;
+    const dataAnterior = dataAtualCardapio;
+    
+    console.log(`📅 Data alterada de ${dataAnterior} para ${novaData}`);
+    
+    // ✅ ATUALIZAR VARIÁVEL GLOBAL
     dataAtualCardapio = novaData;
     
-    console.log(`📅 Data alterada para: ${novaData}`);
-    
+    // ✅ ATUALIZAR INDICADOR VISUAL
     atualizarIndicadorData();
     
-    // ✅ CORREÇÃO: Atualizar calendário se disponível
-    if (typeof forcarAtualizacaoCalendario === 'function') {
-        forcarAtualizacaoCalendario();
+    // ✅ RECARREGAR CARDÁPIO
+    setTimeout(() => {
+        carregarCardapioParaDataAtual();
+        
+        // ✅ ATUALIZAR CALENDÁRIO
+        if (typeof forcarAtualizacaoCalendario === 'function') {
+            setTimeout(() => {
+                forcarAtualizacaoCalendario();
+            }, 200);
+        }
+    }, 100);
+}
+
+// ===== FUNÇÃO CORRIGIDA: CARREGAR CARDÁPIO PARA DATA ATUAL =====
+function carregarCardapioParaDataAtual() {
+    console.log('📅 carregarCardapioParaDataAtual() chamada');
+    
+    if (!dataAtualCardapio || !clienteAtualCardapio) {
+        console.log('⚠️ Data ou cliente não definidos:', {
+            data: dataAtualCardapio,
+            cliente: clienteAtualCardapio?.codigo || 'null'
+        });
+        
+        // ✅ LIMPAR INTERFACE
+        limparInterfaceCardapio();
+        return;
     }
     
-    carregarCardapioParaDataAtual();
+    console.log(`📅 Carregando cardápio para data: ${dataAtualCardapio}, cliente: ${clienteAtualCardapio.codigo}`);
+    
+    // ✅ LIMPAR RECEITAS TEMPORÁRIAS
+    receitasTemporarias = {};
+    console.log('🧹 Receitas temporárias limpas');
+    
+    // ✅ VERIFICAR SE EXISTE CARDÁPIO
+    const cardapioData = cardapiosCarregados[dataAtualCardapio]?.[clienteAtualCardapio.codigo];
+    
+    if (cardapioData && Object.keys(cardapioData).length > 0) {
+        console.log('✅ Cardápio encontrado para a data, carregando...', cardapioData);
+        
+        // Carregar cardápios existentes
+        Object.keys(cardapioData).forEach(tipoCodigo => {
+            const receitasTipo = cardapioData[tipoCodigo];
+            
+            if (receitasTipo && receitasTipo.length > 0) {
+                // ✅ ARMAZENAR EM RECEITAS TEMPORÁRIAS
+                receitasTemporarias[tipoCodigo] = [...receitasTipo];
+                console.log(`📋 Carregado tipo ${tipoCodigo}: ${receitasTipo.length} receitas`);
+                
+                // ✅ ATUALIZAR INTERFACE
+                atualizarInterfaceTipo(tipoCodigo, receitasTipo);
+            }
+        });
+        
+        console.log('✅ Cardápio carregado com sucesso para data:', dataAtualCardapio);
+        
+    } else {
+        console.log('ℹ️ Nenhum cardápio encontrado para esta data - interface limpa');
+        limparInterfaceCardapio();
+    }
+    
+    // ✅ FORÇAR ATUALIZAÇÃO VISUAL
+    setTimeout(() => {
+        atualizarInterfaceCompleta();
+    }, 100);
+}
+
+// ===== FUNÇÃO: LIMPAR INTERFACE =====
+function limparInterfaceCardapio() {
+    console.log('🧹 Limpando interface do cardápio...');
+    
+    if (!clienteAtualCardapio?.tiposRefeicao) {
+        console.log('⚠️ Cliente não possui tipos de refeição');
+        return;
+    }
+    
+    // Limpar cada tipo de refeição
+    clienteAtualCardapio.tiposRefeicao.forEach(tipo => {
+        const container = document.getElementById(`receitas-list-${tipo.codigo}`);
+        if (container) {
+            container.innerHTML = `
+                <div style="text-align: center; color: #666; padding: 20px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
+                    📝 Nenhuma receita cadastrada para esta data<br>
+                    <small>Use o botão "Adicionar Receitas" para incluir receitas neste tipo</small>
+                </div>
+            `;
+        }
+        
+        const comensaisInput = document.getElementById(`comensais-${tipo.codigo}`);
+        if (comensaisInput) {
+            comensaisInput.value = '';
+        }
+    });
+    
+    const totalComensaisInput = document.getElementById('totalComensais');
+    if (totalComensaisInput) {
+        totalComensaisInput.value = '';
+    }
+}
+
+// ===== FUNÇÃO: ATUALIZAR INTERFACE DE UM TIPO =====
+function atualizarInterfaceTipo(tipoCodigo, receitasTipo) {
+    console.log(`🔄 Atualizando interface do tipo: ${tipoCodigo}`);
+    
+    const container = document.getElementById(`receitas-list-${tipoCodigo}`);
+    if (container) {
+        // ✅ USAR FUNÇÃO DE RENDERIZAÇÃO
+        setTimeout(() => {
+            if (typeof renderizarReceitasDoTipoEditavel === 'function') {
+                renderizarReceitasDoTipoEditavel(tipoCodigo);
+            } else {
+                renderizarReceitasBasico(tipoCodigo, receitasTipo);
+            }
+        }, 50);
+    }
+    
+    // ✅ ATUALIZAR COMENSAIS
+    const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
+    if (comensaisInput && receitasTipo && receitasTipo.length > 0) {
+        const primeiraReceita = receitasTipo[0];
+        if (primeiraReceita.comensais) {
+            comensaisInput.value = primeiraReceita.comensais;
+        }
+    }
+}
+
+// ===== FUNÇÃO: RENDERIZAÇÃO BÁSICA =====
+function renderizarReceitasBasico(tipoCodigo, receitasTipo) {
+    const container = document.getElementById(`receitas-list-${tipoCodigo}`);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!receitasTipo || receitasTipo.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; color: #666; padding: 20px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
+                📝 Nenhuma receita adicionada<br>
+                <small>Use o botão "Adicionar Receitas" para incluir receitas neste tipo</small>
+            </div>
+        `;
+        return;
+    }
+    
+    receitasTipo.forEach(receita => {
+        const div = document.createElement('div');
+        div.className = 'receita-item-tabular';
+        div.id = `receita-${tipoCodigo}-${receita.receita_id}`;
+        
+        div.style.cssText = `
+            display: grid;
+            grid-template-columns: 2fr 120px 150px 150px 80px;
+            gap: 10px;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+        `;
+        
+        const receitaOriginal = receitasCarregadas.find(r => r.id === receita.receita_id);
+        const unidadeRendimento = receitaOriginal ? (receitaOriginal.unidade_rendimento || 'UN') : 'UN';
+        
+        div.innerHTML = `
+            <div style="font-weight: 500; color: #333; font-size: 14px;">
+                ${receita.codigo} - ${receita.descricao}
+            </div>
+            <div style="text-align: center;">
+                <span style="padding: 4px 8px; background: #e7f3ff; color: #0066cc; border-radius: 4px; font-weight: 600;">
+                    ${receita.comensais || 0}
+                </span>
+            </div>
+            <div style="text-align: center;">
+                <span style="font-weight: 500;">
+                    ${(receita.quantidadePorPessoa || 0).toFixed(3)} ${unidadeRendimento}
+                </span>
+            </div>
+            <div style="text-align: center;">
+                <span style="padding: 6px 10px; background: #e8f5e8; color: #2e7d32; border-radius: 6px; font-weight: 600;">
+                    ${(receita.totalPorComensais || 0).toFixed(3)} ${unidadeRendimento}
+                </span>
+            </div>
+            <div style="text-align: center;">
+                <button class="btn btn-danger" onclick="removerReceita('${tipoCodigo}', '${receita.receita_id}')" 
+                        style="padding: 4px 8px; font-size: 11px; width: 60px;">
+                    Excluir
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(div);
+    });
+}
+
+// ===== FUNÇÃO: ATUALIZAR INTERFACE COMPLETA =====
+function atualizarInterfaceCompleta() {
+    console.log('🔄 Atualizando interface completa...');
+    
+    if (!clienteAtualCardapio?.tiposRefeicao) {
+        console.log('⚠️ Cliente não definido para atualização completa');
+        return;
+    }
+    
+    clienteAtualCardapio.tiposRefeicao.forEach(tipo => {
+        if (receitasTemporarias[tipo.codigo]) {
+            if (typeof renderizarReceitasDoTipoEditavel === 'function') {
+                renderizarReceitasDoTipoEditavel(tipo.codigo);
+            } else {
+                renderizarReceitasBasico(tipo.codigo, receitasTemporarias[tipo.codigo]);
+            }
+        } else {
+            const container = document.getElementById(`receitas-list-${tipo.codigo}`);
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: #666; padding: 20px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
+                        📝 Nenhuma receita cadastrada para esta data<br>
+                        <small>Use o botão "Adicionar Receitas" para incluir receitas neste tipo</small>
+                    </div>
+                `;
+            }
+        }
+    });
 }
 
 function atualizarIndicadorData() {
@@ -464,6 +802,7 @@ function atualizarIndicadorData() {
     }
 }
 
+// ===== FUNÇÃO: CARREGAR TIPOS DE REFEIÇÃO DO CLIENTE =====
 function carregarTiposRefeicaoCliente() {
     const clienteIndex = document.getElementById('clienteCardapio').value;
     const container = document.getElementById('tiposRefeicaoCardapio');
@@ -486,7 +825,7 @@ function carregarTiposRefeicaoCliente() {
         return;
     }
 
-    // Criar seções expansíveis CORRIGIDAS para cada tipo de refeição
+    // Criar seções expansíveis para cada tipo de refeição
     cliente.tiposRefeicao.forEach(tipo => {
         const expandable = document.createElement('div');
         expandable.className = 'expandable';
@@ -496,7 +835,6 @@ function carregarTiposRefeicaoCliente() {
                 <span>▼</span>
             </div>
             <div class="expandable-content">
-                <!-- ✅ CORREÇÃO 1: Seção de comensais corrigida -->
                 <div class="comensais-section">
                     <label>Comensais para ${tipo.descricao}:</label>
                     <input type="number" 
@@ -505,21 +843,18 @@ function carregarTiposRefeicaoCliente() {
                            min="1" 
                            max="99999" 
                            placeholder="0"
-                           value="${getComensaisFromTotal() || ''}">
-                    <!-- ✅ CORREÇÃO PRINCIPAL: Botão que atualiza E calcula -->
-                    <button class="btn btn-primary compact-btn" onclick="atualizarECalcularTipoFinal('${tipo.codigo}')">
+                           value="">
+                    <button class="btn btn-primary compact-btn" onclick="executarAtualizacaoECalculoFinal('${tipo.codigo}')">
                         📝 Atualizar e Calcular
                     </button>
                 </div>
 
-                <!-- ✅ BOTÃO DE AÇÃO CORRIGIDO (apenas adicionar receitas) -->
                 <div class="actions" style="margin: 15px 0; padding: 15px 0; border-top: 1px solid #e9ecef;">
                     <button class="btn btn-primary compact-btn" onclick="abrirModalReceitasTipo('${tipo.codigo}')">
                         ➕ Adicionar Receitas
                     </button>
                 </div>
 
-                <!-- ✅ CORREÇÃO 3: Cabeçalho da tabela corrigido -->
                 <div class="receitas-header visible">
                     <div class="receitas-header-grid" style="display: grid; grid-template-columns: 2fr 120px 150px 150px 80px; gap: 10px; font-weight: 600; color: #495057; font-size: 13px; padding: 10px; background: #f8f9fa; border-radius: 5px; margin-bottom: 10px;">
                         <div style="text-align: left;">Receita</div>
@@ -530,7 +865,6 @@ function carregarTiposRefeicaoCliente() {
                     </div>
                 </div>
 
-                <!-- Container das receitas -->
                 <div id="receitas-list-${tipo.codigo}" class="receitas-container"></div>
             </div>
         `;
@@ -540,54 +874,78 @@ function carregarTiposRefeicaoCliente() {
     carregarCardapioParaDataAtual();
 }
 
-function getComensaisFromTotal() {
-    const totalInput = document.getElementById('totalComensais');
-    return totalInput ? totalInput.value : '';
-}
-
-function carregarCardapioParaDataAtual() {
-    if (!dataAtualCardapio || !clienteAtualCardapio) {
-        console.log('⚠️ Data ou cliente não definidos');
+// ===== FUNÇÃO PRINCIPAL: ATUALIZAR E CALCULAR =====
+function executarAtualizacaoECalculoFinal(tipoCodigo) {
+    console.log(`🔄 [FINAL] Executando atualização e cálculo para tipo: ${tipoCodigo}`);
+    
+    const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
+    if (!comensaisInput) {
+        mostrarToast('Campo de comensais não encontrado', 'error');
         return;
     }
     
-    console.log(`📅 Carregando cardápio para data: ${dataAtualCardapio}`);
+    const comensaisGlobal = parseInt(comensaisInput.value || 0);
     
-    // Limpar receitas temporárias
-    receitasTemporarias = {};
+    if (comensaisGlobal <= 0) {
+        mostrarToast('Informe um número válido de comensais (maior que 0)', 'warning');
+        comensaisInput.focus();
+        return;
+    }
     
-    const cardapioData = cardapiosCarregados[dataAtualCardapio]?.[clienteAtualCardapio.codigo];
+    // ✅ VERIFICAR SE TEM RECEITAS
+    if (!receitasTemporarias[tipoCodigo] || receitasTemporarias[tipoCodigo].length === 0) {
+        mostrarToast(`ℹ️ Comensais definido para ${comensaisGlobal}. Adicione receitas para aplicar o cálculo.`, 'info');
+        return;
+    }
     
-    if (cardapioData) {
-        console.log('✅ Cardápio encontrado, carregando...');
+    // ✅ APLICAR COMENSAIS E CALCULAR
+    let receitasProcessadas = 0;
+    
+    receitasTemporarias[tipoCodigo].forEach(receita => {
+        // Buscar dados da receita original
+        const receitaOriginal = receitasCarregadas.find(r => r.id === receita.receita_id);
         
-        Object.keys(cardapioData).forEach(tipoCodigo => {
-            const receitasTipo = cardapioData[tipoCodigo];
+        if (receitaOriginal && receitaOriginal.rendimento > 0) {
+            // ✅ CÁLCULO: comensais × rendimento da receita
+            const rendimento = parseFloat(receitaOriginal.rendimento) || 0;
+            const total = comensaisGlobal * rendimento;
             
-            // Armazenar em receitas temporárias
-            receitasTemporarias[tipoCodigo] = [...receitasTipo];
+            // Atualizar receita
+            receita.comensais = comensaisGlobal;
+            receita.quantidadePorPessoa = rendimento;
+            receita.totalPorComensais = total;
+            receita.unidadeBasica = receitaOriginal.unidade_rendimento || 'UN';
+            receita.alterada = true;
             
-            // Atualizar interface
-            const container = document.getElementById(`receitas-list-${tipoCodigo}`);
-            if (container) {
-                container.innerHTML = '';
-                receitasTipo.forEach(receita => {
-                    adicionarReceitaNaLista(tipoCodigo, receita);
-                });
+            console.log(`✅ Receita ${receita.codigo}: ${comensaisGlobal} × ${rendimento} = ${total}`);
+            receitasProcessadas++;
+        }
+    });
+    
+    if (receitasProcessadas > 0) {
+        mostrarToast(`✅ ${receitasProcessadas} receita(s) calculadas com ${comensaisGlobal} comensais!`, 'success');
+        
+        // ✅ RE-RENDERIZAR
+        setTimeout(() => {
+            if (typeof renderizarReceitasDoTipoEditavel === 'function') {
+                renderizarReceitasDoTipoEditavel(tipoCodigo);
+            } else {
+                renderizarReceitasBasico(tipoCodigo, receitasTemporarias[tipoCodigo]);
             }
             
-            // Atualizar comensais
-            const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
-            if (comensaisInput && receitasTipo.length > 0) {
-                comensaisInput.value = receitasTipo[0].comensais || '';
+            // ✅ ATUALIZAR CALENDÁRIO
+            if (typeof forcarAtualizacaoCalendario === 'function') {
+                setTimeout(() => {
+                    forcarAtualizacaoCalendario();
+                }, 300);
             }
-        });
+        }, 100);
     } else {
-        console.log('⚠️ Nenhum cardápio encontrado para esta data');
+        mostrarToast('Nenhuma receita pôde ser calculada. Verifique se as receitas têm rendimento definido.', 'warning');
     }
 }
 
-// ===== FUNÇÕES DE RECEITAS =====
+// ===== FUNÇÕES DE MODAL DE RECEITAS =====
 
 function abrirModalReceitasTipo(tipoCodigo) {
     console.log('🍽️ Abrindo modal de receitas para tipo:', tipoCodigo);
@@ -741,7 +1099,6 @@ function adicionarReceitasSelecionadas() {
         };
         
         receitasTemporarias[tipoCodigo].push(receitaCardapio);
-        adicionarReceitaNaLista(tipoCodigo, receitaCardapio);
         adicionadas++;
     });
     
@@ -749,174 +1106,129 @@ function adicionarReceitasSelecionadas() {
         mostrarToast(`✅ ${adicionadas} receita(s) adicionada(s) com sucesso!`, 'success');
         fecharModal('modalReceitas');
         
-        // ✅ CORREÇÃO: Atualizar calendário após adicionar receitas
-        if (typeof forcarAtualizacaoCalendario === 'function') {
-            setTimeout(() => {
-                forcarAtualizacaoCalendario();
-            }, 300);
-        }
+        // ✅ RE-RENDERIZAR
+        setTimeout(() => {
+            if (typeof renderizarReceitasDoTipoEditavel === 'function') {
+                renderizarReceitasDoTipoEditavel(tipoCodigo);
+            } else {
+                renderizarReceitasBasico(tipoCodigo, receitasTemporarias[tipoCodigo]);
+            }
+            
+            // ✅ ATUALIZAR CALENDÁRIO
+            if (typeof forcarAtualizacaoCalendario === 'function') {
+                setTimeout(() => {
+                    forcarAtualizacaoCalendario();
+                }, 300);
+            }
+        }, 100);
     }
 }
 
-// Adicionar receita na lista visual
-function adicionarReceitaNaLista(tipoCodigo, receita) {
-    const container = document.getElementById(`receitas-list-${tipoCodigo}`);
-    if (!container) return;
+// ===== FUNÇÃO: REMOVER RECEITA =====
+async function removerReceita(tipoCodigo, receitaId) {
+    console.log(`🗑️ Removendo receita ${receitaId} do tipo ${tipoCodigo}`);
     
-    const div = document.createElement('div');
-    div.className = 'receita-item-tabular';
-    div.id = `receita-${tipoCodigo}-${receita.receita_id}`;
-    
-    div.innerHTML = `
-        <div class="receita-nome">${receita.codigo} - ${receita.descricao}</div>
-        <div>
-            <input type="number" 
-                   value="${receita.quantidadePorPessoa || 0}" 
-                   step="0.001" 
-                   min="0"
-                   onchange="atualizarQuantidadePorPessoa('${tipoCodigo}', '${receita.receita_id}', this.value)"
-                   placeholder="0,000">
-            <small>${receita.unidadeBasica}/pessoa</small>
-        </div>
-        <div>
-            <input type="number" 
-                   value="${receita.totalPorComensais || 0}" 
-                   step="0.001" 
-                   min="0"
-                   onchange="atualizarTotalPorComensais('${tipoCodigo}', '${receita.receita_id}', this.value)"
-                   placeholder="0,000">
-            <small>Total KG</small>
-        </div>
-        <div class="total-calculado" id="total-${tipoCodigo}-${receita.receita_id}">
-            ${(receita.totalPorComensais || 0).toFixed(3)} KG
-        </div>
-        <button class="btn btn-danger" onclick="removerReceita('${tipoCodigo}', '${receita.receita_id}')">
-            Excluir
-        </button>
-    `;
-    
-    container.appendChild(div);
-}
-
-// Atualizar comensais do tipo
-function atualizarComensaisTipo(tipoCodigo) {
-    const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
-    if (!comensaisInput) return;
-    
-    const comensais = parseInt(comensaisInput.value || 0);
-    
-    if (comensais <= 0) {
-        mostrarToast('Informe um número válido de comensais', 'warning');
+    const receita = receitasTemporarias[tipoCodigo]?.find(r => r.receita_id === receitaId);
+    if (!receita) {
+        mostrarToast('Receita não encontrada', 'error');
         return;
     }
     
-    // Atualizar todas as receitas do tipo
-    if (receitasTemporarias[tipoCodigo]) {
-        receitasTemporarias[tipoCodigo].forEach(receita => {
-            receita.comensais = comensais;
-            
-            // Recalcular se tem quantidade por pessoa
-            if (receita.quantidadePorPessoa > 0) {
-                receita.totalPorComensais = comensais * receita.quantidadePorPessoa;
-                
-                // Atualizar visual
-                const totalEl = document.getElementById(`total-${tipoCodigo}-${receita.receita_id}`);
-                if (totalEl) {
-                    totalEl.textContent = `${receita.totalPorComensais.toFixed(3)} KG`;
-                    totalEl.classList.add('updated');
-                    setTimeout(() => totalEl.classList.remove('updated'), 600);
-                }
-            }
-        });
+    const confirmar = confirm(`❓ Confirmar remoção?\n\nReceita: ${receita.codigo} - ${receita.descricao}\n\nEsta ação será salva no banco de dados.`);
+    if (!confirmar) {
+        return;
     }
     
-    mostrarToast(`✅ Comensais atualizado para ${comensais}`, 'success');
-}
-
-// Atualizar quantidade por pessoa
-function atualizarQuantidadePorPessoa(tipoCodigo, receitaId, valor) {
-    const qtd = parseFloat(valor || 0);
-    
-    if (receitasTemporarias[tipoCodigo]) {
-        const receita = receitasTemporarias[tipoCodigo].find(r => r.receita_id === receitaId);
-        if (receita) {
-            receita.quantidadePorPessoa = qtd;
-            receita.alterada = true;
+    try {
+        if (!clienteAtualCardapio || !dataAtualCardapio) {
+            mostrarToast('❌ Cliente ou data não selecionados', 'error');
+            return;
+        }
+        
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) {
+            mostrarToast('❌ Usuário não autenticado', 'error');
+            return;
+        }
+        
+        const tipoRefeicao = clienteAtualCardapio.tiposRefeicao.find(t => t.codigo === tipoCodigo);
+        if (!tipoRefeicao) {
+            mostrarToast('❌ Tipo de refeição não encontrado', 'error');
+            return;
+        }
+        
+        // ✅ REMOVER DO BANCO
+        const { error } = await window.supabase
+            .from('cardapios')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('cliente_id', clienteAtualCardapio.id)
+            .eq('tipo_refeicao_id', tipoRefeicao.id)
+            .eq('receita_id', receitaId)
+            .eq('data', dataAtualCardapio);
+        
+        if (error) {
+            console.error('❌ Erro ao remover do banco:', error);
+            mostrarToast(`❌ Erro ao remover do banco: ${error.message}`, 'error');
+            return;
+        }
+        
+        // ✅ REMOVER DA MEMÓRIA
+        if (receitasTemporarias[tipoCodigo]) {
+            receitasTemporarias[tipoCodigo] = receitasTemporarias[tipoCodigo].filter(r => r.receita_id !== receitaId);
+        }
+        
+        // ✅ REMOVER ELEMENTO VISUAL
+        const elemento = document.getElementById(`receita-${tipoCodigo}-${receitaId}`);
+        if (elemento) {
+            elemento.style.transition = 'all 0.3s ease';
+            elemento.style.transform = 'translateX(-100%)';
+            elemento.style.opacity = '0';
             
-            // Recalcular total
-            if (receita.comensais > 0) {
-                receita.totalPorComensais = receita.comensais * qtd;
+            setTimeout(() => {
+                elemento.remove();
+            }, 300);
+        }
+        
+        // ✅ ATUALIZAR DADOS GLOBAIS
+        if (window.cardapiosCarregados && window.cardapiosCarregados[dataAtualCardapio]) {
+            const clienteCodigo = clienteAtualCardapio.codigo;
+            if (window.cardapiosCarregados[dataAtualCardapio][clienteCodigo] && 
+                window.cardapiosCarregados[dataAtualCardapio][clienteCodigo][tipoCodigo]) {
                 
-                // Atualizar campo total
-                const totalInput = document.querySelector(`#receita-${tipoCodigo}-${receitaId} input:nth-of-type(2)`);
-                if (totalInput) {
-                    totalInput.value = receita.totalPorComensais.toFixed(3);
-                }
-                
-                // Atualizar total calculado
-                const totalEl = document.getElementById(`total-${tipoCodigo}-${receitaId}`);
-                if (totalEl) {
-                    totalEl.textContent = `${receita.totalPorComensais.toFixed(3)} KG`;
-                    totalEl.classList.add('updated');
-                    setTimeout(() => totalEl.classList.remove('updated'), 600);
-                }
+                window.cardapiosCarregados[dataAtualCardapio][clienteCodigo][tipoCodigo] = 
+                    window.cardapiosCarregados[dataAtualCardapio][clienteCodigo][tipoCodigo]
+                        .filter(r => r.receita_id !== receitaId);
             }
         }
-    }
-}
-
-// Atualizar total por comensais
-function atualizarTotalPorComensais(tipoCodigo, receitaId, valor) {
-    const total = parseFloat(valor || 0);
-    
-    if (receitasTemporarias[tipoCodigo]) {
-        const receita = receitasTemporarias[tipoCodigo].find(r => r.receita_id === receitaId);
-        if (receita) {
-            receita.totalPorComensais = total;
-            receita.alterada = true;
-            
-            // Recalcular quantidade por pessoa
-            if (receita.comensais > 0) {
-                receita.quantidadePorPessoa = total / receita.comensais;
-                
-                // Atualizar campo quantidade
-                const qtdInput = document.querySelector(`#receita-${tipoCodigo}-${receitaId} input:nth-of-type(1)`);
-                if (qtdInput) {
-                    qtdInput.value = receita.quantidadePorPessoa.toFixed(3);
-                }
-            }
-            
-            // Atualizar total calculado
-            const totalEl = document.getElementById(`total-${tipoCodigo}-${receitaId}`);
-            if (totalEl) {
-                totalEl.textContent = `${total.toFixed(3)} KG`;
-                totalEl.classList.add('updated');
-                setTimeout(() => totalEl.classList.remove('updated'), 600);
-            }
+        
+        mostrarToast(`✅ Receita "${receita.codigo}" removida com sucesso!`, 'success');
+        
+        // ✅ ATUALIZAR CALENDÁRIO
+        if (typeof forcarAtualizacaoCalendario === 'function') {
+            setTimeout(() => {
+                forcarAtualizacaoCalendario();
+            }, 500);
         }
-    }
-}
-
-// Remover receita
-function removerReceita(tipoCodigo, receitaId) {
-    if (!confirm('Deseja remover esta receita?')) return;
-    
-    if (receitasTemporarias[tipoCodigo]) {
-        receitasTemporarias[tipoCodigo] = receitasTemporarias[tipoCodigo].filter(r => r.receita_id !== receitaId);
-    }
-    
-    const elemento = document.getElementById(`receita-${tipoCodigo}-${receitaId}`);
-    if (elemento) {
-        elemento.remove();
-    }
-    
-    mostrarToast('Receita removida', 'info');
-    
-    // ✅ CORREÇÃO: Atualizar calendário após remover receita
-    if (typeof forcarAtualizacaoCalendario === 'function') {
+        
+        // ✅ RE-RENDERIZAR SE VAZIO
         setTimeout(() => {
-            forcarAtualizacaoCalendario();
-        }, 300);
+            if (!receitasTemporarias[tipoCodigo] || receitasTemporarias[tipoCodigo].length === 0) {
+                const container = document.getElementById(`receitas-list-${tipoCodigo}`);
+                if (container) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: #666; padding: 20px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
+                            📝 Nenhuma receita adicionada<br>
+                            <small>Use o botão "Adicionar Receitas" para incluir receitas neste tipo</small>
+                        </div>
+                    `;
+                }
+            }
+        }, 400);
+        
+    } catch (error) {
+        console.error('❌ Erro durante remoção:', error);
+        mostrarToast(`❌ Erro ao remover receita: ${error.message}`, 'error');
     }
 }
 
@@ -943,7 +1255,7 @@ function atualizarParaTodos() {
             const comensaisInput = document.getElementById(`comensais-${tipo.codigo}`);
             if (comensaisInput) {
                 comensaisInput.value = totalComensais;
-                atualizarComensaisTipo(tipo.codigo);
+                executarAtualizacaoECalculoFinal(tipo.codigo);
             }
         });
         
@@ -963,16 +1275,12 @@ function calcularParaTodos() {
     clienteAtualCardapio.tiposRefeicao.forEach(tipo => {
         if (receitasTemporarias[tipo.codigo]) {
             receitasTemporarias[tipo.codigo].forEach(receita => {
-                if (receita.comensais > 0 && receita.quantidadePorPessoa > 0) {
-                    receita.totalPorComensais = receita.comensais * receita.quantidadePorPessoa;
+                const receitaOriginal = receitasCarregadas.find(r => r.id === receita.receita_id);
+                if (receitaOriginal && receitaOriginal.rendimento > 0 && receita.comensais > 0) {
+                    const rendimento = parseFloat(receitaOriginal.rendimento);
+                    receita.quantidadePorPessoa = rendimento;
+                    receita.totalPorComensais = receita.comensais * rendimento;
                     totalCalculado++;
-                    
-                    // Atualizar visual
-                    const totalEl = document.getElementById(`total-${tipo.codigo}-${receita.receita_id}`);
-                    if (totalEl) {
-                        totalEl.textContent = `${receita.totalPorComensais.toFixed(3)} KG`;
-                        totalEl.classList.add('updated');
-                    }
                 }
             });
         }
@@ -980,12 +1288,21 @@ function calcularParaTodos() {
     
     if (totalCalculado > 0) {
         mostrarToast(`✅ ${totalCalculado} receitas calculadas com sucesso!`, 'success');
+        
+        // Re-renderizar todos os tipos
+        clienteAtualCardapio.tiposRefeicao.forEach(tipo => {
+            if (typeof renderizarReceitasDoTipoEditavel === 'function') {
+                renderizarReceitasDoTipoEditavel(tipo.codigo);
+            } else {
+                renderizarReceitasBasico(tipo.codigo, receitasTemporarias[tipo.codigo]);
+            }
+        });
     } else {
         mostrarToast('Nenhuma receita para calcular', 'info');
     }
 }
 
-// ===== GRAVAR PARA TODOS CORRIGIDO =====
+// ===== GRAVAR PARA TODOS =====
 async function gravarParaTodos() {
     try {
         if (!clienteAtualCardapio || !dataAtualCardapio) {
@@ -1040,7 +1357,7 @@ async function gravarParaTodos() {
         if (totalGravado > 0) {
             mostrarToast(`✅ ${totalGravado} receitas gravadas com sucesso!`, 'success');
             
-            // ✅ CORREÇÃO: Recarregar dados e atualizar calendário
+            // ✅ RECARREGAR DADOS E ATUALIZAR CALENDÁRIO
             await carregarCardapios();
             
             if (typeof forcarAtualizacaoCalendario === 'function') {
@@ -1056,11 +1373,6 @@ async function gravarParaTodos() {
         console.error('❌ Erro ao gravar:', error);
         mostrarToast('Erro ao gravar: ' + error.message, 'error');
     }
-}
-
-// Visualização semanal
-function abrirVisualizacaoSemanal() {
-    mostrarToast('Visualização semanal em desenvolvimento', 'info');
 }
 
 // ===== FUNÇÕES AUXILIARES =====
@@ -1104,7 +1416,6 @@ function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
     console.log(`Toast: ${mensagem}`);
 }
 
-// Função para impressão
 function abrirModalImpressao() {
     console.log('🖨️ Abrindo modal de impressão...');
     
@@ -1121,1197 +1432,122 @@ function abrirModalImpressao() {
     }
 }
 
-// ===== EXPORTAR FUNÇÕES =====
+function abrirVisualizacaoSemanal() {
+    mostrarToast('Visualização semanal em desenvolvimento', 'info');
+}
+
+// ===== FUNÇÃO DE DEBUG =====
+function debugEstadoCardapio() {
+    console.log('🔍 DEBUG - Estado atual do cardápio:');
+    console.log('📅 Data atual:', dataAtualCardapio);
+    console.log('👤 Cliente atual:', clienteAtualCardapio?.codigo || 'null');
+    console.log('📋 Receitas temporárias:', receitasTemporarias);
+    console.log('🗓️ Cardápios carregados:', cardapiosCarregados);
+    
+    if (dataAtualCardapio && clienteAtualCardapio) {
+        const cardapioData = cardapiosCarregados[dataAtualCardapio]?.[clienteAtualCardapio.codigo];
+        console.log('📊 Cardápio para data/cliente atual:', cardapioData || 'VAZIO');
+    }
+    
+    return {
+        dependenciasOK: Object.values(window.dependenciasCarregadas).every(x => x),
+        elementosOK: !!(document.getElementById('dataCardapio') && document.getElementById('clienteCardapio')),
+        funcoesOK: typeof window.executarAtualizacaoECalculoFinal === 'function'
+    };
+}
+
+// ===== OBSERVADOR DE MUDANÇAS NA INTERFACE =====
+function observarMudancasInterface() {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const tabCardapio = document.getElementById('cardapio');
+                if (tabCardapio && !tabCardapio.classList.contains('hidden')) {
+                    console.log('👁️ Aba de cardápio ativada');
+                    setTimeout(() => {
+                        inicializarSeNecessario();
+                    }, 200);
+                }
+            }
+        });
+    });
+    
+    const tabCardapio = document.getElementById('cardapio');
+    if (tabCardapio) {
+        observer.observe(tabCardapio, { attributes: true });
+        console.log('👁️ Observer de interface configurado');
+    }
+}
+
+// ===== EXPORTAR FUNÇÕES PRINCIPAIS =====
 window.inicializarCardapio = inicializarCardapio;
-window.toggleCalendar = toggleCalendarioSistema;
-window.mudarMes = mudarMesCalendario;
-window.selecionarDia = selecionarDiaCalendario;
-window.atualizarCalendario = atualizarCalendarioSistema;
+window.inicializarSistemaSeguro = inicializarSistemaSeguro;
+window.aguardarDependencias = aguardarDependencias;
+window.debugEstadoCardapio = debugEstadoCardapio;
+window.inicializarSeNecessario = inicializarSeNecessario;
+
+// ===== EXPORTAR FUNÇÕES DE INTERFACE =====
 window.carregarTiposRefeicaoCliente = carregarTiposRefeicaoCliente;
-window.toggleExpandable = toggleExpandable;
-window.fecharModal = fecharModal;
-window.abrirModalImpressao = abrirModalImpressao;
-window.formatarDataBrasil = formatarDataBrasil;
+window.carregarCardapioData = carregarCardapioData;
+window.carregarCardapioParaDataAtual = carregarCardapioParaDataAtual;
+window.limparInterfaceCardapio = limparInterfaceCardapio;
+window.atualizarInterfaceTipo = atualizarInterfaceTipo;
+window.atualizarInterfaceCompleta = atualizarInterfaceCompleta;
+
+// ===== EXPORTAR FUNÇÕES DE MODAL =====
 window.abrirModalReceitasTipo = abrirModalReceitasTipo;
-window.atualizarComensaisTipo = atualizarComensaisTipo;
 window.adicionarReceitasSelecionadas = adicionarReceitasSelecionadas;
 window.filtrarReceitas = filtrarReceitas;
-window.atualizarQuantidadePorPessoa = atualizarQuantidadePorPessoa;
-window.atualizarTotalPorComensais = atualizarTotalPorComensais;
+
+// ===== EXPORTAR FUNÇÕES DE AÇÃO =====
+window.executarAtualizacaoECalculoFinal = executarAtualizacaoECalculoFinal;
 window.removerReceita = removerReceita;
 window.atualizarParaTodos = atualizarParaTodos;
 window.calcularParaTodos = calcularParaTodos;
 window.gravarParaTodos = gravarParaTodos;
-window.abrirVisualizacaoSemanal = abrirVisualizacaoSemanal;
-window.carregarCardapioData = carregarCardapioData;
-window.atualizarECalcularTipoFinal = atualizarECalcularTipoFinal;
 
+// ===== EXPORTAR FUNÇÕES AUXILIARES =====
+window.toggleExpandable = toggleExpandable;
+window.fecharModal = fecharModal;
+window.abrirModalImpressao = abrirModalImpressao;
+window.abrirVisualizacaoSemanal = abrirVisualizacaoSemanal;
+window.formatarDataBrasil = formatarDataBrasil;
+
+// ===== ALIASES PARA COMPATIBILIDADE =====
+window.toggleCalendar = window.toggleCalendarioSistema;
+window.mudarMes = window.mudarMesCalendario;
+window.selecionarDia = window.selecionarDiaCalendarioSeguro;
+window.atualizarCalendario = window.atualizarCalendarioSistema;
+
+// ===== INICIALIZAÇÃO AUTOMÁTICA =====
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM carregado - configurando sistema seguro...');
+    
+    // Aguardar um pouco para outros scripts carregarem
+    setTimeout(() => {
+        // Configurar observer
+        observarMudancasInterface();
+        
+        // Tentar inicializar
+        inicializarSeNecessario();
+        
+        // Debug inicial
+        setTimeout(() => {
+            const status = debugEstadoCardapio();
+            console.log('🧪 Status inicial:', status);
+        }, 2000);
+        
+    }, 1000);
+});
+
+// ===== DISPONIBILIZAR VARIÁVEIS GLOBALMENTE =====
+window.clientesCarregados = clientesCarregados;
+window.receitasCarregadas = receitasCarregadas;
+window.tiposRefeicaoCarregados = tiposRefeicaoCarregados;
+window.cardapiosCarregados = cardapiosCarregados;
+window.clienteAtualCardapio = clienteAtualCardapio;
+window.tipoRefeicaoAtualCardapio = tipoRefeicaoAtualCardapio;
+window.dataAtualCardapio = dataAtualCardapio;
+window.receitasTemporarias = receitasTemporarias;
 
 console.log('✅ cardapio.js TOTALMENTE CORRIGIDO carregado com sucesso!');
-
-// ===== CORREÇÕES PARA O MÓDULO CARDÁPIO =====
-// Adicione estas correções ao arquivo js/cardapio.js
-
-// ===== FUNÇÃO CORRIGIDA: Carregar tipos de refeição cliente =====
-function carregarTiposRefeicaoCliente() {
-    const clienteIndex = document.getElementById('clienteCardapio').value;
-    const container = document.getElementById('tiposRefeicaoCardapio');
-    
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (clienteIndex === '') {
-        clienteAtualCardapio = null;
-        return;
-    }
-
-    const cliente = clientesCarregados[parseInt(clienteIndex)];
-    if (!cliente) return;
-    
-    clienteAtualCardapio = cliente;
-
-    if (!cliente.tiposRefeicao || cliente.tiposRefeicao.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Cliente não possui tipos de refeição cadastrados</p>';
-        return;
-    }
-
-    // Criar seções expansíveis CORRIGIDAS para cada tipo de refeição
-    cliente.tiposRefeicao.forEach(tipo => {
-        const expandable = document.createElement('div');
-        expandable.className = 'expandable';
-        expandable.innerHTML = `
-            <div class="expandable-header" onclick="toggleExpandable(this)">
-                <span>${tipo.descricao}</span>
-                <span>▼</span>
-            </div>
-            <div class="expandable-content">
-                <!-- ✅ CORREÇÃO 1: Seção de comensais corrigida -->
-                <div class="comensais-section">
-                    <label>Comensais para ${tipo.descricao}:</label>
-                    <input type="number" 
-                           id="comensais-${tipo.codigo}" 
-                           class="comensais-input" 
-                           min="1" 
-                           max="99999" 
-                           placeholder="0"
-                           value="${getComensaisFromTotal() || ''}">
-                    <button class="btn btn-secondary compact-btn" onclick="atualizarComensaisTipoCorrigido('${tipo.codigo}')">
-                        📝 Atualizar
-                    </button>
-                </div>
-
-                <!-- ✅ BOTÕES DE AÇÃO CORRIGIDOS -->
-                <div class="actions" style="margin: 15px 0; padding: 15px 0; border-top: 1px solid #e9ecef;">
-                    <button class="btn btn-primary compact-btn" onclick="abrirModalReceitasTipo('${tipo.codigo}')">
-                        ➕ Adicionar Receitas
-                    </button>
-                    <button class="btn btn-success compact-btn" onclick="calcularReceitasDoTipo('${tipo.codigo}')">
-                        🧮 Calcular
-                    </button>
-                </div>
-
-                <!-- ✅ CORREÇÃO 3: Cabeçalho da tabela corrigido -->
-                <div class="receitas-header visible">
-                    <div class="receitas-header-grid" style="display: grid; grid-template-columns: 2fr 120px 150px 150px 80px; gap: 10px; font-weight: 600; color: #495057; font-size: 13px; padding: 10px; background: #f8f9fa; border-radius: 5px; margin-bottom: 10px;">
-                        <div style="text-align: left;">Receita</div>
-                        <div style="text-align: center;">Comensais</div>
-                        <div style="text-align: center;">Rend. Receita</div>
-                        <div style="text-align: center;">Total</div>
-                        <div style="text-align: center;">Ações</div>
-                    </div>
-                </div>
-
-                <!-- Container das receitas -->
-                <div id="receitas-list-${tipo.codigo}" class="receitas-container"></div>
-            </div>
-        `;
-        container.appendChild(expandable);
-    });
-    
-    carregarCardapioParaDataAtual();
-}
-
-// ===== CORREÇÃO 1: Função de atualizar comensais CORRIGIDA =====
-function atualizarComensaisTipoCorrigido(tipoCodigo) {
-    console.log(`📝 Atualizando comensais para tipo: ${tipoCodigo}`);
-    
-    const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
-    if (!comensaisInput) {
-        mostrarToast('Campo de comensais não encontrado', 'error');
-        return;
-    }
-    
-    const comensais = parseInt(comensaisInput.value || 0);
-    
-    if (comensais <= 0) {
-        mostrarToast('Informe um número válido de comensais (maior que 0)', 'warning');
-        comensaisInput.focus();
-        return;
-    }
-    
-    console.log(`✅ Atualizando ${comensais} comensais para tipo ${tipoCodigo}`);
-    
-    // ✅ CORREÇÃO: Atualizar todas as receitas do tipo
-    if (receitasTemporarias[tipoCodigo]) {
-        let receitasAtualizadas = 0;
-        
-        receitasTemporarias[tipoCodigo].forEach((receita, index) => {
-            // Atualizar campo de comensais da receita
-            receita.comensais = comensais;
-            receitasAtualizadas++;
-            
-            console.log(`📋 Receita ${receita.codigo}: comensais atualizados para ${comensais}`);
-            
-            // Atualizar visualmente o campo de comensais na linha da receita
-            const comensaisCell = document.querySelector(`#receita-${tipoCodigo}-${receita.receita_id} .comensais-receita`);
-            if (comensaisCell) {
-                comensaisCell.textContent = comensais;
-                comensaisCell.style.background = '#e8f5e8';
-                comensaisCell.style.fontWeight = 'bold';
-                
-                // Remover destaque após 2 segundos
-                setTimeout(() => {
-                    comensaisCell.style.background = '';
-                    comensaisCell.style.fontWeight = '';
-                }, 2000);
-            }
-        });
-        
-        mostrarToast(`✅ ${receitasAtualizadas} receita(s) atualizadas com ${comensais} comensais`, 'success');
-        
-        // Re-renderizar as receitas para mostrar os valores atualizados
-        setTimeout(() => {
-            renderizarReceitasDoTipo(tipoCodigo);
-        }, 100);
-    } else {
-        mostrarToast(`ℹ️ Comensais definido para ${comensais}. Adicione receitas para aplicar o cálculo.`, 'info');
-    }
-}
-
-// ===== CORREÇÃO 2: Função de calcular receitas do tipo =====
-function calcularReceitasDoTipo(tipoCodigo) {
-    console.log(`🧮 Calculando receitas do tipo: ${tipoCodigo}`);
-    
-    if (!receitasTemporarias[tipoCodigo] || receitasTemporarias[tipoCodigo].length === 0) {
-        mostrarToast('Nenhuma receita encontrada para calcular', 'warning');
-        return;
-    }
-    
-    const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
-    const comensais = parseInt(comensaisInput?.value || 0);
-    
-    if (comensais <= 0) {
-        mostrarToast('Defina o número de comensais antes de calcular', 'warning');
-        comensaisInput?.focus();
-        return;
-    }
-    
-    let receitasCalculadas = 0;
-    
-    receitasTemporarias[tipoCodigo].forEach(receita => {
-        // Buscar dados da receita original para pegar rendimento
-        const receitaOriginal = receitasCarregadas.find(r => r.id === receita.receita_id);
-        
-        if (receitaOriginal && receitaOriginal.rendimento > 0) {
-            // ✅ CORREÇÃO: Cálculo = comensais * rendimento da receita
-            const rendimento = parseFloat(receitaOriginal.rendimento) || 0;
-            const total = comensais * rendimento;
-            
-            // Atualizar dados da receita
-            receita.comensais = comensais;
-            receita.quantidadePorPessoa = rendimento;
-            receita.totalPorComensais = total;
-            receita.unidadeBasica = receitaOriginal.unidade_rendimento || 'UN';
-            receita.alterada = true;
-            
-            console.log(`✅ Receita ${receita.codigo}: ${comensais} × ${rendimento} = ${total} ${receita.unidadeBasica}`);
-            receitasCalculadas++;
-        } else {
-            console.warn(`⚠️ Receita ${receita.codigo} sem rendimento definido`);
-        }
-    });
-    
-    if (receitasCalculadas > 0) {
-        mostrarToast(`✅ ${receitasCalculadas} receita(s) calculadas com sucesso!`, 'success');
-        
-        // Re-renderizar as receitas para mostrar os valores calculados
-        renderizarReceitasDoTipo(tipoCodigo);
-        
-        // ✅ CORREÇÃO: Atualizar calendário após cálculos
-        if (typeof forcarAtualizacaoCalendario === 'function') {
-            setTimeout(() => {
-                forcarAtualizacaoCalendario();
-            }, 300);
-        }
-    } else {
-        mostrarToast('Nenhuma receita pôde ser calculada. Verifique se as receitas têm rendimento definido.', 'warning');
-    }
-}
-
-// ===== CORREÇÃO 3: Função de renderizar receitas com colunas corretas =====
-function renderizarReceitasDoTipo(tipoCodigo) {
-    const container = document.getElementById(`receitas-list-${tipoCodigo}`);
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (!receitasTemporarias[tipoCodigo] || receitasTemporarias[tipoCodigo].length === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; color: #666; padding: 20px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
-                📝 Nenhuma receita adicionada<br>
-                <small>Use o botão "Adicionar Receitas" para incluir receitas neste tipo</small>
-            </div>
-        `;
-        return;
-    }
-    
-    receitasTemporarias[tipoCodigo].forEach(receita => {
-        const div = document.createElement('div');
-        div.className = 'receita-item-tabular';
-        div.id = `receita-${tipoCodigo}-${receita.receita_id}`;
-        
-        // ✅ LAYOUT CORRIGIDO COM COLUNAS CORRETAS
-        div.style.cssText = `
-            display: grid;
-            grid-template-columns: 2fr 120px 150px 150px 80px;
-            gap: 10px;
-            align-items: center;
-            padding: 12px;
-            margin-bottom: 8px;
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-        `;
-        
-        // Buscar dados da receita original
-        const receitaOriginal = receitasCarregadas.find(r => r.id === receita.receita_id);
-        const rendimento = receitaOriginal ? parseFloat(receitaOriginal.rendimento || 0) : 0;
-        const unidadeRendimento = receitaOriginal ? (receitaOriginal.unidade_rendimento || 'UN') : 'UN';
-        
-        div.innerHTML = `
-            <!-- ✅ COLUNA 1: Código + Nome da Receita -->
-            <div class="receita-nome" style="font-weight: 500; color: #333; font-size: 14px; line-height: 1.3;">
-                ${receita.codigo} - ${receita.descricao}
-            </div>
-            
-            <!-- ✅ COLUNA 2: Qtde de Comensais -->
-            <div style="text-align: center;">
-                <span class="comensais-receita" style="display: inline-block; padding: 4px 8px; background: #e7f3ff; color: #0066cc; border-radius: 4px; font-weight: 600; font-size: 13px;">
-                    ${receita.comensais || 0}
-                </span>
-            </div>
-            
-            <!-- ✅ COLUNA 3: Rendimento da Receita + Unidade -->
-            <div style="text-align: center;">
-                <span style="font-weight: 500; color: #495057;">
-                    ${rendimento.toFixed(3)} ${unidadeRendimento}
-                </span>
-                <small style="display: block; color: #666; font-size: 11px; margin-top: 2px;">
-                    por pessoa
-                </small>
-            </div>
-            
-            <!-- ✅ COLUNA 4: Total + Unidade -->
-            <div style="text-align: center;">
-                <span class="total-calculado" id="total-${tipoCodigo}-${receita.receita_id}" 
-                      style="display: inline-block; padding: 6px 10px; background: #e8f5e8; color: #2e7d32; border-radius: 6px; font-weight: 600; border: 2px solid #4caf50; font-size: 13px;">
-                    ${(receita.totalPorComensais || 0).toFixed(3)} ${unidadeRendimento}
-                </span>
-            </div>
-            
-            <!-- ✅ COLUNA 5: Botão Excluir -->
-            <div style="text-align: center;">
-                <button class="btn btn-danger" onclick="removerReceita('${tipoCodigo}', '${receita.receita_id}')" 
-                        style="padding: 4px 8px; font-size: 11px; width: 60px; border-radius: 4px;">
-                    Excluir
-                </button>
-            </div>
-        `;
-        
-        container.appendChild(div);
-    });
-}
-
-// ===== SOBRESCREVER FUNÇÃO ORIGINAL DE ADICIONAR RECEITA =====
-function adicionarReceitaNaListaCorrigida(tipoCodigo, receita) {
-    // Usar a função de renderização completa em vez de adicionar individualmente
-    if (!receitasTemporarias[tipoCodigo]) {
-        receitasTemporarias[tipoCodigo] = [];
-    }
-    
-    // Verificar se receita já existe
-    const exists = receitasTemporarias[tipoCodigo].find(r => r.receita_id === receita.receita_id);
-    if (!exists) {
-        receitasTemporarias[tipoCodigo].push(receita);
-    }
-    
-    // Re-renderizar todas as receitas do tipo
-    renderizarReceitasDoTipo(tipoCodigo);
-}
-
-// ===== ATUALIZAR EXPORTAÇÕES GLOBAIS =====
-window.atualizarComensaisTipoCorrigido = atualizarComensaisTipoCorrigido;
-window.calcularReceitasDoTipo = calcularReceitasDoTipo;
-window.renderizarReceitasDoTipo = renderizarReceitasDoTipo;
-window.adicionarReceitaNaListaCorrigida = adicionarReceitaNaListaCorrigida;
-
-// ===== SOBRESCREVER FUNÇÃO ORIGINAL (Opcional - apenas se quiser substituir completamente) =====
-// Descomente a linha abaixo se quiser substituir a função original
-// window.atualizarComensaisTipo = atualizarComensaisTipoCorrigido;
-
-console.log('✅ Correções do módulo cardápio carregadas com sucesso!');
-console.log('📋 Novas funções disponíveis:');
-console.log('  - atualizarComensaisTipoCorrigido()');
-console.log('  - calcularReceitasDoTipo()');
-console.log('  - renderizarReceitasDoTipo()');
-
-// ===== CORREÇÃO: CAMPOS EDITÁVEIS PARA COMENSAIS E RENDIMENTO =====
-// Adicione este código ao arquivo js/cardapio.js (após as correções anteriores)
-
-// ===== FUNÇÃO CORRIGIDA: Renderizar receitas com campos editáveis =====
-function renderizarReceitasDoTipoEditavel(tipoCodigo) {
-    const container = document.getElementById(`receitas-list-${tipoCodigo}`);
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (!receitasTemporarias[tipoCodigo] || receitasTemporarias[tipoCodigo].length === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; color: #666; padding: 20px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
-                📝 Nenhuma receita adicionada<br>
-                <small>Use o botão "Adicionar Receitas" para incluir receitas neste tipo</small>
-            </div>
-        `;
-        return;
-    }
-    
-    receitasTemporarias[tipoCodigo].forEach(receita => {
-        const div = document.createElement('div');
-        div.className = 'receita-item-tabular';
-        div.id = `receita-${tipoCodigo}-${receita.receita_id}`;
-        
-        // Layout com campos editáveis
-        div.style.cssText = `
-            display: grid;
-            grid-template-columns: 2fr 120px 150px 150px 80px;
-            gap: 10px;
-            align-items: center;
-            padding: 12px;
-            margin-bottom: 8px;
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-        `;
-        
-        // Buscar dados da receita original
-        const receitaOriginal = receitasCarregadas.find(r => r.id === receita.receita_id);
-        const rendimentoOriginal = receitaOriginal ? parseFloat(receitaOriginal.rendimento || 0) : 0;
-        const unidadeRendimento = receitaOriginal ? (receitaOriginal.unidade_rendimento || 'UN') : 'UN';
-        
-        // Usar valores salvos ou padrão
-        const comensaisAtual = receita.comensais || 0;
-        const rendimentoAtual = receita.quantidadePorPessoa || rendimentoOriginal;
-        const totalAtual = receita.totalPorComensais || 0;
-        
-        div.innerHTML = `
-            <!-- ✅ COLUNA 1: Código + Nome da Receita -->
-            <div class="receita-nome" style="font-weight: 500; color: #333; font-size: 14px; line-height: 1.3;">
-                ${receita.codigo} - ${receita.descricao}
-            </div>
-            
-            <!-- ✅ COLUNA 2: Comensais EDITÁVEL -->
-            <div style="text-align: center;">
-                <input type="number" 
-                       class="campo-comensais-editavel" 
-                       id="comensais-editavel-${tipoCodigo}-${receita.receita_id}"
-                       value="${comensaisAtual}" 
-                       min="1" 
-                       max="9999" 
-                       step="1"
-                       onchange="atualizarComensaisReceita('${tipoCodigo}', '${receita.receita_id}', this.value)"
-                       onblur="calcularTotalReceita('${tipoCodigo}', '${receita.receita_id}')"
-                       style="width: 80px; padding: 6px 8px; border: 2px solid #007bff; border-radius: 4px; text-align: center; font-weight: 600; font-size: 13px; background: #e7f3ff; color: #004085;">
-                <small style="display: block; color: #666; font-size: 10px; margin-top: 2px;">pessoas</small>
-            </div>
-            
-            <!-- ✅ COLUNA 3: Rendimento EDITÁVEL -->
-            <div style="text-align: center;">
-                <input type="number" 
-                       class="campo-rendimento-editavel" 
-                       id="rendimento-editavel-${tipoCodigo}-${receita.receita_id}"
-                       value="${rendimentoAtual.toFixed(3)}" 
-                       min="0" 
-                       max="999.999" 
-                       step="0.001"
-                       onchange="atualizarRendimentoReceita('${tipoCodigo}', '${receita.receita_id}', this.value)"
-                       onblur="calcularTotalReceita('${tipoCodigo}', '${receita.receita_id}')"
-                       style="width: 100px; padding: 6px 8px; border: 2px solid #28a745; border-radius: 4px; text-align: center; font-weight: 600; font-size: 13px; background: #d4edda; color: #155724;">
-                <small style="display: block; color: #666; font-size: 10px; margin-top: 2px;">${unidadeRendimento}/pessoa</small>
-            </div>
-            
-            <!-- ✅ COLUNA 4: Total CALCULADO -->
-            <div style="text-align: center;">
-                <span class="total-calculado-editavel" id="total-${tipoCodigo}-${receita.receita_id}" 
-                      style="display: inline-block; padding: 8px 12px; background: #fff3cd; color: #856404; border-radius: 6px; font-weight: 600; border: 2px solid #ffc107; font-size: 13px; min-width: 80px;">
-                    ${totalAtual.toFixed(3)} ${unidadeRendimento}
-                </span>
-                <small style="display: block; color: #666; font-size: 10px; margin-top: 2px;">total</small>
-            </div>
-            
-            <!-- ✅ COLUNA 5: Ações -->
-            <div style="text-align: center; display: flex; flex-direction: column; gap: 4px;">
-                <button class="btn btn-success" onclick="calcularTotalReceita('${tipoCodigo}', '${receita.receita_id}')" 
-                        style="padding: 4px 8px; font-size: 10px; width: 60px; border-radius: 4px; margin-bottom: 2px;"
-                        title="Recalcular esta receita">
-                    Calc
-                </button>
-                <button class="btn btn-danger" onclick="removerReceita('${tipoCodigo}', '${receita.receita_id}')" 
-                        style="padding: 4px 8px; font-size: 10px; width: 60px; border-radius: 4px;"
-                        title="Remover esta receita">
-                    Excluir
-                </button>
-            </div>
-        `;
-        
-        container.appendChild(div);
-    });
-}
-
-// ===== NOVA FUNÇÃO: Atualizar comensais de uma receita específica =====
-function atualizarComensaisReceita(tipoCodigo, receitaId, novoValor) {
-    console.log(`👥 Atualizando comensais da receita ${receitaId} para ${novoValor}`);
-    
-    if (!receitasTemporarias[tipoCodigo]) return;
-    
-    const receita = receitasTemporarias[tipoCodigo].find(r => r.receita_id === receitaId);
-    if (!receita) return;
-    
-    const comensais = parseInt(novoValor) || 0;
-    
-    if (comensais < 0) {
-        mostrarToast('Número de comensais não pode ser negativo', 'warning');
-        return;
-    }
-    
-    // Atualizar valor na receita
-    receita.comensais = comensais;
-    receita.alterada = true;
-    
-    // Feedback visual no campo
-    const campo = document.getElementById(`comensais-editavel-${tipoCodigo}-${receitaId}`);
-    if (campo) {
-        campo.style.background = '#d1ecf1';
-        campo.style.borderColor = '#17a2b8';
-        setTimeout(() => {
-            campo.style.background = '#e7f3ff';
-            campo.style.borderColor = '#007bff';
-        }, 1000);
-    }
-    
-    console.log(`✅ Comensais da receita ${receita.codigo} atualizado para ${comensais}`);
-}
-
-// ===== NOVA FUNÇÃO: Atualizar rendimento de uma receita específica =====
-function atualizarRendimentoReceita(tipoCodigo, receitaId, novoValor) {
-    console.log(`⚖️ Atualizando rendimento da receita ${receitaId} para ${novoValor}`);
-    
-    if (!receitasTemporarias[tipoCodigo]) return;
-    
-    const receita = receitasTemporarias[tipoCodigo].find(r => r.receita_id === receitaId);
-    if (!receita) return;
-    
-    const rendimento = parseFloat(novoValor) || 0;
-    
-    if (rendimento < 0) {
-        mostrarToast('Rendimento não pode ser negativo', 'warning');
-        return;
-    }
-    
-    // Atualizar valor na receita
-    receita.quantidadePorPessoa = rendimento;
-    receita.alterada = true;
-    
-    // Feedback visual no campo
-    const campo = document.getElementById(`rendimento-editavel-${tipoCodigo}-${receitaId}`);
-    if (campo) {
-        campo.style.background = '#f8d7da';
-        campo.style.borderColor = '#dc3545';
-        setTimeout(() => {
-            campo.style.background = '#d4edda';
-            campo.style.borderColor = '#28a745';
-        }, 1000);
-    }
-    
-    console.log(`✅ Rendimento da receita ${receita.codigo} atualizado para ${rendimento}`);
-}
-
-// ===== NOVA FUNÇÃO: Calcular total de uma receita específica =====
-function calcularTotalReceita(tipoCodigo, receitaId) {
-    console.log(`🧮 Calculando total da receita ${receitaId}`);
-    
-    if (!receitasTemporarias[tipoCodigo]) return;
-    
-    const receita = receitasTemporarias[tipoCodigo].find(r => r.receita_id === receitaId);
-    if (!receita) return;
-    
-    // Obter valores atuais dos campos
-    const comensaisInput = document.getElementById(`comensais-editavel-${tipoCodigo}-${receitaId}`);
-    const rendimentoInput = document.getElementById(`rendimento-editavel-${tipoCodigo}-${receitaId}`);
-    
-    const comensais = parseInt(comensaisInput?.value || receita.comensais || 0);
-    const rendimento = parseFloat(rendimentoInput?.value || receita.quantidadePorPessoa || 0);
-    
-    // Calcular total
-    const total = comensais * rendimento;
-    
-    // Atualizar receita
-    receita.comensais = comensais;
-    receita.quantidadePorPessoa = rendimento;
-    receita.totalPorComensais = total;
-    receita.alterada = true;
-    
-    // Atualizar display do total
-    const totalElement = document.getElementById(`total-${tipoCodigo}-${receitaId}`);
-    if (totalElement) {
-        const receitaOriginal = receitasCarregadas.find(r => r.id === receitaId);
-        const unidade = receitaOriginal ? (receitaOriginal.unidade_rendimento || 'UN') : 'UN';
-        
-        totalElement.textContent = `${total.toFixed(3)} ${unidade}`;
-        
-        // Animação de atualização
-        totalElement.style.transform = 'scale(1.1)';
-        totalElement.style.background = '#d1ecf1';
-        totalElement.style.borderColor = '#17a2b8';
-        
-        setTimeout(() => {
-            totalElement.style.transform = 'scale(1)';
-            totalElement.style.background = '#fff3cd';
-            totalElement.style.borderColor = '#ffc107';
-        }, 300);
-    }
-    
-    console.log(`✅ Total calculado: ${comensais} × ${rendimento} = ${total}`);
-    
-    // Mostrar feedback
-    mostrarToast(`✅ Total recalculado: ${total.toFixed(3)}`, 'success', 2000);
-    
-    // ✅ Atualizar calendário se disponível
-    if (typeof forcarAtualizacaoCalendario === 'function') {
-        setTimeout(() => {
-            forcarAtualizacaoCalendario();
-        }, 100);
-    }
-}
-
-// ===== FUNÇÃO CORRIGIDA: Calcular receitas do tipo (com campos editáveis) =====
-function calcularReceitasDoTipoEditavel(tipoCodigo) {
-    console.log(`🧮 Calculando TODAS as receitas do tipo: ${tipoCodigo}`);
-    
-    if (!receitasTemporarias[tipoCodigo] || receitasTemporarias[tipoCodigo].length === 0) {
-        mostrarToast('Nenhuma receita encontrada para calcular', 'warning');
-        return;
-    }
-    
-    let receitasCalculadas = 0;
-    
-    receitasTemporarias[tipoCodigo].forEach(receita => {
-        // Calcular cada receita individualmente (vai usar os valores editados)
-        calcularTotalReceita(tipoCodigo, receita.receita_id);
-        receitasCalculadas++;
-    });
-    
-    if (receitasCalculadas > 0) {
-        mostrarToast(`✅ ${receitasCalculadas} receita(s) recalculadas com valores personalizados!`, 'success');
-    }
-}
-
-// ===== FUNÇÃO CORRIGIDA: Botão atualizar global (preserva edições individuais) =====
-function atualizarComensaisTipoEditavelSemSobrescrever(tipoCodigo) {
-    console.log(`📝 Atualizando comensais do tipo ${tipoCodigo} (preservando edições individuais)`);
-    
-    const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
-    if (!comensaisInput) {
-        mostrarToast('Campo de comensais não encontrado', 'error');
-        return;
-    }
-    
-    const comensaisGlobal = parseInt(comensaisInput.value || 0);
-    
-    if (comensaisGlobal <= 0) {
-        mostrarToast('Informe um número válido de comensais (maior que 0)', 'warning');
-        comensaisInput.focus();
-        return;
-    }
-    
-    // ✅ CORREÇÃO: Perguntar antes de sobrescrever valores editados manualmente
-    const receitasComEdicao = receitasTemporarias[tipoCodigo]?.filter(r => r.alterada) || [];
-    
-    if (receitasComEdicao.length > 0) {
-        const confirmar = confirm(
-            `⚠️ Atenção!\n\n` +
-            `Existem ${receitasComEdicao.length} receita(s) com valores editados manualmente.\n\n` +
-            `Deseja aplicar ${comensaisGlobal} comensais para TODAS as receitas?\n\n` +
-            `• SIM = Aplica ${comensaisGlobal} para todas (sobrescreve edições)\n` +
-            `• NÃO = Mantém valores editados individualmente`
-        );
-        
-        if (!confirmar) {
-            mostrarToast('ℹ️ Valores individuais mantidos. Use os campos editáveis para ajustes específicos.', 'info');
-            return;
-        }
-    }
-    
-    // Aplicar comensais global para todas as receitas
-    if (receitasTemporarias[tipoCodigo]) {
-        receitasTemporarias[tipoCodigo].forEach(receita => {
-            receita.comensais = comensaisGlobal;
-            
-            // Atualizar campo visual se existir
-            const campoComensais = document.getElementById(`comensais-editavel-${tipoCodigo}-${receita.receita_id}`);
-            if (campoComensais) {
-                campoComensais.value = comensaisGlobal;
-            }
-        });
-        
-        mostrarToast(`✅ ${receitasTemporarias[tipoCodigo].length} receita(s) atualizadas com ${comensaisGlobal} comensais`, 'success');
-        
-        // Re-renderizar para mostrar valores atualizados
-        setTimeout(() => {
-            renderizarReceitasDoTipoEditavel(tipoCodigo);
-        }, 100);
-    }
-}
-
-// ===== SOBRESCREVER FUNÇÕES ORIGINAIS PARA USAR VERSÕES EDITÁVEIS =====
-
-// Substituir função de renderização
-window.renderizarReceitasDoTipo = renderizarReceitasDoTipoEditavel;
-
-// Substituir função de cálculo
-window.calcularReceitasDoTipo = calcularReceitasDoTipoEditavel;
-
-// ===== EXPORTAR NOVAS FUNÇÕES =====
-window.atualizarComensaisReceita = atualizarComensaisReceita;
-window.atualizarRendimentoReceita = atualizarRendimentoReceita;
-window.calcularTotalReceita = calcularTotalReceita;
-window.calcularReceitasDoTipoEditavel = calcularReceitasDoTipoEditavel;
-window.atualizarComensaisTipoEditavelSemSobrescrever = atualizarComensaisTipoEditavelSemSobrescrever;
-window.renderizarReceitasDoTipoEditavel = renderizarReceitasDoTipoEditavel;
-
-console.log('✅ Campos editáveis implementados com sucesso!');
-console.log('📋 Funcionalidades adicionadas:');
-console.log('  - Campos de comensais editáveis por receita');
-console.log('  - Campos de rendimento editáveis por receita');
-console.log('  - Cálculo individual por receita');
-console.log('  - Botão "Calc" para recalcular receita específica');
-console.log('  - Preservação de edições individuais');
-
-// ===== CORREÇÃO: CAMPOS EDITÁVEIS PARA COMENSAIS E RENDIMENTO =====
-// Adicione este código ao arquivo js/cardapio.js (após as correções anteriores)
-
-// ===== FUNÇÃO CORRIGIDA: Renderizar receitas com campos editáveis =====
-function renderizarReceitasDoTipoEditavel(tipoCodigo) {
-    const container = document.getElementById(`receitas-list-${tipoCodigo}`);
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (!receitasTemporarias[tipoCodigo] || receitasTemporarias[tipoCodigo].length === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; color: #666; padding: 20px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
-                📝 Nenhuma receita adicionada<br>
-                <small>Use o botão "Adicionar Receitas" para incluir receitas neste tipo</small>
-            </div>
-        `;
-        return;
-    }
-    
-    receitasTemporarias[tipoCodigo].forEach(receita => {
-        const div = document.createElement('div');
-        div.className = 'receita-item-tabular';
-        div.id = `receita-${tipoCodigo}-${receita.receita_id}`;
-        
-        // Layout com campos editáveis
-        div.style.cssText = `
-            display: grid;
-            grid-template-columns: 2fr 120px 150px 150px 90px;
-            gap: 10px;
-            align-items: center;
-            padding: 12px;
-            margin-bottom: 8px;
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-        `;
-        
-        // Buscar dados da receita original
-        const receitaOriginal = receitasCarregadas.find(r => r.id === receita.receita_id);
-        const rendimentoOriginal = receitaOriginal ? parseFloat(receitaOriginal.rendimento || 0) : 0;
-        const unidadeRendimento = receitaOriginal ? (receitaOriginal.unidade_rendimento || 'UN') : 'UN';
-        
-        // Usar valores salvos ou padrão
-        const comensaisAtual = receita.comensais || 0;
-        const rendimentoAtual = receita.quantidadePorPessoa || rendimentoOriginal;
-        const totalAtual = receita.totalPorComensais || 0;
-        
-        div.innerHTML = `
-            <!-- ✅ COLUNA 1: Código + Nome da Receita -->
-            <div class="receita-nome" style="font-weight: 500; color: #333; font-size: 14px; line-height: 1.3;">
-                ${receita.codigo} - ${receita.descricao}
-            </div>
-            
-            <!-- ✅ COLUNA 2: Comensais EDITÁVEL -->
-            <div style="text-align: center;">
-                <input type="number" 
-                       class="campo-comensais-editavel" 
-                       id="comensais-editavel-${tipoCodigo}-${receita.receita_id}"
-                       value="${comensaisAtual}" 
-                       min="1" 
-                       max="9999" 
-                       step="1"
-                       onchange="atualizarComensaisReceita('${tipoCodigo}', '${receita.receita_id}', this.value)"
-                       onblur="calcularTotalReceita('${tipoCodigo}', '${receita.receita_id}')"
-                       style="width: 80px; padding: 6px 8px; border: 2px solid #007bff; border-radius: 4px; text-align: center; font-weight: 600; font-size: 13px; background: #e7f3ff; color: #004085;">
-                <small style="display: block; color: #666; font-size: 10px; margin-top: 2px;">pessoas</small>
-            </div>
-            
-            <!-- ✅ COLUNA 3: Rendimento EDITÁVEL -->
-            <div style="text-align: center;">
-                <input type="number" 
-                       class="campo-rendimento-editavel" 
-                       id="rendimento-editavel-${tipoCodigo}-${receita.receita_id}"
-                       value="${rendimentoAtual.toFixed(3)}" 
-                       min="0" 
-                       max="999.999" 
-                       step="0.001"
-                       onchange="atualizarRendimentoReceita('${tipoCodigo}', '${receita.receita_id}', this.value)"
-                       onblur="calcularTotalReceita('${tipoCodigo}', '${receita.receita_id}')"
-                       style="width: 100px; padding: 6px 8px; border: 2px solid #28a745; border-radius: 4px; text-align: center; font-weight: 600; font-size: 13px; background: #d4edda; color: #155724;">
-                <small style="display: block; color: #666; font-size: 10px; margin-top: 2px;">${unidadeRendimento}/pessoa</small>
-            </div>
-            
-            <!-- ✅ COLUNA 4: Total CALCULADO -->
-            <div style="text-align: center;">
-                <span class="total-calculado-editavel" id="total-${tipoCodigo}-${receita.receita_id}" 
-                      style="display: inline-block; padding: 8px 12px; background: #fff3cd; color: #856404; border-radius: 6px; font-weight: 600; border: 2px solid #ffc107; font-size: 13px; min-width: 80px;">
-                    ${totalAtual.toFixed(3)} ${unidadeRendimento}
-                </span>
-                <small style="display: block; color: #666; font-size: 10px; margin-top: 2px;">total</small>
-            </div>
-            
-            <!-- ✅ COLUNA 5: Ações -->
-            <div style="text-align: center; display: flex; flex-direction: column; gap: 4px;">
-                <button class="btn btn-success" onclick="calcularTotalReceita('${tipoCodigo}', '${receita.receita_id}')" 
-                        style="padding: 4px 8px; font-size: 10px; width: 70px; border-radius: 4px; margin-bottom: 2px;"
-                        title="Recalcular apenas esta receita">
-                    Calc. esta
-                </button>
-                <button class="btn btn-danger" onclick="removerReceita('${tipoCodigo}', '${receita.receita_id}')" 
-                        style="padding: 4px 8px; font-size: 10px; width: 70px; border-radius: 4px;"
-                        title="Remover esta receita">
-                    Excluir
-                </button>
-            </div>
-        `;
-        
-        container.appendChild(div);
-    });
-}
-
-// ===== NOVA FUNÇÃO: Atualizar comensais de uma receita específica =====
-function atualizarComensaisReceita(tipoCodigo, receitaId, novoValor) {
-    console.log(`👥 Atualizando comensais da receita ${receitaId} para ${novoValor}`);
-    
-    if (!receitasTemporarias[tipoCodigo]) return;
-    
-    const receita = receitasTemporarias[tipoCodigo].find(r => r.receita_id === receitaId);
-    if (!receita) return;
-    
-    const comensais = parseInt(novoValor) || 0;
-    
-    if (comensais < 0) {
-        mostrarToast('Número de comensais não pode ser negativo', 'warning');
-        return;
-    }
-    
-    // Atualizar valor na receita
-    receita.comensais = comensais;
-    receita.alterada = true;
-    
-    // Feedback visual no campo
-    const campo = document.getElementById(`comensais-editavel-${tipoCodigo}-${receitaId}`);
-    if (campo) {
-        campo.style.background = '#d1ecf1';
-        campo.style.borderColor = '#17a2b8';
-        setTimeout(() => {
-            campo.style.background = '#e7f3ff';
-            campo.style.borderColor = '#007bff';
-        }, 1000);
-    }
-    
-    console.log(`✅ Comensais da receita ${receita.codigo} atualizado para ${comensais}`);
-}
-
-// ===== NOVA FUNÇÃO: Atualizar rendimento de uma receita específica =====
-function atualizarRendimentoReceita(tipoCodigo, receitaId, novoValor) {
-    console.log(`⚖️ Atualizando rendimento da receita ${receitaId} para ${novoValor}`);
-    
-    if (!receitasTemporarias[tipoCodigo]) return;
-    
-    const receita = receitasTemporarias[tipoCodigo].find(r => r.receita_id === receitaId);
-    if (!receita) return;
-    
-    const rendimento = parseFloat(novoValor) || 0;
-    
-    if (rendimento < 0) {
-        mostrarToast('Rendimento não pode ser negativo', 'warning');
-        return;
-    }
-    
-    // Atualizar valor na receita
-    receita.quantidadePorPessoa = rendimento;
-    receita.alterada = true;
-    
-    // Feedback visual no campo
-    const campo = document.getElementById(`rendimento-editavel-${tipoCodigo}-${receitaId}`);
-    if (campo) {
-        campo.style.background = '#f8d7da';
-        campo.style.borderColor = '#dc3545';
-        setTimeout(() => {
-            campo.style.background = '#d4edda';
-            campo.style.borderColor = '#28a745';
-        }, 1000);
-    }
-    
-    console.log(`✅ Rendimento da receita ${receita.codigo} atualizado para ${rendimento}`);
-}
-
-// ===== NOVA FUNÇÃO: Calcular total de uma receita específica =====
-function calcularTotalReceita(tipoCodigo, receitaId) {
-    console.log(`🧮 Calculando total da receita ${receitaId}`);
-    
-    if (!receitasTemporarias[tipoCodigo]) return;
-    
-    const receita = receitasTemporarias[tipoCodigo].find(r => r.receita_id === receitaId);
-    if (!receita) return;
-    
-    // Obter valores atuais dos campos
-    const comensaisInput = document.getElementById(`comensais-editavel-${tipoCodigo}-${receitaId}`);
-    const rendimentoInput = document.getElementById(`rendimento-editavel-${tipoCodigo}-${receitaId}`);
-    
-    const comensais = parseInt(comensaisInput?.value || receita.comensais || 0);
-    const rendimento = parseFloat(rendimentoInput?.value || receita.quantidadePorPessoa || 0);
-    
-    // Calcular total
-    const total = comensais * rendimento;
-    
-    // Atualizar receita
-    receita.comensais = comensais;
-    receita.quantidadePorPessoa = rendimento;
-    receita.totalPorComensais = total;
-    receita.alterada = true;
-    
-    // Atualizar display do total
-    const totalElement = document.getElementById(`total-${tipoCodigo}-${receitaId}`);
-    if (totalElement) {
-        const receitaOriginal = receitasCarregadas.find(r => r.id === receitaId);
-        const unidade = receitaOriginal ? (receitaOriginal.unidade_rendimento || 'UN') : 'UN';
-        
-        totalElement.textContent = `${total.toFixed(3)} ${unidade}`;
-        
-        // Animação de atualização
-        totalElement.style.transform = 'scale(1.1)';
-        totalElement.style.background = '#d1ecf1';
-        totalElement.style.borderColor = '#17a2b8';
-        
-        setTimeout(() => {
-            totalElement.style.transform = 'scale(1)';
-            totalElement.style.background = '#fff3cd';
-            totalElement.style.borderColor = '#ffc107';
-        }, 300);
-    }
-    
-    console.log(`✅ Total calculado: ${comensais} × ${rendimento} = ${total}`);
-    
-    // Mostrar feedback
-    mostrarToast(`✅ Total recalculado: ${total.toFixed(3)}`, 'success', 2000);
-    
-    // ✅ Atualizar calendário se disponível
-    if (typeof forcarAtualizacaoCalendario === 'function') {
-        setTimeout(() => {
-            forcarAtualizacaoCalendario();
-        }, 100);
-    }
-}
-
-// ===== FUNÇÃO CORRIGIDA: Calcular receitas do tipo (com campos editáveis) =====
-function calcularReceitasDoTipoEditavel(tipoCodigo) {
-    console.log(`🧮 Calculando TODAS as receitas do tipo: ${tipoCodigo}`);
-    
-    if (!receitasTemporarias[tipoCodigo] || receitasTemporarias[tipoCodigo].length === 0) {
-        mostrarToast('Nenhuma receita encontrada para calcular', 'warning');
-        return;
-    }
-    
-    let receitasCalculadas = 0;
-    
-    receitasTemporarias[tipoCodigo].forEach(receita => {
-        // Calcular cada receita individualmente (vai usar os valores editados)
-        calcularTotalReceita(tipoCodigo, receita.receita_id);
-        receitasCalculadas++;
-    });
-    
-    if (receitasCalculadas > 0) {
-        mostrarToast(`✅ ${receitasCalculadas} receita(s) recalculadas com valores personalizados!`, 'success');
-    }
-}
-
-// ===== NOVA FUNÇÃO: Atualizar E Calcular em uma ação =====
-function atualizarECalcularTipo(tipoCodigo) {
-    console.log(`🔄 Atualizando E calculando tipo: ${tipoCodigo}`);
-    
-    const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
-    if (!comensaisInput) {
-        mostrarToast('Campo de comensais não encontrado', 'error');
-        return;
-    }
-    
-    const comensaisGlobal = parseInt(comensaisInput.value || 0);
-    
-    if (comensaisGlobal <= 0) {
-        mostrarToast('Informe um número válido de comensais (maior que 0)', 'warning');
-        comensaisInput.focus();
-        return;
-    }
-    
-    // ✅ CORREÇÃO: Perguntar antes de sobrescrever valores editados manualmente
-    const receitasComEdicao = receitasTemporarias[tipoCodigo]?.filter(r => r.alterada) || [];
-    
-    if (receitasComEdicao.length > 0) {
-        const confirmar = confirm(
-            `⚠️ Atenção!\n\n` +
-            `Existem ${receitasComEdicao.length} receita(s) com valores editados manualmente.\n\n` +
-            `Deseja aplicar ${comensaisGlobal} comensais para TODAS as receitas E calcular?\n\n` +
-            `• SIM = Aplica ${comensaisGlobal} para todas e calcula (sobrescreve edições)\n` +
-            `• NÃO = Mantém valores editados individualmente`
-        );
-        
-        if (!confirmar) {
-            mostrarToast('ℹ️ Valores individuais mantidos. Use os campos editáveis para ajustes específicos.', 'info');
-            return;
-        }
-    }
-    
-    // ✅ PASSO 1: Aplicar comensais global para todas as receitas
-    if (receitasTemporarias[tipoCodigo]) {
-        receitasTemporarias[tipoCodigo].forEach(receita => {
-            receita.comensais = comensaisGlobal;
-            
-            // Atualizar campo visual se existir
-            const campoComensais = document.getElementById(`comensais-editavel-${tipoCodigo}-${receita.receita_id}`);
-            if (campoComensais) {
-                campoComensais.value = comensaisGlobal;
-            }
-        });
-        
-        // ✅ PASSO 2: Calcular automaticamente todas as receitas
-        setTimeout(() => {
-            calcularReceitasDoTipoEditavel(tipoCodigo);
-            
-            mostrarToast(`✅ ${receitasTemporarias[tipoCodigo].length} receita(s) atualizadas e calculadas com ${comensaisGlobal} comensais!`, 'success');
-            
-            // Re-renderizar para mostrar valores atualizados
-            setTimeout(() => {
-                renderizarReceitasDoTipoEditavel(tipoCodigo);
-            }, 200);
-            
-        }, 100);
-        
-    } else {
-        mostrarToast(`ℹ️ Comensais definido para ${comensaisGlobal}. Adicione receitas para aplicar o cálculo.`, 'info');
-    }
-}
-
-// ===== FUNÇÃO CORRIGIDA: Atualizar comensais CORRIGIDA (mantida para compatibilidade) =====
-function atualizarComensaisTipoEditavelSemSobrescrever(tipoCodigo) {
-    console.log(`📝 Atualizando comensais do tipo ${tipoCodigo} (preservando edições individuais)`);
-    
-    const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
-    if (!comensaisInput) {
-        mostrarToast('Campo de comensais não encontrado', 'error');
-        return;
-    }
-    
-    const comensaisGlobal = parseInt(comensaisInput.value || 0);
-    
-    if (comensaisGlobal <= 0) {
-        mostrarToast('Informe um número válido de comensais (maior que 0)', 'warning');
-        comensaisInput.focus();
-        return;
-    }
-    
-    // ✅ CORREÇÃO: Perguntar antes de sobrescrever valores editados manualmente
-    const receitasComEdicao = receitasTemporarias[tipoCodigo]?.filter(r => r.alterada) || [];
-    
-    if (receitasComEdicao.length > 0) {
-        const confirmar = confirm(
-            `⚠️ Atenção!\n\n` +
-            `Existem ${receitasComEdicao.length} receita(s) com valores editados manualmente.\n\n` +
-            `Deseja aplicar ${comensaisGlobal} comensais para TODAS as receitas?\n\n` +
-            `• SIM = Aplica ${comensaisGlobal} para todas (sobrescreve edições)\n` +
-            `• NÃO = Mantém valores editados individualmente`
-        );
-        
-        if (!confirmar) {
-            mostrarToast('ℹ️ Valores individuais mantidos. Use os campos editáveis para ajustes específicos.', 'info');
-            return;
-        }
-    }
-    
-    // Aplicar comensais global para todas as receitas
-    if (receitasTemporarias[tipoCodigo]) {
-        receitasTemporarias[tipoCodigo].forEach(receita => {
-            receita.comensais = comensaisGlobal;
-            
-            // Atualizar campo visual se existir
-            const campoComensais = document.getElementById(`comensais-editavel-${tipoCodigo}-${receita.receita_id}`);
-            if (campoComensais) {
-                campoComensais.value = comensaisGlobal;
-            }
-        });
-        
-        mostrarToast(`✅ ${receitasTemporarias[tipoCodigo].length} receita(s) atualizadas com ${comensaisGlobal} comensais`, 'success');
-        
-        // Re-renderizar para mostrar valores atualizados
-        setTimeout(() => {
-            renderizarReceitasDoTipoEditavel(tipoCodigo);
-        }, 100);
-    }
-}
-
-// ===== SOBRESCREVER FUNÇÕES ORIGINAIS PARA USAR VERSÕES EDITÁVEIS =====
-
-// Substituir função de renderização
-window.renderizarReceitasDoTipo = renderizarReceitasDoTipoEditavel;
-
-// Substituir função de cálculo
-window.calcularReceitasDoTipo = calcularReceitasDoTipoEditavel;
-
-// ===== EXPORTAR NOVAS FUNÇÕES =====
-window.atualizarComensaisReceita = atualizarComensaisReceita;
-window.atualizarRendimentoReceita = atualizarRendimentoReceita;
-window.calcularTotalReceita = calcularTotalReceita;
-window.calcularReceitasDoTipoEditavel = calcularReceitasDoTipoEditavel;
-window.atualizarComensaisTipoEditavelSemSobrescrever = atualizarComensaisTipoEditavelSemSobrescrever;
-window.renderizarReceitasDoTipoEditavel = renderizarReceitasDoTipoEditavel;
-window.atualizarECalcularTipo = atualizarECalcularTipo;
-
-console.log('✅ Campos editáveis implementados com sucesso!');
-console.log('📋 Funcionalidades adicionadas:');
-console.log('  - Campos de comensais editáveis por receita');
-console.log('  - Campos de rendimento editáveis por receita');
-console.log('  - Cálculo individual por receita');
-console.log('  - Botão "Calc. esta" para recalcular receita específica');
-console.log('  - Botão "Atualizar e Calcular" que faz tudo de uma vez');
-console.log('  - Preservação de edições individuais');
-
-function atualizarECalcularTipoFinal(tipoCodigo) {
-    console.log(`🔄 [FINAL] Atualizando E calculando tipo: ${tipoCodigo}`);
-    
-    const comensaisInput = document.getElementById(`comensais-${tipoCodigo}`);
-    if (!comensaisInput) {
-        mostrarToast('Campo de comensais não encontrado', 'error');
-        return;
-    }
-    
-    const comensaisGlobal = parseInt(comensaisInput.value || 0);
-    
-    if (comensaisGlobal <= 0) {
-        mostrarToast('Informe um número válido de comensais (maior que 0)', 'warning');
-        comensaisInput.focus();
-        return;
-    }
-    
-    // ✅ PASSO 1: Verificar se tem receitas
-    if (!receitasTemporarias[tipoCodigo] || receitasTemporarias[tipoCodigo].length === 0) {
-        mostrarToast(`ℹ️ Comensais definido para ${comensaisGlobal}. Adicione receitas para aplicar o cálculo.`, 'info');
-        return;
-    }
-    
-    // ✅ PASSO 2: Perguntar se pode sobrescrever edições manuais
-    const receitasComEdicao = receitasTemporarias[tipoCodigo].filter(r => r.alterada) || [];
-    
-    if (receitasComEdicao.length > 0) {
-        const confirmar = confirm(
-            `⚠️ Atenção!\n\n` +
-            `Existem ${receitasComEdicao.length} receita(s) com valores editados manualmente.\n\n` +
-            `Deseja aplicar ${comensaisGlobal} comensais para TODAS as receitas E calcular?\n\n` +
-            `• SIM = Aplica ${comensaisGlobal} para todas e calcula (sobrescreve edições)\n` +
-            `• NÃO = Mantém valores editados individualmente`
-        );
-        
-        if (!confirmar) {
-            mostrarToast('ℹ️ Valores individuais mantidos. Use os campos editáveis para ajustes específicos.', 'info');
-            return;
-        }
-    }
-    
-    // ✅ PASSO 3: Aplicar comensais global para todas as receitas
-    let receitasAtualizadas = 0;
-    
-    receitasTemporarias[tipoCodigo].forEach(receita => {
-        // Buscar dados da receita original para pegar rendimento
-        const receitaOriginal = receitasCarregadas.find(r => r.id === receita.receita_id);
-        
-        if (receitaOriginal && receitaOriginal.rendimento > 0) {
-            // ✅ CÁLCULO AUTOMÁTICO: comensais * rendimento da receita
-            const rendimento = parseFloat(receitaOriginal.rendimento) || 0;
-            const total = comensaisGlobal * rendimento;
-            
-            // Atualizar todos os valores da receita
-            receita.comensais = comensaisGlobal;
-            receita.quantidadePorPessoa = rendimento;
-            receita.totalPorComensais = total;
-            receita.unidadeBasica = receitaOriginal.unidade_rendimento || 'UN';
-            receita.alterada = true;
-            
-            console.log(`✅ Receita ${receita.codigo}: ${comensaisGlobal} × ${rendimento} = ${total} ${receita.unidadeBasica}`);
-            receitasAtualizadas++;
-            
-            // Atualizar campo visual se existir
-            const campoComensais = document.getElementById(`comensais-editavel-${tipoCodigo}-${receita.receita_id}`);
-            if (campoComensais) {
-                campoComensais.value = comensaisGlobal;
-            }
-            
-            const campoRendimento = document.getElementById(`rendimento-editavel-${tipoCodigo}-${receita.receita_id}`);
-            if (campoRendimento) {
-                campoRendimento.value = rendimento.toFixed(3);
-            }
-        } else {
-            console.warn(`⚠️ Receita ${receita.codigo} sem rendimento definido`);
-        }
-    });
-    
-    if (receitasAtualizadas > 0) {
-        mostrarToast(`✅ ${receitasAtualizadas} receita(s) atualizadas e calculadas com ${comensaisGlobal} comensais!`, 'success');
-        
-        // ✅ PASSO 4: Re-renderizar as receitas para mostrar os valores atualizados
-        setTimeout(() => {
-            renderizarReceitasDoTipoEditavel(tipoCodigo);
-            
-            // ✅ PASSO 5: Atualizar calendário se disponível
-            if (typeof forcarAtualizacaoCalendario === 'function') {
-                setTimeout(() => {
-                    forcarAtualizacaoCalendario();
-                }, 300);
-            }
-        }, 100);
-        
-    } else {
-        mostrarToast('Nenhuma receita pôde ser calculada. Verifique se as receitas têm rendimento definido.', 'warning');
-    }
-}
