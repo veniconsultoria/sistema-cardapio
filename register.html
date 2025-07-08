@@ -12,6 +12,7 @@
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
         }
         
         .login-card {
@@ -27,6 +28,7 @@
             text-align: center;
             margin-bottom: 2rem;
             color: #333;
+            font-size: 1.8rem;
         }
         
         .form-group {
@@ -46,6 +48,8 @@
             border: 1px solid #e9ecef;
             border-radius: 5px;
             font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
         }
         
         .form-group input:focus {
@@ -65,11 +69,19 @@
             font-weight: 600;
             cursor: pointer;
             margin-bottom: 1rem;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
         }
         
         .btn-login:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-login:disabled {
+            background: #6c757d;
+            transform: none;
+            cursor: not-allowed;
         }
         
         .register-link {
@@ -82,6 +94,10 @@
             text-decoration: none;
         }
         
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+        
         .error-message {
             background: #f8d7da;
             color: #721c24;
@@ -89,6 +105,7 @@
             border-radius: 5px;
             margin-bottom: 1rem;
             display: none;
+            border: 1px solid #f5c6cb;
         }
         
         .success-message {
@@ -98,44 +115,45 @@
             border-radius: 5px;
             margin-bottom: 1rem;
             display: none;
+            border: 1px solid #c3e6cb;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="login-card">
-            <h2 class="login-title">Criar Conta</h2>
+            <h2 class="login-title">📝 Criar Conta</h2>
             
-            <div id="errorMessage" class="error-message"></div>
-            <div id="successMessage" class="success-message"></div>
+            <div id="error-message" class="error-message"></div>
+            <div id="success-message" class="success-message"></div>
             
-            <form id="registerForm">
+            <form id="registerForm" novalidate>
                 <div class="form-group">
                     <label for="name">Nome:</label>
-                    <input type="text" id="name" required placeholder="Seu nome completo">
+                    <input type="text" id="name" name="name" placeholder="Seu nome completo" autocomplete="name">
                 </div>
                 
                 <div class="form-group">
                     <label for="company">Empresa:</label>
-                    <input type="text" id="company" required placeholder="Nome da empresa">
+                    <input type="text" id="company" name="company" placeholder="Nome da empresa" autocomplete="organization">
                 </div>
                 
                 <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" required placeholder="seu@email.com">
+                    <label for="email">Email: *</label>
+                    <input type="email" id="email" name="email" required placeholder="seu@email.com" autocomplete="email">
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Senha:</label>
-                    <input type="password" id="password" required placeholder="Mínimo 6 caracteres">
+                    <label for="password">Senha: *</label>
+                    <input type="password" id="password" name="password" required placeholder="Mínimo 6 caracteres" autocomplete="new-password">
                 </div>
                 
                 <div class="form-group">
-                    <label for="confirmPassword">Confirmar Senha:</label>
-                    <input type="password" id="confirmPassword" required placeholder="Digite a senha novamente">
+                    <label for="confirmPassword">Confirmar Senha: *</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Digite a senha novamente" autocomplete="new-password">
                 </div>
                 
-                <button type="submit" class="btn-login">Criar Conta</button>
+                <button type="submit" id="register-btn" class="btn-login">Criar Conta</button>
             </form>
             
             <div class="register-link">
@@ -144,8 +162,39 @@
         </div>
     </div>
     
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Scripts na ordem correta -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    
+    <script>
+        // Configurar form de registro quando DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM carregado - configurando formulário de registro');
+            
+            // Configurar formulário
+            const registerForm = document.getElementById('registerForm');
+            if (registerForm) {
+                registerForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('📝 Form submetido - chamando register()');
+                    
+                    // Verificar se a função register existe
+                    if (typeof register === 'function') {
+                        register();
+                    } else {
+                        console.error('❌ Função register não encontrada');
+                        alert('Erro: Sistema de autenticação não carregado. Recarregue a página.');
+                    }
+                });
+            }
+            
+            // Focar no campo nome
+            const nameInput = document.getElementById('name');
+            if (nameInput) {
+                nameInput.focus();
+            }
+        });
+    </script>
 </body>
 </html>

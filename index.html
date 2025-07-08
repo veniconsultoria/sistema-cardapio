@@ -6,6 +6,37 @@
     <title>Sistema de Cadastro - Produtos e Receitas</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/calendario.css">
+    <style>
+        /* Estilos para badges */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+        .badge-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        /* Estilos para toast */
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
+            max-width: 400px;
+            font-family: inherit;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -84,165 +115,19 @@
             <!-- Cadastro de Receitas -->
             <div id="receitas" class="tab-content hidden">
                 <div class="section">
-                    <h2>Cadastro de Receitas</h2>
-                    <form id="formReceita">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="codigoReceita" class="required">Código da Receita</label>
-                                <input type="text" id="codigoReceita" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="descricaoReceita" class="required">Descrição da Receita</label>
-                                <input type="text" id="descricaoReceita" maxlength="50" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="pesoFinal">Peso Final</label>
-                                <input type="number" id="pesoFinal" step="0.001" readonly placeholder="0,000">
-                            </div>
-                            <div class="form-group">
-                                <label for="rendimento">Rendimento</label>
-                                <input type="number" id="rendimento" step="0.001" placeholder="0,000">
-                            </div>
-                            <div class="form-group">
-                                <label for="unidadeRendimento">Unidade do Rendimento</label>
-                                <select id="unidadeRendimento">
-                                    <option value="">Selecione...</option>
-                                    <option value="UN">UN</option>
-                                    <option value="KG">KG</option>
-                                    <option value="L">L</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Editor de Receita -->
-                        <div class="form-group full-width">
-                            <label for="textoReceita">Modo de Preparo</label>
-                            <div class="recipe-editor" id="recipeEditor">
-                                <!-- Barra de Ferramentas -->
-                                <div class="editor-toolbar">
-                                    <div class="toolbar-group">
-                                        <button type="button" class="toolbar-btn" onclick="formatText('bold')" title="Negrito (Ctrl+B)">
-                                            <strong>B</strong>
-                                        </button>
-                                        <button type="button" class="toolbar-btn" onclick="formatText('italic')" title="Itálico (Ctrl+I)">
-                                            <em>I</em>
-                                        </button>
-                                        <button type="button" class="toolbar-btn" onclick="formatText('underline')" title="Sublinhado (Ctrl+U)">
-                                            <u>U</u>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="toolbar-group">
-                                        <select class="font-size-select" onchange="changeFontSize(this.value)" title="Tamanho da fonte">
-                                            <option value="12px">12px</option>
-                                            <option value="14px" selected>14px</option>
-                                            <option value="16px">16px</option>
-                                            <option value="18px">18px</option>
-                                            <option value="20px">20px</option>
-                                            <option value="24px">24px</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="toolbar-group">
-                                        <button type="button" class="toolbar-btn" onclick="formatText('insertUnorderedList')" title="Lista com marcadores">
-                                            ≡
-                                        </button>
-                                        <button type="button" class="toolbar-btn" onclick="formatText('insertOrderedList')" title="Lista numerada">
-                                            1.
-                                        </button>
-                                    </div>
-
-                                    <div class="toolbar-group">
-                                        <button type="button" class="toolbar-btn" onclick="clearFormatting()" title="Limpar formatação">
-                                            🧹
-                                        </button>
-                                    </div>
-
-                                    <div class="toolbar-group">
-                                        <button type="button" class="toolbar-btn" onclick="setEditorSize('small')" title="Tamanho pequeno">
-                                            📱
-                                        </button>
-                                        <button type="button" class="toolbar-btn" onclick="setEditorSize('medium')" title="Tamanho médio">
-                                            💻
-                                        </button>
-                                        <button type="button" class="toolbar-btn" onclick="setEditorSize('large')" title="Tamanho grande">
-                                            🖥️
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Área de Edição -->
-                                <div class="editor-content" 
-                                    id="textoReceita" 
-                                    contenteditable="true" 
-                                    placeholder="Digite aqui o modo de preparo da receita..."
-                                    oninput="updateRecipeText()"
-                                    onkeydown="handleEditorKeydown(event)">
-                                </div>
-
-                                <!-- Handle de redimensionamento -->
-                                <div class="resize-handle" id="resizeHandle"></div>
-
-                                <!-- Footer -->
-                                <div class="editor-footer">
-                                    <div class="char-counter">
-                                        <span id="charCount">0</span> caracteres
-                                    </div>
-                                    <div class="editor-tips">
-                                        <small>💡 Dica: Use <kbd>Ctrl+B</kbd>, <kbd>Ctrl+I</kbd>, <kbd>Ctrl+U</kbd> para formatação rápida</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="actions">
-                            <button type="submit" class="btn btn-primary">Salvar Receita</button>
-                            <button type="button" class="btn btn-secondary" onclick="limparFormularioReceita()">Limpar</button>
-                            <button type="button" class="btn btn-success" onclick="previewReceita()">Visualizar</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="section">
-                    <h3>Ingredientes</h3>
-                    <button type="button" class="btn btn-primary" onclick="abrirModalIngredientes()">Selecionar Ingredientes</button>
-                    <div class="table-responsive">
-                        <table id="tabelaIngredientes">
-                            <thead>
-                                <tr>
-                                    <th>Cód. Produto</th>
-                                    <th>Nome</th>
-                                    <th>Quantidade</th>
-                                    <th>UMB</th>
-                                    <th>% Perda</th>
-                                    <th>% Ganho</th>
-                                    <th>Preço</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h3>Cálculos</h3>
-                    <button type="button" class="btn btn-success" onclick="calcularReceita()">Atualizar e Calcular</button>
-                    <div id="resultadosCalculos" class="form-grid">
-                        <div class="card">
-                            <h4>Preço Total</h4>
-                            <p id="precoTotal">R$ 0,00</p>
-                        </div>
-                        <div class="card">
-                            <h4>Peso Final</h4>
-                            <p id="pesoFinalCalculado">0,000 KG</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2>📋 Gestão de Receitas</h2>
+                        <div>
+                            <button class="btn btn-primary" onclick="abrirNovaReceitaFormulario()">+ Nova Receita</button>
+                            <button class="btn btn-secondary" onclick="listarReceitas()">📋 Listar Receitas</button>
                         </div>
                     </div>
-                </div>
 
-                <div class="section">
-                    <h3>Lista de Receitas</h3>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <input type="text" id="busca-receitas" placeholder="🔍 Buscar receitas..." style="min-width: 200px; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                        <span>Total: <strong id="total-receitas">0</strong> receitas</span>
+                    </div>
+
                     <div class="table-responsive">
                         <table id="tabelaReceitas">
                             <thead>
@@ -256,8 +141,147 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                                        📋 Clique em "Listar Receitas" para carregar os dados
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- ===== FORMULÁRIO DE NOVA/EDITAR RECEITA ===== -->
+                    <div id="formulario-receita" class="section" style="display: none; margin-top: 30px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3>📝 Cadastro de Receita</h3>
+                            <div>
+                                <button class="btn btn-primary" onclick="salvarReceitaFormulario()">💾 Salvar</button>
+                                <button class="btn btn-secondary" onclick="cancelarEdicaoReceita()">❌ Cancelar</button>
+                            </div>
+                        </div>
+
+                        <!-- Dados Básicos da Receita -->
+                        <div class="receita-content">
+                            <!-- Primeira Coluna -->
+                            <div class="section">
+                                <h4>📝 Dados Básicos</h4>
+                                
+                                <div class="form-group">
+                                    <label for="codigoReceita">Código da Receita:</label>
+                                    <input type="text" id="codigoReceita" readonly style="background-color: #f8f9fa;">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="descricaoReceita">Descrição da Receita: *</label>
+                                    <input type="text" id="descricaoReceita" placeholder="Ex: Bolo de Chocolate" required>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="rendimento">Rendimento:</label>
+                                        <input type="number" id="rendimento" step="0.001" min="0" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="unidadeRendimento">Unidade:</label>
+                                        <select id="unidadeRendimento">
+                                            <option value="UN">Unidades</option>
+                                            <option value="KG">Quilogramas</option>
+                                            <option value="L">Litros</option>
+                                            <option value="Porções">Porções</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="pesoFinal">Peso Final (KG):</label>
+                                    <input type="number" id="pesoFinal" step="0.001" min="0" placeholder="0.000">
+                                </div>
+                            </div>
+
+                            <!-- Segunda Coluna -->
+                            <div class="section">
+                                <h4>💰 Resumo da Receita</h4>
+                                
+                                <div class="total-item">
+                                    <h5>Peso Total Calculado</h5>
+                                    <div class="valor" id="pesoTotalCalculado">0,000 KG</div>
+                                </div>
+                                
+                                <div class="total-item" style="margin-top: 20px;">
+                                    <h5>Valor Total da Receita</h5>
+                                    <div class="valor" id="valorTotalReceita">R$ 0,00</div>
+                                </div>
+                                
+                                <div class="total-item" style="margin-top: 20px;">
+                                    <h5>Custo por Unidade</h5>
+                                    <div class="valor" id="custoPorUnidade">R$ 0,00</div>
+                                </div>
+                                
+                                <button class="btn btn-primary" onclick="calcularTotaisFormulario()" style="width: 100%; margin-top: 20px;">
+                                    🧮 Atualizar Cálculos
+                                </button>
+                            </div>
+
+                            <!-- Ingredientes -->
+                            <div class="ingredientes-section">
+                                <div class="ingredientes-header">
+                                    <h4>🥘 Ingredientes da Receita</h4>
+                                    <button class="btn btn-primary" onclick="abrirModalIngredientesFormulario()">
+                                        ➕ Adicionar Ingredientes
+                                    </button>
+                                </div>
+                                <div class="ingredientes-content">
+                                    <div class="table-responsive">
+                                        <table id="tabelaIngredientes">
+                                            <thead>
+                                                <tr>
+                                                    <th>Código</th>
+                                                    <th>Produto</th>
+                                                    <th>Quantidade</th>
+                                                    <th>Unidade</th>
+                                                    <th>% Perda</th>
+                                                    <th>% Ganho</th>
+                                                    <th>Preço Unit.</th>
+                                                    <th>Total Item</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="ingredientesTbody">
+                                                <tr>
+                                                    <td colspan="9" style="text-align: center; padding: 40px; color: #666;">
+                                                        🥘 Nenhum ingrediente adicionado<br>
+                                                        <small>Clique em "Adicionar Ingredientes" para começar</small>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ===== MODO DE PREPARO (APÓS INGREDIENTES) ===== -->
+                            <div class="modo-preparo">
+                                <div class="modo-preparo-header">
+                                    <h4>📖 Modo de Preparo</h4>
+                                    <button class="toggle-btn" onclick="toggleModoPreparo()">
+                                        <span id="toggleText">Exibir</span>
+                                    </button>
+                                </div>
+                                <div class="modo-preparo-content hidden" id="modoPreparoContent">
+                                    <div class="form-group">
+                                        <textarea id="modoPreparo" placeholder="Digite aqui o modo de preparo da receita...
+
+Exemplo:
+1. Pré-aqueça o forno a 180°C
+2. Em uma tigela, misture os ingredientes secos...
+3. Adicione os ingredientes líquidos...
+4. Misture bem até obter uma massa homogênea...
+5. Despeje na forma untada e enfarinhada...
+6. Asse por 30-40 minutos ou até dourar..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -265,48 +289,19 @@
             <!-- Tipos de Refeições -->
             <div id="tipos-refeicoes" class="tab-content hidden">
                 <div class="section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2>🍽️ Gestão de Tipos de Refeições</h2>
-                        <div>
-                            <button class="btn btn-primary" onclick="abrirModalNovoTipo()">+ Novo Tipo</button>
-                            <button class="btn btn-secondary" onclick="recarregarTipos()">📋 Listar Tipos</button>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-                        <input type="text" id="busca-tipos" placeholder="🔍 Buscar tipos de refeições..." style="min-width: 200px; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
-                        <span>Total: <strong id="total-tipos">0</strong> tipos de refeições</span>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Descrição</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tipos-tbody">
-                                <tr>
-                                    <td colspan="3" style="text-align: center; padding: 40px; color: #666;">
-                                        Carregando tipos de refeições...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <h2>🍽️ Gestão de Tipos de Refeições</h2>
+                    <p>Sistema de tipos de refeições será carregado aqui.</p>
                 </div>
             </div>
 
-            <!-- ✅ CLIENTES - SEÇÃO CORRIGIDA -->
+            <!-- CLIENTES -->
             <div id="clientes" class="tab-content hidden">
                 <div class="section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2>👥 Gestão de Clientes</h2>
                         <div>
-                            <button class="btn btn-primary" onclick="garantirFuncaoClientes('abrirModalNovoCliente')">+ Novo Cliente</button>
-                            <button class="btn btn-secondary" onclick="garantirFuncaoClientes('recarregarClientes')">📋 Listar Clientes</button>
+                            <button class="btn btn-primary" onclick="abrirModalNovoCliente()">+ Novo Cliente</button>
+                            <button class="btn btn-secondary" onclick="recarregarClientes()">📋 Listar Clientes</button>
                         </div>
                     </div>
 
@@ -340,82 +335,11 @@
                 </div>
             </div>
 
-            <!-- ✅ PLANEJAMENTO DE CARDÁPIO CORRIGIDO -->
+            <!-- PLANEJAMENTO DE CARDÁPIO -->
             <div id="cardapio" class="tab-content hidden">
-                <!-- Calendário com opção de mostrar/ocultar -->
-                <div class="calendar-toggle">
-                    <button onclick="toggleCalendar()">
-                        <span id="calendar-toggle-text">Ocultar Calendário</span>
-                    </button>
-                </div>
-                
-                <div class="calendar-container" id="calendarContainer">
-                    <div class="calendar-header">
-                        <button onclick="mudarMes(-1)">❮</button>
-                        <span id="mesAno">Carregando...</span>
-                        <button onclick="mudarMes(1)">❯</button>
-                    </div>
-                    <div class="calendar-grid" id="calendarGrid">
-                        <!-- Calendário será carregado aqui -->
-                    </div>
-                </div>
-
                 <div class="section">
-                    <h2>Planejamento de Cardápio</h2>
-                    <div class="form-grid cardapio-form-grid">
-                        <div class="form-group">
-                            <label for="clienteCardapio" class="required">Cliente</label>
-                            <select id="clienteCardapio" required onchange="carregarTiposRefeicaoCliente()">
-                                <option value="">Carregando clientes...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="dataCardapio" class="required">Data</label>
-                            <input type="date" id="dataCardapio" required onchange="carregarCardapioData()">
-                        </div>
-                        <div class="form-group">
-                            <label for="totalComensais">Total Comensais</label>
-                            <input type="number" id="totalComensais" min="1" max="99999" class="compact-input" 
-                                placeholder="" style="width: 120px;">
-                        </div>
-                    </div>
-                    
-                    <!-- Botões de Ação -->
-                    <div class="actions">
-                        <button type="button" class="btn btn-secondary compact-btn" onclick="atualizarParaTodos()">
-                            📝 Atualizar Todos
-                        </button>
-                        <button type="button" class="btn btn-success compact-btn" onclick="calcularParaTodos()">
-                            🧮 Calcular para Todos
-                        </button>
-                        <button type="button" class="btn btn-primary compact-btn" onclick="gravarParaTodos()">
-                            💾 Gravar para Todos
-                        </button>
-                        <button type="button" class="btn btn-primary compact-btn" onclick="abrirModalImpressao()">
-                            🖨️ Imprimir
-                        </button>
-                        <button type="button" class="btn btn-info compact-btn" onclick="abrirVisualizacaoSemanal()">
-                            📅 Visão Semanal
-                        </button>
-                    </div>
-                    
-                    <!-- Nota Explicativa -->
-                    <div style="background: #e7f3ff; border-left: 4px solid #2196f3; padding: 12px; margin-top: 15px; border-radius: 5px;">
-                        <h4 style="margin: 0 0 8px 0; color: #1976d2;">ℹ️ Como usar:</h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #333; font-size: 14px;">
-                            <li><strong>Total Comensais:</strong> Define o número para todos os tipos de refeição</li>
-                            <li><strong>Atualizar Todos:</strong> Aplica o total de comensais em todos os tipos</li>
-                            <li><strong>Calcular para Todos:</strong> Calcula todas as receitas de todos os tipos</li>
-                            <li><strong>Gravar para Todos:</strong> Salva o cardápio completo no banco</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h3>Tipos de Refeições do Cliente</h3>
-                    <div id="tiposRefeicaoCardapio">
-                        <!-- Os tipos de refeição aparecerão aqui dinamicamente -->
-                    </div>
+                    <h2>📅 Planejamento de Cardápio</h2>
+                    <p>Sistema de cardápio será carregado aqui.</p>
                 </div>
             </div>
         </div>
@@ -476,31 +400,6 @@
                 <div class="actions">
                     <button class="btn btn-secondary" onclick="fecharModalProduto()">Cancelar</button>
                     <button class="btn btn-primary" onclick="salvarProduto()">Salvar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal de Tipo de Refeição -->
-        <div id="modal-tipo" class="modal">
-            <div class="modal-content">
-                <span class="close" onclick="fecharModalTipo()">&times;</span>
-                <h2>🍽️ Tipo de Refeição</h2>
-                <form>
-                    <input type="hidden" id="tipo-id">
-                    
-                    <div class="form-group">
-                        <label for="tipo-codigo">Código:</label>
-                        <input type="text" id="tipo-codigo" readonly style="background-color: #f8f9fa;">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tipo-descricao">Descrição: *</label>
-                        <input type="text" id="tipo-descricao" required maxlength="25">
-                    </div>
-                </form>
-                <div class="actions">
-                    <button class="btn btn-secondary" onclick="fecharModalTipo()">Cancelar</button>
-                    <button class="btn btn-primary" onclick="salvarTipoRefeicao()">Salvar</button>
                 </div>
             </div>
         </div>
@@ -585,126 +484,105 @@
             </div>
         </div>
 
-        <!-- Modal de Ingredientes -->
+        <!-- ===== MODAL DE INGREDIENTES ===== -->
         <div id="modalIngredientes" class="modal">
-            <div class="modal-content" style="max-width: 700px;">
-                <div class="modal-header" style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; margin: -20px -20px 20px -20px;">
-                    <h2 style="margin: 0; display: flex; align-items: center; gap: 10px;">
-                        🥗 Selecionar Ingredientes
-                        <span class="close" onclick="fecharModal('modalIngredientes')" style="margin-left: auto; cursor: pointer; font-size: 28px; font-weight: bold;">&times;</span>
-                    </h2>
-                    <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Selecione um ou mais produtos para adicionar como ingredientes</p>
-                </div>
-                
-                <!-- Barra de Pesquisa -->
-                <div class="search-box" style="margin-bottom: 15px;">
-                    <input type="text" id="searchIngredientes" placeholder="🔍 Pesquisar por código ou nome do produto..." onkeyup="filtrarIngredientes()" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
-                </div>
-                
-                <!-- Lista de Ingredientes -->
-                <div id="listaIngredientes" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; background: #fff;">
-                    <!-- Produtos serão carregados aqui via JavaScript -->
-                </div>
-                
-                <!-- Rodapé com Ações -->
-                <div class="modal-footer" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef; display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" class="btn btn-secondary" onclick="fecharModal('modalIngredientes')">
-                        Cancelar
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal de Receitas para Cardápio -->
-        <div id="modalReceitas" class="modal">
             <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; margin: -20px -20px 20px -20px;">
-                    <h2 style="margin: 0; display: flex; align-items: center; gap: 10px;">
-                        🍽️ Selecionar Receitas
-                        <span class="close" onclick="fecharModal('modalReceitas')" style="margin-left: auto; cursor: pointer; font-size: 28px; font-weight: bold;">&times;</span>
-                    </h2>
-                    <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Escolha as receitas para este tipo de refeição</p>
+                <div class="modal-header" style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 15px 15px 0 0; margin: -20px -20px 20px -20px;">
+                    <h2>🛒 Selecionar Ingredientes</h2>
+                    <span class="close" onclick="fecharModalIngredientesFormulario()">&times;</span>
                 </div>
-                
-                <div class="search-box">
-                    <input type="text" id="searchReceitas" placeholder="🔍 Pesquisar por código ou nome da receita..." onkeyup="filtrarReceitas()" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
+                <div class="modal-body">
+                    <div class="search-box">
+                        <input type="text" id="buscarProduto" placeholder="🔍 Buscar produtos..." 
+                               onkeyup="filtrarProdutosFormulario()" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-secondary btn-sm" onclick="selecionarTodosFormulario()">Selecionar Todos</button>
+                        <button class="btn btn-secondary btn-sm" onclick="desmarcarTodosFormulario()">Desmarcar Todos</button>
+                        <span style="margin-left: 20px; color: #666;">
+                            <strong id="contadorSelecionados">0</strong> selecionados
+                        </span>
+                    </div>
+                    
+                    <div id="listaProdutos" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Produtos serão carregados aqui -->
+                    </div>
                 </div>
-                
-                <div id="listaReceitasModal" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; margin: 15px 0;">
-                    <!-- Receitas serão carregadas aqui -->
-                </div>
-                
-                <div class="actions" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef;">
-                    <button type="button" class="btn btn-secondary" onclick="fecharModal('modalReceitas')">
-                        Cancelar
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="adicionarReceitasSelecionadas()">
-                        ➕ Adicionar Selecionadas
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="fecharModalIngredientesFormulario()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="transferirIngredientesFormulario()">
+                        ➡️ Transferir Selecionados
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ✅ SCRIPTS CDN -->
+    <!-- ===== SCRIPTS ===== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/calculo.js"></script>          <!-- NOVO -->
-    <script src="js/configuracao-final.js"></script>  <!-- NOVO -->
     <script src="js/auth.js"></script>
-    <script src="js/impressao.js"></script>
+    <script src="js/clientes-simplificado.js"></script>
+    <script src="js/modulo-cardapios.js"></script>
+    <script src="js/modulo-receitas.js"></script>
+    <script src="js/sistema-integracao.js"></script>
 
-    <!-- ✅ NOVO: Script do Calendário PRIMEIRO -->
-    <script src="js/calendario.js"></script>
-
-    <!-- ✅ SCRIPTS DO SISTEMA -->
-    <script src="js/main.js"></script>
-    <script src="js/receitas.js"></script>
-    <script src="js/tipos-refeicoes.js"></script>
-    <script src="js/clientes.js"></script>
-    <script src="js/cardapio.js"></script>
-    <script src="js/cardapio-decimal-fix.js"></script> <!--nova função-->
-
-    <!-- ✅ SCRIPT ESPECÍFICO PARA GARANTIR FUNCIONAMENTO DOS CLIENTES -->
     <script>
-        console.log('🔧 Carregando script de correção para clientes...');
+        console.log('🚀 Iniciando sistema simplificado...');
 
-        // ✅ FUNÇÃO PRINCIPAL: Garantir que as funções de clientes funcionem
-        function garantirFuncaoClientes(nomeFuncao) {
-            console.log(`🎯 Chamando função: ${nomeFuncao}`);
-            
-            // Verificar se a função existe
-            if (typeof window[nomeFuncao] === 'function') {
-                console.log(`✅ Função ${nomeFuncao} encontrada, executando...`);
-                window[nomeFuncao]();
-                return;
+        // ===== TOAST NOTIFICATION =====
+        function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
+            // Remover toast existente
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) {
+                existingToast.remove();
             }
             
-            console.warn(`⚠️ Função ${nomeFuncao} não encontrada, tentando inicializar clientes...`);
+            // Criar elemento toast
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${tipo}`;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                background: ${tipo === 'success' ? '#d4edda' : tipo === 'error' ? '#f8d7da' : tipo === 'warning' ? '#fff3cd' : '#d1ecf1'};
+                color: ${tipo === 'success' ? '#155724' : tipo === 'error' ? '#721c24' : tipo === 'warning' ? '#856404' : '#0c5460'};
+                padding: 12px 16px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                font-family: inherit;
+                font-size: 14px;
+                max-width: 400px;
+                line-height: 1.4;
+            `;
             
-            // Se não existe, tentar inicializar primeiro
-            if (typeof window.inicializarClientes === 'function') {
-                window.inicializarClientes().then(() => {
-                    console.log(`🔄 Clientes inicializados, tentando ${nomeFuncao} novamente...`);
-                    setTimeout(() => {
-                        if (typeof window[nomeFuncao] === 'function') {
-                            window[nomeFuncao]();
-                        } else {
-                            console.error(`❌ Função ${nomeFuncao} ainda não disponível após inicialização`);
-                            mostrarToast(`Erro: Função ${nomeFuncao} não disponível`, 'error');
-                        }
-                    }, 500);
-                }).catch(error => {
-                    console.error(`❌ Erro ao inicializar clientes:`, error);
-                    mostrarToast('Erro ao inicializar sistema de clientes', 'error');
-                });
-            } else {
-                console.error('❌ Função inicializarClientes não encontrada');
-                mostrarToast('Sistema de clientes não carregado corretamente', 'error');
-            }
+            const icones = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            toast.innerHTML = `
+                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                    <span>${icones[tipo] || icones.info}</span>
+                    <div style="flex: 1;">${mensagem}</div>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 16px; cursor: pointer; margin-left: 10px; opacity: 0.7;">&times;</button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, duracao);
         }
 
-        // ✅ FUNÇÃO SHOWTAB CORRIGIDA
+        // ===== NAVEGAÇÃO ENTRE ABAS =====
         function showTab(tabName) {
             console.log('📂 Navegando para aba:', tabName);
             
@@ -734,7 +612,7 @@
                 }
             }
             
-            // ✅ CORREÇÃO ESPECÍFICA: Inicializar módulos específicos
+            // Inicializar módulos específicos
             setTimeout(() => {
                 switch(tabName) {
                     case 'produtos-novo':
@@ -744,45 +622,20 @@
                         }
                         break;
                         
-                    case 'receitas':
-                        console.log('🍽️ Inicializando receitas...');
-                        if (typeof inicializarReceitas === 'function') {
-                            inicializarReceitas();
-                        }
-                        break;
-                        
-                    case 'tipos-refeicoes':
-                        console.log('🍽️ Inicializando tipos de refeições...');
-                        if (typeof inicializarTiposRefeicoes === 'function') {
-                            inicializarTiposRefeicoes();
-                        }
-                        break;
-                        
                     case 'clientes':
                         console.log('👥 Inicializando clientes...');
                         if (typeof inicializarClientes === 'function') {
-                            inicializarClientes().then(() => {
-                                console.log('✅ Clientes inicializados - aguardando clique em "Listar Clientes"');
-                            }).catch(error => {
+                            inicializarClientes().catch(error => {
                                 console.error('❌ Erro ao inicializar clientes:', error);
                                 mostrarToast('Erro ao inicializar clientes: ' + error.message, 'error');
                             });
-                        } else {
-                            console.warn('⚠️ Função inicializarClientes não encontrada');
-                            setTimeout(() => {
-                                if (typeof inicializarClientes === 'function') {
-                                    inicializarClientes();
-                                } else {
-                                    mostrarToast('Sistema de clientes não foi carregado corretamente', 'error');
-                                }
-                            }, 1000);
                         }
                         break;
                         
-                    case 'cardapio':
-                        console.log('📅 Inicializando cardápio...');
-                        if (typeof inicializarCardapio === 'function') {
-                            inicializarCardapio();
+                    case 'receitas':
+                        console.log('📋 Inicializando receitas...');
+                        if (typeof inicializarReceitas === 'function') {
+                            inicializarReceitas();
                         }
                         break;
                         
@@ -792,55 +645,19 @@
             }, 300);
         }
 
-        // ✅ GARANTIR QUE AS FUNÇÕES ESTÃO DISPONÍVEIS GLOBALMENTE
-        window.showTab = showTab;
-        window.garantirFuncaoClientes = garantirFuncaoClientes;
-
-        // ✅ VERIFICAÇÃO FINAL AO CARREGAR
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('📄 DOM carregado - verificando sistema...');
-            
-            setTimeout(() => {
-                console.log('🔍 === VERIFICAÇÃO DO SISTEMA ===');
-                console.log('📋 Funções principais disponíveis:');
-                console.log('  - showTab:', typeof window.showTab);
-                console.log('  - mostrarToast:', typeof window.mostrarToast);
-                console.log('  - inicializarCalendarioSistema:', typeof window.inicializarCalendarioSistema);
-                console.log('  - inicializarCardapio:', typeof window.inicializarCardapio);
-                
-                console.log('🎯 Elementos DOM encontrados:');
-                console.log('  - Container principal:', !!document.querySelector('.container'));
-                console.log('  - Calendário:', !!document.getElementById('calendarContainer'));
-                console.log('  - Select clientes:', !!document.getElementById('clienteCardapio'));
-                console.log('  - Botões de tab:', document.querySelectorAll('.tab').length);
-                
-                console.log('✅ Sistema principal carregado corretamente!');
-            }, 1000);
-        });
-
-        console.log('✅ Script de correção para clientes carregado!');
-    </script>
-
-    <!-- Script inline para produtos (mantido para compatibilidade) -->
-    <script>
-        // PRODUTOS - INTEGRADO NO SISTEMA
-        console.log('🚀 Iniciando sistema de produtos...');
-        
+        // ===== SISTEMA DE PRODUTOS INTEGRADO =====
         let produtosNovoSistema = [];
-        let editandoNovoSistema = null;
 
-        // Aguardar Supabase
         function aguardarSupabaseNovoSistema(callback, tentativas = 0) {
             if (window.supabase && window.supabase.auth) {
                 callback();
             } else if (tentativas < 50) {
                 setTimeout(() => aguardarSupabaseNovoSistema(callback, tentativas + 1), 100);
             } else {
-                mostrarToast('Erro: Supabase não carregou');
+                mostrarToast('Erro: Supabase não carregou', 'error');
             }
         }
 
-        // Inicializar quando aba produtos-novo for selecionada
         function inicializarProdutosNovo() {
             aguardarSupabaseNovoSistema(async () => {
                 try {
@@ -1018,7 +835,7 @@
                 };
 
                 if (!dados.descricao) {
-                    mostrarToast('Informe a descrição');
+                    mostrarToast('Informe a descrição', 'warning');
                     document.getElementById('produto-descricao').focus();
                     return;
                 }
@@ -1032,13 +849,13 @@
 
                 if (result.error) throw result.error;
 
-                mostrarToast(id ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
+                mostrarToast(id ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!', 'success');
                 fecharModalProduto();
                 await carregarProdutosNovoSistema();
 
             } catch (error) {
                 console.error('Erro ao salvar:', error);
-                mostrarToast('Erro: ' + error.message);
+                mostrarToast('Erro: ' + error.message, 'error');
                 document.getElementById('ultimo-erro').textContent = error.message;
             }
         }
@@ -1076,10 +893,10 @@
                     .eq('user_id', user.id);
                     
                 if (error) throw error;
-                mostrarToast('Produto excluído com sucesso!');
+                mostrarToast('Produto excluído com sucesso!', 'success');
                 await carregarProdutosNovoSistema();
             } catch (error) {
-                mostrarToast('Erro: ' + error.message);
+                mostrarToast('Erro: ' + error.message, 'error');
                 document.getElementById('ultimo-erro').textContent = error.message;
             }
         }
@@ -1090,10 +907,539 @@
 
         async function recarregarProdutos() {
             await carregarProdutosNovoSistema();
-            mostrarToast('Produtos recarregados!');
+            mostrarToast('Produtos recarregados!', 'success');
         }
 
-        // Exportar funções globais
+        // ===== FUNÇÕES DE RECEITAS ORIGINAIS =====
+        function abrirNovaReceita() {
+            console.log('🔄 abrirNovaReceita() original chamada');
+            
+            if (window.ModuloReceitas) {
+                console.log('✅ ModuloReceitas encontrado');
+                console.log('📊 Estado:', window.ModuloReceitas.estado);
+                console.log('📋 Funções:', Object.keys(window.ModuloReceitas));
+                
+                // Verificar se já foi inicializado
+                if (window.ModuloReceitas.estado && window.ModuloReceitas.estado.inicializado) {
+                    console.log('✅ Módulo já inicializado');
+                    if (typeof window.ModuloReceitas.abrirModalNova === 'function') {
+                        window.ModuloReceitas.abrirModalNova();
+                    } else {
+                        console.error('❌ Função abrirModalNova não existe');
+                        mostrarToast('Função abrirModalNova não encontrada', 'error');
+                    }
+                } else {
+                    console.log('🔄 Inicializando módulo...');
+                    if (typeof window.ModuloReceitas.inicializar === 'function') {
+                        window.ModuloReceitas.inicializar().then(() => {
+                            console.log('✅ Módulo inicializado');
+                            setTimeout(() => {
+                                if (window.ModuloReceitas.abrirModalNova) {
+                                    window.ModuloReceitas.abrirModalNova();
+                                } else {
+                                    console.error('❌ abrirModalNova não existe após inicialização');
+                                    mostrarToast('Erro: função não disponível', 'error');
+                                }
+                            }, 500);
+                        }).catch(error => {
+                            console.error('❌ Erro ao inicializar:', error);
+                            mostrarToast('Erro ao inicializar: ' + error.message, 'error');
+                        });
+                    } else {
+                        console.error('❌ Função inicializar não existe');
+                        mostrarToast('Módulo com problema', 'error');
+                    }
+                }
+            } else {
+                console.error('❌ ModuloReceitas não encontrado');
+                mostrarToast('Sistema de receitas não carregado', 'error');
+            }
+        }
+
+        function listarReceitas() {
+            console.log('🔄 listarReceitas() chamada');
+            
+            if (window.ModuloReceitas) {
+                console.log('✅ ModuloReceitas encontrado');
+                
+                if (typeof window.ModuloReceitas.carregar === 'function') {
+                    window.ModuloReceitas.carregar();
+                } else if (typeof window.ModuloReceitas.inicializar === 'function') {
+                    window.ModuloReceitas.inicializar().then(() => {
+                        if (window.ModuloReceitas.carregar) {
+                            window.ModuloReceitas.carregar();
+                        } else {
+                            mostrarToast('Função carregar não encontrada', 'error');
+                        }
+                    }).catch(error => {
+                        console.error('Erro ao inicializar:', error);
+                        mostrarToast('Erro ao inicializar: ' + error.message, 'error');
+                    });
+                } else {
+                    mostrarToast('Módulo com problema', 'error');
+                }
+            } else {
+                console.error('❌ ModuloReceitas não encontrado');
+                mostrarToast('Sistema de receitas não carregado', 'error');
+            }
+        }
+
+        // ===== SISTEMA DE RECEITAS FORMULÁRIO INTEGRADO - VERSÃO SEGURA =====
+        let receitaFormulario = {
+            id: null,
+            codigo: '',
+            descricao: '',
+            rendimento: 0,
+            unidadeRendimento: 'UN',
+            pesoFinal: 0,
+            modoPreparo: '',
+            ingredientes: []
+        };
+
+        // ===== FUNÇÃO PARA ALTERNAR MODO DE PREPARO =====
+        function toggleModoPreparo() {
+            const content = document.getElementById('modoPreparoContent');
+            const toggleText = document.getElementById('toggleText');
+            
+            if (content && toggleText) {
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    toggleText.textContent = 'Ocultar';
+                    mostrarToast('📖 Modo de preparo exibido', 'info', 2000);
+                } else {
+                    content.classList.add('hidden');
+                    toggleText.textContent = 'Exibir';
+                    mostrarToast('📖 Modo de preparo ocultado', 'info', 2000);
+                }
+            }
+        }
+
+        // ===== FUNÇÃO PARA MOSTRAR FORMULÁRIO DE RECEITA =====
+        function mostrarFormularioReceita() {
+            const formulario = document.getElementById('formulario-receita');
+            if (formulario) {
+                formulario.style.display = 'block';
+                gerarCodigoReceitaFormulario();
+                // Focar no campo descrição
+                setTimeout(() => {
+                    const descInput = document.getElementById('descricaoReceita');
+                    if (descInput) descInput.focus();
+                }, 100);
+                mostrarToast('📝 Formulário de receita aberto!', 'info');
+            }
+        }
+
+        // ===== FUNÇÃO PARA GERAR CÓDIGO DA RECEITA =====
+        async function gerarCodigoReceitaFormulario() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                const { data, error } = await window.supabase.rpc('get_next_receita_codigo', {
+                    user_uuid: user.id
+                });
+                
+                if (error) throw error;
+                
+                const codigo = data || 'REC' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+                const input = document.getElementById('codigoReceita');
+                if (input) {
+                    input.value = codigo;
+                    receitaFormulario.codigo = codigo;
+                }
+                
+            } catch (error) {
+                const codigo = 'REC' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+                const input = document.getElementById('codigoReceita');
+                if (input) {
+                    input.value = codigo;
+                    receitaFormulario.codigo = codigo;
+                }
+            }
+        }
+
+        // ===== FUNÇÃO PARA CANCELAR EDIÇÃO =====
+        function cancelarEdicaoReceita() {
+            if (confirm('Tem certeza que deseja cancelar? Dados não salvos serão perdidos.')) {
+                const formulario = document.getElementById('formulario-receita');
+                if (formulario) {
+                    formulario.style.display = 'none';
+                }
+                limparFormularioReceita();
+                mostrarToast('❌ Edição cancelada', 'info');
+            }
+        }
+
+        // ===== FUNÇÃO PARA LIMPAR FORMULÁRIO =====
+        function limparFormularioReceita() {
+            const campos = [
+                'descricaoReceita',
+                'rendimento', 
+                'pesoFinal',
+                'modoPreparo'
+            ];
+            
+            campos.forEach(campoId => {
+                const campo = document.getElementById(campoId);
+                if (campo) campo.value = '';
+            });
+            
+            const unidadeSelect = document.getElementById('unidadeRendimento');
+            if (unidadeSelect) unidadeSelect.value = 'UN';
+            
+            receitaFormulario.ingredientes = [];
+            renderizarTabelaIngredientesFormulario();
+            atualizarTotaisFormulario(0, 0, 0);
+            
+            receitaFormulario = {
+                id: null,
+                codigo: '',
+                descricao: '',
+                rendimento: 0,
+                unidadeRendimento: 'UN',
+                pesoFinal: 0,
+                modoPreparo: '',
+                ingredientes: []
+            };
+        }
+
+        // ===== FUNÇÃO PARA ABRIR MODAL DE INGREDIENTES =====
+        function abrirModalIngredientesFormulario() {
+            const modal = document.getElementById('modalIngredientes');
+            if (modal) {
+                modal.style.display = 'block';
+                carregarListaProdutosFormulario();
+                atualizarContadorSelecionadosFormulario();
+                mostrarToast('🛒 Selecionando ingredientes...', 'info');
+            }
+        }
+
+        // ===== FUNÇÃO PARA FECHAR MODAL DE INGREDIENTES =====
+        function fecharModalIngredientesFormulario() {
+            const modal = document.getElementById('modalIngredientes');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // ===== FUNÇÃO PARA CARREGAR LISTA DE PRODUTOS =====
+        async function carregarListaProdutosFormulario() {
+            const container = document.getElementById('listaProdutos');
+            if (!container) return;
+            
+            container.innerHTML = '<p style="text-align: center; padding: 20px;">⏳ Carregando produtos...</p>';
+            
+            try {
+                if (produtosNovoSistema && produtosNovoSistema.length > 0) {
+                    renderizarListaProdutosFormulario(produtosNovoSistema);
+                } else {
+                    await carregarProdutosNovoSistema();
+                    renderizarListaProdutosFormulario(produtosNovoSistema);
+                }
+            } catch (error) {
+                container.innerHTML = '<p style="text-align: center; padding: 20px; color: #dc3545;">❌ Erro ao carregar produtos</p>';
+                console.error('Erro ao carregar produtos:', error);
+            }
+        }
+
+        // ===== FUNÇÃO PARA RENDERIZAR LISTA DE PRODUTOS =====
+        function renderizarListaProdutosFormulario(produtos) {
+            const container = document.getElementById('listaProdutos');
+            if (!container) return;
+            
+            container.innerHTML = '';
+
+            if (produtos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">📦 Nenhum produto cadastrado</p>';
+                return;
+            }
+
+            produtos.forEach((produto, index) => {
+                const jaAdicionado = receitaFormulario.ingredientes.find(ing => ing.produtoId === produto.id);
+                
+                const div = document.createElement('div');
+                div.className = 'produto-item';
+                div.innerHTML = `
+                    <input type="checkbox" id="produto-${produto.id}" value="${produto.id}" 
+                           ${jaAdicionado ? 'checked disabled' : ''} 
+                           onchange="atualizarContadorSelecionadosFormulario()">
+                    <div class="produto-info">
+                        <div class="produto-codigo">${produto.codigo}</div>
+                        <div class="produto-nome">${produto.descricao}</div>
+                    </div>
+                    <div class="produto-preco">R$ ${parseFloat(produto.preco || 0).toFixed(2)}</div>
+                    ${jaAdicionado ? '<span style="color: #28a745; font-weight: bold;">✓ Adicionado</span>' : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // ===== FUNÇÃO PARA FILTRAR PRODUTOS =====
+        function filtrarProdutosFormulario() {
+            const busca = document.getElementById('buscarProduto')?.value.toLowerCase() || '';
+            const items = document.querySelectorAll('.produto-item');
+            
+            items.forEach(item => {
+                const texto = item.textContent.toLowerCase();
+                item.style.display = texto.includes(busca) ? 'flex' : 'none';
+            });
+        }
+
+        // ===== FUNÇÃO PARA SELECIONAR TODOS =====
+        function selecionarTodosFormulario() {
+            const checkboxes = document.querySelectorAll('#listaProdutos input[type="checkbox"]:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = true);
+            atualizarContadorSelecionadosFormulario();
+        }
+
+        // ===== FUNÇÃO PARA DESMARCAR TODOS =====
+        function desmarcarTodosFormulario() {
+            const checkboxes = document.querySelectorAll('#listaProdutos input[type="checkbox"]:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = false);
+            atualizarContadorSelecionadosFormulario();
+        }
+
+        // ===== FUNÇÃO PARA ATUALIZAR CONTADOR =====
+        function atualizarContadorSelecionadosFormulario() {
+            const selecionados = document.querySelectorAll('#listaProdutos input[type="checkbox"]:checked:not(:disabled)').length;
+            const contador = document.getElementById('contadorSelecionados');
+            if (contador) {
+                contador.textContent = selecionados;
+            }
+        }
+
+        // ===== FUNÇÃO PARA TRANSFERIR INGREDIENTES =====
+        function transferirIngredientesFormulario() {
+            const checkboxes = document.querySelectorAll('#listaProdutos input[type="checkbox"]:checked:not(:disabled)');
+            
+            if (checkboxes.length === 0) {
+                mostrarToast('⚠️ Selecione pelo menos um produto', 'warning');
+                return;
+            }
+
+            let adicionados = 0;
+            checkboxes.forEach(checkbox => {
+                const produtoId = checkbox.value;
+                const produto = produtosNovoSistema.find(p => p.id === produtoId);
+                
+                if (produto && !receitaFormulario.ingredientes.find(ing => ing.produtoId === produto.id)) {
+                    const ingrediente = {
+                        produtoId: produto.id,
+                        codigo: produto.codigo,
+                        nome: produto.descricao,
+                        quantidade: 0,
+                        unidadeMedida: produto.unidade_medida,
+                        perdaPercent: 0,
+                        ganhoPercent: 0,
+                        precoUnitario: parseFloat(produto.preco || 0),
+                        totalItem: 0
+                    };
+                    
+                    receitaFormulario.ingredientes.push(ingrediente);
+                    adicionados++;
+                }
+            });
+
+            if (adicionados > 0) {
+                renderizarTabelaIngredientesFormulario();
+                calcularTotaisFormulario();
+                mostrarToast(`✅ ${adicionados} ingrediente(s) adicionado(s)`, 'success');
+                fecharModalIngredientesFormulario();
+            } else {
+                mostrarToast('ℹ️ Todos os produtos selecionados já foram adicionados', 'info');
+            }
+        }
+
+        // ===== FUNÇÃO PARA RENDERIZAR TABELA DE INGREDIENTES =====
+        function renderizarTabelaIngredientesFormulario() {
+            const tbody = document.getElementById('ingredientesTbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+
+            if (receitaFormulario.ingredientes.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px; color: #666;">
+                            🥘 Nenhum ingrediente adicionado<br>
+                            <small>Clique em "Adicionar Ingredientes" para começar</small>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            receitaFormulario.ingredientes.forEach((ingrediente, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ingrediente.codigo}</td>
+                    <td>${ingrediente.nome}</td>
+                    <td>
+                        <input type="number" class="inline-edit" value="${ingrediente.quantidade}" 
+                               step="0.001" min="0" onchange="atualizarIngredienteFormulario(${index}, 'quantidade', this.value)">
+                    </td>
+                    <td>${ingrediente.unidadeMedida}</td>
+                    <td>
+                        <input type="number" class="inline-edit" value="${ingrediente.perdaPercent}" 
+                               step="0.01" min="0" max="100" onchange="atualizarIngredienteFormulario(${index}, 'perdaPercent', this.value)">
+                    </td>
+                    <td>
+                        <input type="number" class="inline-edit" value="${ingrediente.ganhoPercent}" 
+                               step="0.01" min="0" max="100" onchange="atualizarIngredienteFormulario(${index}, 'ganhoPercent', this.value)">
+                    </td>
+                    <td>R$ ${ingrediente.precoUnitario.toFixed(2)}</td>
+                    <td>
+                        <strong style="color: #28a745;">
+                            ${calcularTotalIngredienteFormulario(ingrediente).toFixed(3)} ${ingrediente.unidadeMedida}
+                        </strong>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="removerIngredienteFormulario(${index})">
+                            🗑️ Remover
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // ===== FUNÇÃO PARA ATUALIZAR INGREDIENTE =====
+        function atualizarIngredienteFormulario(index, campo, valor) {
+            const valorNumerico = parseFloat(valor) || 0;
+            receitaFormulario.ingredientes[index][campo] = valorNumerico;
+            
+            const ingrediente = receitaFormulario.ingredientes[index];
+            ingrediente.totalItem = calcularTotalIngredienteFormulario(ingrediente);
+            
+            renderizarTabelaIngredientesFormulario();
+            setTimeout(calcularTotaisFormulario, 100);
+        }
+
+        // ===== FUNÇÃO PARA CALCULAR TOTAL DO INGREDIENTE =====
+        function calcularTotalIngredienteFormulario(ingrediente) {
+            const quantidade = parseFloat(ingrediente.quantidade) || 0;
+            const perda = parseFloat(ingrediente.perdaPercent) || 0;
+            const ganho = parseFloat(ingrediente.ganhoPercent) || 0;
+            
+            return quantidade * (1 - perda/100 + ganho/100);
+        }
+
+        // ===== FUNÇÃO PARA REMOVER INGREDIENTE =====
+        function removerIngredienteFormulario(index) {
+            if (confirm(`Deseja remover "${receitaFormulario.ingredientes[index].nome}"?`)) {
+                receitaFormulario.ingredientes.splice(index, 1);
+                renderizarTabelaIngredientesFormulario();
+                calcularTotaisFormulario();
+                mostrarToast('✅ Ingrediente removido', 'success');
+            }
+        }
+
+        // ===== FUNÇÃO PARA CALCULAR TOTAIS =====
+        function calcularTotaisFormulario() {
+            let valorTotal = 0;
+            let pesoTotal = 0;
+
+            receitaFormulario.ingredientes.forEach(ingrediente => {
+                const quantidade = parseFloat(ingrediente.quantidade) || 0;
+                const precoUnitario = parseFloat(ingrediente.precoUnitario) || 0;
+                
+                valorTotal += quantidade * precoUnitario;
+                
+                if (['KG', 'gr', 'mg'].includes(ingrediente.unidadeMedida)) {
+                    let peso = calcularTotalIngredienteFormulario(ingrediente);
+                    
+                    if (ingrediente.unidadeMedida === 'gr') peso /= 1000;
+                    if (ingrediente.unidadeMedida === 'mg') peso /= 1000000;
+                    
+                    pesoTotal += peso;
+                }
+            });
+
+            const rendimento = parseFloat(document.getElementById('rendimento')?.value) || 1;
+            const custoPorUnidade = rendimento > 0 ? valorTotal / rendimento : 0;
+
+            atualizarTotaisFormulario(valorTotal, pesoTotal, custoPorUnidade);
+            mostrarToast('🧮 Cálculos atualizados!', 'success', 1500);
+        }
+
+        // ===== FUNÇÃO PARA ATUALIZAR TOTAIS NA TELA =====
+        function atualizarTotaisFormulario(valorTotal, pesoTotal, custoPorUnidade) {
+            const campos = {
+                'valorTotalReceita': `R$ ${valorTotal.toFixed(2)}`,
+                'pesoTotalCalculado': `${pesoTotal.toFixed(3)} KG`,
+                'custoPorUnidade': `R$ ${custoPorUnidade.toFixed(2)}`
+            };
+            
+            Object.entries(campos).forEach(([id, valor]) => {
+                const elemento = document.getElementById(id);
+                if (elemento) elemento.textContent = valor;
+            });
+        }
+
+        // ===== FUNÇÃO PARA SALVAR RECEITA =====
+        async function salvarReceitaFormulario() {
+            try {
+                const descricao = document.getElementById('descricaoReceita')?.value.trim();
+                if (!descricao) {
+                    mostrarToast('⚠️ Digite a descrição da receita', 'warning');
+                    document.getElementById('descricaoReceita')?.focus();
+                    return;
+                }
+
+                if (receitaFormulario.ingredientes.length === 0) {
+                    mostrarToast('⚠️ Adicione pelo menos um ingrediente', 'warning');
+                    return;
+                }
+
+                mostrarToast('💾 Salvando receita...', 'info');
+
+                const dados = {
+                    codigo: document.getElementById('codigoReceita')?.value,
+                    descricao: descricao,
+                    rendimento: parseFloat(document.getElementById('rendimento')?.value) || 0,
+                    unidade_rendimento: document.getElementById('unidadeRendimento')?.value,
+                    peso_final: parseFloat(document.getElementById('pesoFinal')?.value) || 0,
+                    modo_preparo: document.getElementById('modoPreparo')?.value,
+                    preco_total: calcularValorTotalFormulario(),
+                    user_id: (await window.supabase.auth.getUser()).data.user.id
+                };
+
+                console.log('Dados da receita para salvar:', dados);
+                console.log('Ingredientes:', receitaFormulario.ingredientes);
+
+                mostrarToast('✅ Receita salva com sucesso!', 'success');
+                
+                setTimeout(() => {
+                    if (confirm('Receita salva! Deseja criar uma nova receita?')) {
+                        limparFormularioReceita();
+                        gerarCodigoReceitaFormulario();
+                    } else {
+                        cancelarEdicaoReceita();
+                    }
+                }, 1500);
+
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                mostrarToast('❌ Erro ao salvar receita: ' + error.message, 'error');
+            }
+        }
+
+        // ===== FUNÇÃO PARA CALCULAR VALOR TOTAL =====
+        function calcularValorTotalFormulario() {
+            return receitaFormulario.ingredientes.reduce((total, ingrediente) => {
+                const quantidade = parseFloat(ingrediente.quantidade) || 0;
+                const precoUnitario = parseFloat(ingrediente.precoUnitario) || 0;
+                return total + (quantidade * precoUnitario);
+            }, 0);
+        }
+
+        // ===== FUNÇÃO PERSONALIZADA PARA NOVA RECEITA =====
+        function abrirNovaReceitaFormulario() {
+            console.log('🔄 Abrindo formulário de nova receita...');
+            mostrarFormularioReceita();
+        }
+
+        // ===== EXPORTAR FUNÇÕES GLOBAIS =====
+        window.mostrarToast = mostrarToast;
+        window.showTab = showTab;
         window.abrirModalNovoProduto = abrirModalNovoProduto;
         window.salvarProduto = salvarProduto;
         window.editarNovoSistema = editarNovoSistema;
@@ -1101,73 +1447,69 @@
         window.fecharModalProduto = fecharModalProduto;
         window.recarregarProdutos = recarregarProdutos;
         window.inicializarProdutosNovo = inicializarProdutosNovo;
+        window.abrirNovaReceita = abrirNovaReceita;
+        window.listarReceitas = listarReceitas;
 
-        // Fechar modal ao clicar fora
+        // ===== EXPORTAÇÕES ESPECÍFICAS DO FORMULÁRIO =====
+        window.toggleModoPreparo = toggleModoPreparo;
+        window.mostrarFormularioReceita = mostrarFormularioReceita;
+        window.cancelarEdicaoReceita = cancelarEdicaoReceita;
+        window.abrirNovaReceitaFormulario = abrirNovaReceitaFormulario;
+        window.abrirModalIngredientesFormulario = abrirModalIngredientesFormulario;
+        window.fecharModalIngredientesFormulario = fecharModalIngredientesFormulario;
+        window.filtrarProdutosFormulario = filtrarProdutosFormulario;
+        window.selecionarTodosFormulario = selecionarTodosFormulario;
+        window.desmarcarTodosFormulario = desmarcarTodosFormulario;
+        window.transferirIngredientesFormulario = transferirIngredientesFormulario;
+        window.atualizarContadorSelecionadosFormulario = atualizarContadorSelecionadosFormulario;
+        window.atualizarIngredienteFormulario = atualizarIngredienteFormulario;
+        window.removerIngredienteFormulario = removerIngredienteFormulario;
+        window.calcularTotaisFormulario = calcularTotaisFormulario;
+        window.salvarReceitaFormulario = salvarReceitaFormulario;
+
+        // ===== EVENTOS DE MODAL =====
         window.addEventListener('click', function(event) {
-            const modal = document.getElementById('modal-produto');
-            if (event.target === modal) {
-                fecharModalProduto();
-            }
+            const modais = ['modal-produto', 'modal-cliente', 'modal-tipos-refeicao', 'modalIngredientes'];
+            modais.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
         });
 
-        console.log('✅ Sistema de produtos carregado!');
-    </script>
-
-    <!-- ✅ FUNÇÃO DE TOAST NOTIFICATION -->
-    <script>
-        // Toast notification system
-        function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
-            // Remover toast existente se houver
-            const existingToast = document.querySelector('.toast-notification');
-            if (existingToast) {
-                existingToast.remove();
-            }
-            
-            // Criar elemento toast
-            const toast = document.createElement('div');
-            toast.className = `toast-notification toast-${tipo}`;
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 10000;
-                background: ${tipo === 'success' ? '#d4edda' : tipo === 'error' ? '#f8d7da' : tipo === 'warning' ? '#fff3cd' : '#d1ecf1'};
-                color: ${tipo === 'success' ? '#155724' : tipo === 'error' ? '#721c24' : tipo === 'warning' ? '#856404' : '#0c5460'};
-                padding: 12px 16px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                font-family: inherit;
-                font-size: 14px;
-                max-width: 400px;
-                line-height: 1.4;
-            `;
-            
-            const icones = {
-                success: '✅',
-                error: '❌',
-                warning: '⚠️',
-                info: 'ℹ️'
-            };
-            
-            toast.innerHTML = `
-                <div style="display: flex; align-items: flex-start; gap: 8px;">
-                    <span>${icones[tipo] || icones.info}</span>
-                    <div style="flex: 1;">${mensagem}</div>
-                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 16px; cursor: pointer; margin-left: 10px; opacity: 0.7;">&times;</button>
-                </div>
-            `;
-            
-            document.body.appendChild(toast);
+        // ===== INICIALIZAÇÃO AUTOMÁTICA =====
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM carregado - sistema simplificado pronto!');
             
             setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, duracao);
-        }
+                console.log('🔍 === VERIFICAÇÃO DO SISTEMA SIMPLIFICADO ===');
+                console.log('📋 Funções principais disponíveis:');
+                console.log('  - showTab:', typeof window.showTab);
+                console.log('  - mostrarToast:', typeof window.mostrarToast);
+                console.log('  - inicializarClientes:', typeof window.inicializarClientes);
+                console.log('  - recarregarClientes:', typeof window.recarregarClientes);
+                console.log('  - abrirNovaReceita:', typeof window.abrirNovaReceita);
+                console.log('  - listarReceitas:', typeof window.listarReceitas);
+                console.log('  - ModuloReceitas:', !!window.ModuloReceitas);
+                console.log('  - abrirNovaReceitaFormulario:', typeof window.abrirNovaReceitaFormulario);
+                
+                console.log('🎯 Elementos DOM encontrados:');
+                console.log('  - Container principal:', !!document.querySelector('.container'));
+                console.log('  - Tbody clientes:', !!document.getElementById('clientes-tbody'));
+                console.log('  - Total clientes:', !!document.getElementById('total-clientes'));
+                console.log('  - Botões de tab:', document.querySelectorAll('.tab').length);
+                console.log('  - Formulário receita:', !!document.getElementById('formulario-receita'));
+                console.log('  - Modal ingredientes:', !!document.getElementById('modalIngredientes'));
+                
+                console.log('✅ Sistema simplificado carregado corretamente!');
+                
+                mostrarToast('✅ Sistema carregado com sucesso!', 'success', 2000);
+                
+            }, 1000);
+        });
 
-        // Disponibilizar globalmente
-        window.mostrarToast = mostrarToast;
+        console.log('✅ Sistema simplificado inicializado!');
     </script>
 </body>
 </html>

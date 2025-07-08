@@ -1,5 +1,4 @@
-// js/auth.js
-// Sistema de autenticação
+// js/auth.js - Sistema de autenticação (CORRIGIDO)
 
 console.log('📁 Carregando auth.js...');
 
@@ -55,7 +54,17 @@ async function login() {
             
         } catch (error) {
             console.error('❌ Erro no login:', error);
-            mostrarErro('Erro no login: ' + error.message);
+            
+            let errorMessage = 'Erro no login. Tente novamente.';
+            if (error.message.includes('Invalid login credentials')) {
+                errorMessage = 'Email ou senha incorretos.';
+            } else if (error.message.includes('Email not confirmed')) {
+                errorMessage = 'Por favor, confirme seu email antes de fazer login.';
+            } else if (error.message.includes('Too many requests')) {
+                errorMessage = 'Muitas tentativas. Aguarde um momento e tente novamente.';
+            }
+            
+            mostrarErro(errorMessage);
         } finally {
             // Reabilitar botão
             loginBtn.textContent = 'Entrar';
@@ -69,13 +78,15 @@ async function register() {
     console.log('📝 Tentando fazer registro...');
     
     aguardarSupabase(async () => {
+        const name = document.getElementById('name')?.value?.trim();
+        const company = document.getElementById('company')?.value?.trim();
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirm-password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
         
         // Validações
         if (!email || !password || !confirmPassword) {
-            mostrarErro('Por favor, preencha todos os campos');
+            mostrarErro('Por favor, preencha todos os campos obrigatórios');
             return;
         }
         
@@ -92,7 +103,13 @@ async function register() {
         try {
             const { data, error } = await window.supabase.auth.signUp({
                 email: email,
-                password: password
+                password: password,
+                options: {
+                    data: {
+                        name: name || 'Usuário',
+                        company: company || 'Empresa'
+                    }
+                }
             });
             
             if (error) {
@@ -100,16 +117,22 @@ async function register() {
             }
             
             console.log('✅ Registro realizado:', data.user?.email);
-            mostrarSucesso('Usuário registrado com sucesso! Redirecionando para login...');
+            mostrarSucesso('Conta criada com sucesso! Verifique seu email para confirmar.');
             
-            // Redirecionar após 2 segundos
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 2000);
+            // Limpar formulário
+            document.getElementById('registerForm')?.reset();
             
         } catch (error) {
             console.error('❌ Erro no registro:', error);
-            mostrarErro('Erro no registro: ' + error.message);
+            
+            let errorMessage = 'Erro ao criar conta. Tente novamente.';
+            if (error.message.includes('User already registered')) {
+                errorMessage = 'Este email já está cadastrado.';
+            } else if (error.message.includes('Password should be at least 6 characters')) {
+                errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+            }
+            
+            mostrarErro(errorMessage);
         }
     });
 }
@@ -185,12 +208,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!isLoginPage && !isRegisterPage) {
         // Página que precisa de autenticação
         aguardarSupabase(async () => {
-            const { data: { user } } = await window.supabase.auth.getUser();
-            if (!user) {
-                console.log('🚫 Usuário não autenticado, redirecionando...');
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                if (!user) {
+                    console.log('🚫 Usuário não autenticado, redirecionando...');
+                    window.location.href = 'login.html';
+                } else {
+                    console.log('✅ Usuário autenticado:', user.email);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao verificar autenticação:', error);
                 window.location.href = 'login.html';
-            } else {
-                console.log('✅ Usuário autenticado:', user.email);
             }
         });
     }
@@ -205,6 +233,7 @@ function mostrarErro(mensagem) {
         errorDiv.textContent = mensagem;
         errorDiv.style.display = 'block';
     } else {
+        console.error('Erro:', mensagem);
         alert('Erro: ' + mensagem);
     }
     
@@ -221,6 +250,7 @@ function mostrarSucesso(mensagem) {
         successDiv.textContent = mensagem;
         successDiv.style.display = 'block';
     } else {
+        console.log('Sucesso:', mensagem);
         alert(mensagem);
     }
     

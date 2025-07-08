@@ -1,8 +1,8 @@
-// clientes.js - CORREÇÃO FINAL DEFINITIVA
+// clientes.js - VERSÃO DEFINITIVA (TODOS OS ERROS CORRIGIDOS)
 
-console.log('📁 Carregando clientes.js CORREÇÃO FINAL...');
+console.log('📁 Carregando clientes.js DEFINITIVO...');
 
-// ✅ CONFIGURAÇÃO ISOLADA: Evitar conflitos com outros módulos
+// ✅ CONFIGURAÇÃO ISOLADA
 if (typeof window.clientesModuloFinal === 'undefined') {
     window.clientesModuloFinal = {
         clientesCarregados: [],
@@ -21,7 +21,7 @@ function aguardarSupabaseClientes(callback, tentativas = 0) {
         setTimeout(() => aguardarSupabaseClientes(callback, tentativas + 1), 100);
     } else {
         console.error('❌ Timeout: Supabase não ficou disponível');
-        mostrarToast('Erro: Não foi possível conectar com o Supabase.');
+        mostrarToast('Erro: Não foi possível conectar com o Supabase.', 'error');
     }
 }
 
@@ -30,31 +30,41 @@ async function verificarAutenticacaoClientes() {
     try {
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) {
-            mostrarToast('Você precisa estar logado para acessar esta página.');
+            mostrarToast('Você precisa estar logado para acessar esta página.', 'error');
             window.location.href = 'login.html';
             return false;
         }
         return true;
     } catch (error) {
-        console.error('Erro na autenticação:', error);
+        console.error('❌ Erro na autenticação:', error);
         return false;
     }
 }
 
-// ✅ INICIALIZAR SEM carregar dados automaticamente
+// ✅ INICIALIZAR CLIENTES
 async function inicializarClientes() {
-    console.log('🚀 Inicializando clientes FINAL...');
+    console.log('🚀 Inicializando clientes...');
     
-    aguardarSupabaseClientes(async () => {
-        if (await verificarAutenticacaoClientes()) {
-            await carregarTiposRefeicoesPadrao();
-            await gerarProximoCodigoCliente();
-            configurarEventosClientes();
-            mostrarMensagemInicial();
-            
-            window.clientesModuloFinal.inicializado = true;
-            console.log('✅ Clientes inicializados - clique em "Listar Clientes" para carregar');
-        }
+    return new Promise((resolve, reject) => {
+        aguardarSupabaseClientes(async () => {
+            try {
+                if (await verificarAutenticacaoClientes()) {
+                    await carregarTiposRefeicoesPadrao();
+                    await gerarProximoCodigoCliente();
+                    configurarEventosClientes();
+                    mostrarMensagemInicial();
+                    
+                    window.clientesModuloFinal.inicializado = true;
+                    console.log('✅ Clientes inicializados com sucesso');
+                    resolve();
+                } else {
+                    reject(new Error('Falha na autenticação'));
+                }
+            } catch (error) {
+                console.error('❌ Erro ao inicializar clientes:', error);
+                reject(error);
+            }
+        });
     });
 }
 
@@ -89,15 +99,60 @@ function configurarEventosClientes() {
     }
 }
 
-// ✅ FUNÇÃO PRINCIPAL DE CARREGAMENTO ISOLADA
+// ✅ CARREGAR TIPOS DE REFEIÇÃO PADRÃO
+async function carregarTiposRefeicoesPadrao() {
+    try {
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await window.supabase
+            .from('tipos_refeicoes')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('codigo');
+
+        if (error) throw error;
+        
+        window.tiposRefeicoesPadrao = data || [];
+        console.log(`✅ ${window.tiposRefeicoesPadrao.length} tipos padrão carregados`);
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar tipos:', error);
+        window.tiposRefeicoesPadrao = [];
+    }
+}
+
+// ✅ GERAR PRÓXIMO CÓDIGO
+async function gerarProximoCodigoCliente() {
+    try {
+        const { data: { user } } = await window.supabase.auth.getUser();
+        const { data, error } = await window.supabase.rpc('get_next_cliente_codigo', {
+            user_uuid: user.id
+        });
+
+        if (error) throw error;
+        
+        const input = document.getElementById('cliente-codigo');
+        if (input) {
+            input.value = data || 'CLI001';
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao gerar código:', error);
+        const input = document.getElementById('cliente-codigo');
+        if (input) {
+            input.value = 'CLI001';
+        }
+    }
+}
+
+// ✅ CARREGAR CLIENTES
 async function carregarClientesFinal() {
     try {
-        console.log('📥 [FINAL] Carregando clientes do Supabase...');
+        console.log('📥 Carregando clientes do Supabase...');
         
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
-
-        console.log('👤 [FINAL] User ID:', user.id);
 
         // Carregar clientes básicos
         const { data: clientesData, error: clientesError } = await window.supabase
@@ -106,15 +161,9 @@ async function carregarClientesFinal() {
             .eq('user_id', user.id)
             .order('codigo');
 
-        if (clientesError) {
-            console.error('❌ [FINAL] Erro ao carregar clientes:', clientesError);
-            throw clientesError;
-        }
-
-        console.log('📊 [FINAL] Clientes encontrados:', clientesData?.length || 0);
+        if (clientesError) throw clientesError;
 
         if (!clientesData || clientesData.length === 0) {
-            console.log('⚠️ [FINAL] Nenhum cliente encontrado');
             window.clientesModuloFinal.clientesCarregados = [];
             renderizarTabelaClientesFinal([]);
             return;
@@ -124,8 +173,6 @@ async function carregarClientesFinal() {
         const clientesComTipos = [];
         
         for (const cliente of clientesData) {
-            console.log(`🔍 [FINAL] Carregando tipos para: ${cliente.descricao}`);
-            
             try {
                 const { data: tiposData, error: tiposError } = await window.supabase
                     .from('cliente_tipos_refeicao')
@@ -146,10 +193,8 @@ async function carregarClientesFinal() {
                     tiposRefeicao: tiposRefeicao
                 });
                 
-                console.log(`✅ [FINAL] Cliente ${cliente.descricao}: ${tiposRefeicao.length} tipos`);
-                
             } catch (error) {
-                console.warn(`⚠️ [FINAL] Erro com cliente ${cliente.descricao}:`, error);
+                console.warn(`⚠️ Erro com cliente ${cliente.descricao}:`, error);
                 clientesComTipos.push({
                     ...cliente,
                     tiposRefeicao: []
@@ -157,18 +202,14 @@ async function carregarClientesFinal() {
             }
         }
 
-        // ✅ SALVAR E RENDERIZAR IMEDIATAMENTE
-        console.log(`💾 [FINAL] Salvando ${clientesComTipos.length} clientes...`);
+        // Salvar e renderizar
         window.clientesModuloFinal.clientesCarregados = clientesComTipos;
-        
-        // ✅ RENDERIZAR IMEDIATAMENTE COM OS DADOS CARREGADOS
-        console.log('🎨 [FINAL] Renderizando na tela...');
         renderizarTabelaClientesFinal(clientesComTipos);
         
         mostrarToast(`✅ ${clientesComTipos.length} cliente(s) carregado(s)!`, 'success');
         
     } catch (error) {
-        console.error('❌ [FINAL] Erro ao carregar clientes:', error);
+        console.error('❌ Erro ao carregar clientes:', error);
         mostrarToast('Erro ao carregar clientes: ' + error.message, 'error');
         
         const tbody = document.getElementById('clientes-tbody');
@@ -184,19 +225,16 @@ async function carregarClientesFinal() {
     }
 }
 
-// ✅ FUNÇÃO DE RENDERIZAÇÃO ISOLADA E DIRETA
+// ✅ RENDERIZAR TABELA
 function renderizarTabelaClientesFinal(clientes) {
-    console.log(`🎨 [FINAL] Renderizando ${clientes.length} clientes na tabela...`);
-    
     const tbody = document.getElementById('clientes-tbody');
     const total = document.getElementById('total-clientes');
     
     if (!tbody) {
-        console.error('❌ [FINAL] tbody não encontrado!');
+        console.error('❌ tbody não encontrado!');
         return;
     }
     
-    // Limpar tabela
     tbody.innerHTML = '';
     
     if (clientes.length === 0) {
@@ -208,14 +246,11 @@ function renderizarTabelaClientesFinal(clientes) {
             </tr>
         `;
         if (total) total.textContent = '0';
-        console.log('⚠️ [FINAL] Nenhum cliente para renderizar');
         return;
     }
 
     // Renderizar cada cliente
     clientes.forEach((cliente, index) => {
-        console.log(`📋 [FINAL] Renderizando: ${cliente.codigo} - ${cliente.descricao}`);
-        
         const row = document.createElement('tr');
         const enderecoCompleto = [cliente.endereco, cliente.numero].filter(x => x).join(', ') || '-';
         const tiposCount = cliente.tiposRefeicao ? cliente.tiposRefeicao.length : 0;
@@ -243,19 +278,15 @@ function renderizarTabelaClientesFinal(clientes) {
         tbody.appendChild(row);
     });
     
-    // Atualizar contador
     if (total) {
         total.textContent = clientes.length;
     }
-    
-    console.log(`✅ [FINAL] Tabela renderizada: ${clientes.length} clientes`);
 }
 
-// ✅ FUNÇÃO PRINCIPAL DO BOTÃO "LISTAR CLIENTES"
+// ✅ RECARREGAR CLIENTES
 async function recarregarClientes() {
-    console.log('🔄 [FINAL] Botão Listar Clientes pressionado...');
+    console.log('🔄 Recarregando clientes...');
     
-    // Mostrar loading
     const tbody = document.getElementById('clientes-tbody');
     if (tbody) {
         tbody.innerHTML = `
@@ -270,67 +301,54 @@ async function recarregarClientes() {
     mostrarToast('Carregando clientes...', 'info');
     
     try {
-        // Garantir inicialização
         if (!window.clientesModuloFinal.inicializado) {
-            console.log('⚠️ [FINAL] Inicializando primeiro...');
             await inicializarClientes();
             await new Promise(resolve => setTimeout(resolve, 500));
         }
         
-        // Carregar e renderizar
         await carregarClientesFinal();
         
     } catch (error) {
-        console.error('❌ [FINAL] Erro no recarregamento:', error);
+        console.error('❌ Erro no recarregamento:', error);
         mostrarToast('Erro: ' + error.message, 'error');
     }
 }
 
-// ✅ FUNÇÕES AUXILIARES
-async function carregarTiposRefeicoesPadrao() {
+// ✅ ABRIR MODAL NOVO CLIENTE
+async function abrirModalNovoCliente() {
     try {
-        const { data: { user } } = await window.supabase.auth.getUser();
-        if (!user) return;
-
-        const { data, error } = await window.supabase
-            .from('tipos_refeicoes')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('codigo');
-
-        if (error) throw error;
-        window.tiposRefeicoesPadrao = data || [];
-        console.log(`✅ ${window.tiposRefeicoesPadrao.length} tipos padrão carregados`);
+        await gerarProximoCodigoCliente();
         
-    } catch (error) {
-        console.error('Erro ao carregar tipos:', error);
-        window.tiposRefeicoesPadrao = [];
-    }
-}
-
-async function gerarProximoCodigoCliente() {
-    try {
-        const { data: { user } } = await window.supabase.auth.getUser();
-        const { data, error } = await window.supabase.rpc('get_next_cliente_codigo', {
-            user_uuid: user.id
-        });
-
-        if (error) throw error;
-        const input = document.getElementById('cliente-codigo');
-        if (input) {
-            input.value = data || 'CLI001';
+        // Limpar formulário
+        document.getElementById('cliente-id').value = '';
+        document.getElementById('cliente-descricao').value = '';
+        document.getElementById('cliente-endereco').value = '';
+        document.getElementById('cliente-numero').value = '';
+        document.getElementById('cliente-telefone').value = '';
+        document.getElementById('cliente-email').value = '';
+        
+        // Limpar tipos vinculados
+        window.clientesModuloFinal.tiposRefeicaoTemp = [];
+        atualizarTiposRefeicaoVinculados();
+        window.clientesModuloFinal.editandoCliente = null;
+        
+        // Mostrar modal
+        const modal = document.getElementById('modal-cliente');
+        if (modal) {
+            modal.style.display = 'block';
+            setTimeout(() => {
+                const descInput = document.getElementById('cliente-descricao');
+                if (descInput) descInput.focus();
+            }, 100);
         }
         
     } catch (error) {
-        console.error('❌ Erro ao gerar código:', error);
-        const input = document.getElementById('cliente-codigo');
-        if (input) {
-            input.value = 'CLI001';
-        }
+        console.error('❌ Erro ao abrir modal:', error);
+        mostrarToast('Erro ao abrir formulário: ' + error.message, 'error');
     }
 }
 
-// ✅ FUNÇÕES DE EDIÇÃO E EXCLUSÃO (ADAPTADAS)
+// ✅ EDITAR CLIENTE
 function editarClienteFinal(index) {
     const cliente = window.clientesModuloFinal.clientesCarregados[index];
     if (!cliente) {
@@ -353,13 +371,16 @@ function editarClienteFinal(index) {
     window.clientesModuloFinal.editandoCliente = index;
     
     // Mostrar modal
-    document.getElementById('modal-cliente').style.display = 'block';
-    
-    setTimeout(() => {
-        document.getElementById('cliente-descricao').focus();
-    }, 100);
+    const modal = document.getElementById('modal-cliente');
+    if (modal) {
+        modal.style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('cliente-descricao').focus();
+        }, 100);
+    }
 }
 
+// ✅ EXCLUIR CLIENTE
 async function excluirClienteFinal(index) {
     try {
         const cliente = window.clientesModuloFinal.clientesCarregados[index];
@@ -375,11 +396,15 @@ async function excluirClienteFinal(index) {
         const { data: { user } } = await window.supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
 
-        // Excluir relações primeiro
-        await window.supabase
+        // Excluir relações primeiro (CASCADE já cuida, mas vamos ser explícitos)
+        const { error: deleteRelError } = await window.supabase
             .from('cliente_tipos_refeicao')
             .delete()
             .eq('cliente_id', cliente.id);
+
+        if (deleteRelError) {
+            console.warn('⚠️ Erro ao excluir relações:', deleteRelError);
+        }
 
         // Excluir cliente
         const { error } = await window.supabase
@@ -399,61 +424,291 @@ async function excluirClienteFinal(index) {
     }
 }
 
-// ✅ FUNÇÃO DE NOVO CLIENTE (SIMPLIFICADA)
-async function abrirModalNovoCliente() {
-    await gerarProximoCodigoCliente();
+// ✅ SALVAR CLIENTE - VERSÃO DEFINITIVA (TOTALMENTE CORRIGIDA)
+async function salvarCliente() {
+    console.log('💾 Salvando cliente...');
     
-    // Limpar formulário
-    document.getElementById('cliente-id').value = '';
-    document.getElementById('cliente-descricao').value = '';
-    document.getElementById('cliente-endereco').value = '';
-    document.getElementById('cliente-numero').value = '';
-    document.getElementById('cliente-telefone').value = '';
-    document.getElementById('cliente-email').value = '';
-    
-    // Limpar tipos vinculados
-    window.clientesModuloFinal.tiposRefeicaoTemp = [];
-    atualizarTiposRefeicaoVinculados();
-    window.clientesModuloFinal.editandoCliente = null;
-    
-    // Mostrar modal
-    document.getElementById('modal-cliente').style.display = 'block';
-    
-    setTimeout(() => {
-        const descInput = document.getElementById('cliente-descricao');
-        if (descInput) descInput.focus();
-    }, 100);
-}
+    try {
+        // Verificar autenticação
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) {
+            throw new Error('Usuário não autenticado');
+        }
 
-// ✅ FUNÇÕES AUXILIARES MANTIDAS
-function filtrarClientes() {
-    const busca = document.getElementById('busca-clientes')?.value.toLowerCase() || '';
-    
-    if (!window.clientesModuloFinal.clientesCarregados) return;
-    
-    let filtrados = window.clientesModuloFinal.clientesCarregados.filter(cliente => {
-        return !busca || 
-               cliente.descricao.toLowerCase().includes(busca) || 
-               cliente.codigo.toLowerCase().includes(busca) ||
-               (cliente.email && cliente.email.toLowerCase().includes(busca));
-    });
-    
-    renderizarTabelaClientesFinal(filtrados);
-    
-    // Atualizar contador
-    const total = document.getElementById('total-clientes');
-    if (total) {
-        total.textContent = filtrados.length;
+        // Coletar dados do formulário
+        const id = document.getElementById('cliente-id').value;
+        const codigo = document.getElementById('cliente-codigo').value.trim();
+        const descricao = document.getElementById('cliente-descricao').value.trim();
+        const endereco = document.getElementById('cliente-endereco').value.trim();
+        const numero = document.getElementById('cliente-numero').value.trim();
+        const telefone = document.getElementById('cliente-telefone').value.trim();
+        const email = document.getElementById('cliente-email').value.trim();
+
+        // Validações
+        if (!descricao) {
+            mostrarToast('Por favor, informe o nome/descrição do cliente', 'error');
+            document.getElementById('cliente-descricao').focus();
+            return;
+        }
+
+        if (!codigo) {
+            mostrarToast('Código não foi gerado. Tente novamente.', 'error');
+            await gerarProximoCodigoCliente();
+            return;
+        }
+
+        // Dados do cliente
+        const dadosCliente = {
+            codigo: codigo,
+            descricao: descricao,
+            endereco: endereco || null,
+            numero: numero || null,
+            telefone: telefone || null,
+            email: email || null,
+            user_id: user.id
+        };
+
+        console.log('📝 Dados do cliente:', dadosCliente);
+
+        let clienteSalvo;
+
+        if (id) {
+            // Atualizar cliente existente
+            console.log('🔄 Atualizando cliente existente:', id);
+            
+            const { error } = await window.supabase
+                .from('clientes')
+                .update(dadosCliente)
+                .eq('id', id)
+                .eq('user_id', user.id);
+            
+            if (error) {
+                console.error('❌ Erro ao atualizar cliente:', error);
+                throw error;
+            }
+            
+            // Buscar cliente atualizado
+            const { data: clienteAtualizado, error: selectError } = await window.supabase
+                .from('clientes')
+                .select('*')
+                .eq('id', id)
+                .eq('user_id', user.id)
+                .single();
+            
+            if (selectError) {
+                console.error('❌ Erro ao buscar cliente atualizado:', selectError);
+                throw selectError;
+            }
+            
+            clienteSalvo = clienteAtualizado;
+            console.log('✅ Cliente atualizado:', clienteSalvo);
+            
+        } else {
+            // Criar novo cliente
+            console.log('➕ Criando novo cliente');
+            
+            const { data, error } = await window.supabase
+                .from('clientes')
+                .insert([dadosCliente])
+                .select()
+                .single();
+            
+            if (error) {
+                console.error('❌ Erro ao criar cliente:', error);
+                throw error;
+            }
+            
+            clienteSalvo = data;
+            console.log('✅ Cliente criado:', clienteSalvo);
+        }
+
+        // ✅ CORREÇÃO PRINCIPAL: Salvar tipos vinculados SEM user_id
+        if (clienteSalvo && clienteSalvo.id) {
+            console.log('🔗 Salvando tipos vinculados...');
+            
+            // Remover tipos antigos
+            const { error: deleteError } = await window.supabase
+                .from('cliente_tipos_refeicao')
+                .delete()
+                .eq('cliente_id', clienteSalvo.id);
+            
+            if (deleteError) {
+                console.error('❌ Erro ao limpar tipos antigos:', deleteError);
+                // Não vamos falhar por isso, apenas avisar
+            }
+
+            // Adicionar tipos novos
+            const tiposParaVincular = window.clientesModuloFinal.tiposRefeicaoTemp || [];
+            
+            if (tiposParaVincular.length > 0) {
+                console.log(`➕ Vinculando ${tiposParaVincular.length} tipos...`);
+                
+                // Validar se os tipos existem antes de vincular
+                const tiposValidos = [];
+                for (const tipo of tiposParaVincular) {
+                    if (tipo && tipo.id) {
+                        // Verificar se o tipo ainda existe
+                        const { data: tipoExiste, error: tipoError } = await window.supabase
+                            .from('tipos_refeicoes')
+                            .select('id')
+                            .eq('id', tipo.id)
+                            .eq('user_id', user.id)
+                            .single();
+                        
+                        if (!tipoError && tipoExiste) {
+                            // ✅ CORREÇÃO: Estrutura correta SEM user_id
+                            tiposValidos.push({
+                                cliente_id: clienteSalvo.id,
+                                tipo_refeicao_id: tipo.id
+                                // NÃO incluir user_id aqui!
+                            });
+                        } else {
+                            console.warn(`⚠️ Tipo ${tipo.codigo} não encontrado, ignorando...`);
+                        }
+                    }
+                }
+
+                if (tiposValidos.length > 0) {
+                    console.log(`✅ Inserindo ${tiposValidos.length} tipos válidos:`, tiposValidos);
+                    
+                    // ✅ CORREÇÃO: Insert sem colunas específicas
+                    const { error: insertError } = await window.supabase
+                        .from('cliente_tipos_refeicao')
+                        .insert(tiposValidos);
+
+                    if (insertError) {
+                        console.error('❌ Erro ao vincular tipos:', insertError);
+                        console.error('Dados que causaram erro:', tiposValidos);
+                        throw insertError;
+                    }
+                    
+                    console.log('✅ Tipos vinculados com sucesso');
+                } else {
+                    console.log('ℹ️ Nenhum tipo válido para vincular');
+                }
+            } else {
+                console.log('ℹ️ Nenhum tipo para vincular');
+            }
+        }
+
+        // Sucesso!
+        const mensagem = id ? 'Cliente atualizado com sucesso!' : 'Cliente criado com sucesso!';
+        mostrarToast(mensagem, 'success');
+        
+        // Fechar modal
+        fecharModalCliente();
+        
+        // Recarregar lista
+        await recarregarClientes();
+
+    } catch (error) {
+        console.error('❌ Erro ao salvar cliente:', error);
+        
+        let mensagemErro = 'Erro ao salvar cliente';
+        
+        if (error.message.includes('duplicate key')) {
+            mensagemErro = 'Já existe um cliente com este código';
+        } else if (error.message.includes('not null')) {
+            mensagemErro = 'Erro de validação: campos obrigatórios não preenchidos';
+        } else if (error.message.includes('foreign key')) {
+            mensagemErro = 'Erro de referência: dados inconsistentes';
+        } else if (error.message.includes('user_id')) {
+            mensagemErro = 'Erro de estrutura do banco - execute o script de correção';
+        } else {
+            mensagemErro += ': ' + error.message;
+        }
+        
+        mostrarToast(mensagemErro, 'error');
     }
 }
 
+// ✅ MODAL DE TIPOS DE REFEIÇÃO
+async function abrirModalTiposRefeicao() {
+    console.log('🍽️ Abrindo modal de tipos de refeição...');
+    
+    try {
+        // Garantir que os tipos padrão estão carregados
+        if (!window.tiposRefeicoesPadrao || window.tiposRefeicoesPadrao.length === 0) {
+            await carregarTiposRefeicoesPadrao();
+        }
+        
+        const modal = document.getElementById('modal-tipos-refeicao');
+        const lista = document.getElementById('lista-tipos-modal');
+        
+        if (!modal || !lista) {
+            mostrarToast('Erro: Modal de tipos não encontrado', 'error');
+            return;
+        }
+        
+        // Limpar lista
+        lista.innerHTML = '';
+        
+        if (!window.tiposRefeicoesPadrao || window.tiposRefeicoesPadrao.length === 0) {
+            lista.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhum tipo de refeição encontrado.<br>Cadastre alguns tipos primeiro na aba "Tipos de Refeições".</p>';
+        } else {
+            // Carregar tipos já vinculados
+            const tiposJaVinculados = window.clientesModuloFinal?.tiposRefeicaoTemp || [];
+            const idsVinculados = tiposJaVinculados.map(t => t.id);
+            
+            // Renderizar cada tipo
+            window.tiposRefeicoesPadrao.forEach(tipo => {
+                const isVinculado = idsVinculados.includes(tipo.id);
+                
+                const div = document.createElement('div');
+                div.className = 'tipo-item';
+                div.innerHTML = `
+                    <input type="checkbox" 
+                           id="tipo-${tipo.id}" 
+                           ${isVinculado ? 'checked' : ''} 
+                           onchange="toggleTipoRefeicao('${tipo.id}', '${tipo.codigo}', '${tipo.descricao}', this.checked)">
+                    <label for="tipo-${tipo.id}">${tipo.codigo} - ${tipo.descricao}</label>
+                `;
+                lista.appendChild(div);
+            });
+        }
+        
+        // Mostrar modal
+        modal.style.display = 'block';
+        
+    } catch (error) {
+        console.error('❌ Erro ao abrir modal de tipos:', error);
+        mostrarToast('Erro ao carregar tipos de refeição: ' + error.message, 'error');
+    }
+}
+
+// ✅ TOGGLE TIPO DE REFEIÇÃO
+function toggleTipoRefeicao(id, codigo, descricao, checked) {
+    console.log(`🔄 Toggle tipo: ${codigo} - ${descricao} (${checked ? 'adicionar' : 'remover'})`);
+    
+    if (!window.clientesModuloFinal.tiposRefeicaoTemp) {
+        window.clientesModuloFinal.tiposRefeicaoTemp = [];
+    }
+    
+    const tipoObj = { id, codigo, descricao };
+    
+    if (checked) {
+        // Adicionar se não existe
+        const existe = window.clientesModuloFinal.tiposRefeicaoTemp.find(t => t.id === id);
+        if (!existe) {
+            window.clientesModuloFinal.tiposRefeicaoTemp.push(tipoObj);
+        }
+    } else {
+        // Remover se existe
+        window.clientesModuloFinal.tiposRefeicaoTemp = window.clientesModuloFinal.tiposRefeicaoTemp.filter(t => t.id !== id);
+    }
+    
+    // Atualizar lista na tela
+    atualizarTiposRefeicaoVinculados();
+}
+
+// ✅ ATUALIZAR TIPOS VINCULADOS
 function atualizarTiposRefeicaoVinculados() {
     const container = document.getElementById('tipos-vinculados-lista');
     if (!container) return;
     
     container.innerHTML = '';
 
-    if (window.clientesModuloFinal.tiposRefeicaoTemp.length === 0) {
+    if (!window.clientesModuloFinal.tiposRefeicaoTemp || window.clientesModuloFinal.tiposRefeicaoTemp.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #666; padding: 15px; background: #f8f9fa; border-radius: 5px;">Nenhum tipo de refeição vinculado</p>';
         return;
     }
@@ -484,18 +739,75 @@ function atualizarTiposRefeicaoVinculados() {
     });
 }
 
-// ✅ FUNÇÕES DE TOAST E MODAL
+// ✅ REMOVER TIPO DE REFEIÇÃO
+function removerTipoRefeicao(index) {
+    if (!window.clientesModuloFinal?.tiposRefeicaoTemp) return;
+    
+    if (index >= 0 && index < window.clientesModuloFinal.tiposRefeicaoTemp.length) {
+        const tipoRemovido = window.clientesModuloFinal.tiposRefeicaoTemp.splice(index, 1)[0];
+        console.log(`✅ Tipo ${tipoRemovido.codigo} removido`);
+        atualizarTiposRefeicaoVinculados();
+    }
+}
+
+// ✅ FILTRAR CLIENTES
+function filtrarClientes() {
+    const busca = document.getElementById('busca-clientes')?.value.toLowerCase() || '';
+    
+    if (!window.clientesModuloFinal.clientesCarregados) return;
+    
+    let filtrados = window.clientesModuloFinal.clientesCarregados.filter(cliente => {
+        return !busca || 
+               cliente.descricao.toLowerCase().includes(busca) || 
+               cliente.codigo.toLowerCase().includes(busca) ||
+               (cliente.email && cliente.email.toLowerCase().includes(busca));
+    });
+    
+    renderizarTabelaClientesFinal(filtrados);
+    
+    const total = document.getElementById('total-clientes');
+    if (total) {
+        total.textContent = filtrados.length;
+    }
+}
+
+// ✅ FECHAR MODAIS
+function fecharModalCliente() {
+    const modal = document.getElementById('modal-cliente');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function fecharModalTipos() {
+    const modal = document.getElementById('modal-tipos-refeicao');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function fecharModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// ✅ TOAST NOTIFICATIONS
 function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
+    // Usar toast global se disponível
     if (window.mostrarToast && typeof window.mostrarToast === 'function' && window.mostrarToast !== mostrarToast) {
         window.mostrarToast(mensagem, tipo, duracao);
         return;
     }
     
+    // Remover toast existente
     const existingToast = document.querySelector('.toast-notification');
     if (existingToast) {
         existingToast.remove();
     }
     
+    // Criar novo toast
     const toast = document.createElement('div');
     toast.className = `toast-notification toast-${tipo}`;
     toast.style.cssText = `
@@ -538,43 +850,46 @@ function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
     }, duracao);
 }
 
-function fecharModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
+// ✅ EXPORTAR FUNÇÕES GLOBAIS
+window.inicializarClientes = inicializarClientes;
+window.recarregarClientes = recarregarClientes;
+window.abrirModalNovoCliente = abrirModalNovoCliente;
+window.editarClienteFinal = editarClienteFinal;
+window.excluirClienteFinal = excluirClienteFinal;
+window.salvarCliente = salvarCliente;
+window.abrirModalTiposRefeicao = abrirModalTiposRefeicao;
+window.toggleTipoRefeicao = toggleTipoRefeicao;
+window.removerTipoRefeicao = removerTipoRefeicao;
+window.fecharModalCliente = fecharModalCliente;
+window.fecharModalTipos = fecharModalTipos;
+window.fecharModal = fecharModal;
 
-function fecharModalCliente() {
-    document.getElementById('modal-cliente').style.display = 'none';
-}
-
-// ✅ EXPORTAR FUNÇÕES GLOBAIS (VERSÕES FINAIS)
+// Para compatibilidade
 window.editarCliente = editarClienteFinal;
 window.excluirCliente = excluirClienteFinal;
-window.abrirModalNovoCliente = abrirModalNovoCliente;
-window.recarregarClientes = recarregarClientes;
-window.inicializarClientes = inicializarClientes;
 window.carregarClientes = carregarClientesFinal;
-window.fecharModal = fecharModal;
-window.fecharModalCliente = fecharModalCliente;
 
-// ✅ FUNÇÃO DE TESTE ESPECÍFICA
-window.testarSistemaClientesFinal = function() {
-    console.log('🧪 === TESTE SISTEMA CLIENTES FINAL ===');
-    console.log('📋 Estado:');
+// ✅ TESTE DO SISTEMA
+window.testarSistemaClientes = function() {
+    console.log('🧪 === TESTE SISTEMA CLIENTES DEFINITIVO ===');
+    console.log('📋 Estado atual:');
     console.log('  - Inicializado:', window.clientesModuloFinal?.inicializado);
     console.log('  - Clientes carregados:', window.clientesModuloFinal?.clientesCarregados?.length || 0);
+    console.log('  - Tipos temporários:', window.clientesModuloFinal?.tiposRefeicaoTemp?.length || 0);
+    console.log('  - Tipos padrão:', window.tiposRefeicoesPadrao?.length || 0);
     
-    const tbody = document.getElementById('clientes-tbody');
-    if (tbody) {
-        console.log('📊 Tabela:');
-        console.log('  - Linhas na tabela:', tbody.children.length);
-        console.log('  - Primeira linha:', tbody.children[0]?.textContent?.substring(0, 50));
-    }
+    console.log('🔧 Funções disponíveis:');
+    console.log('  - salvarCliente:', typeof window.salvarCliente);
+    console.log('  - abrirModalTiposRefeicao:', typeof window.abrirModalTiposRefeicao);
+    console.log('  - toggleTipoRefeicao:', typeof window.toggleTipoRefeicao);
     
-    console.log('🎯 Testando carregamento direto...');
-    recarregarClientes();
+    console.log('🎯 Elementos DOM:');
+    console.log('  - Modal cliente:', !!document.getElementById('modal-cliente'));
+    console.log('  - Modal tipos:', !!document.getElementById('modal-tipos-refeicao'));
+    console.log('  - Lista tipos:', !!document.getElementById('lista-tipos-modal'));
+    console.log('  - Tipos vinculados:', !!document.getElementById('tipos-vinculados-lista'));
+    
+    console.log('✅ Teste completo - versão definitiva!');
 };
 
-console.log('✅ clientes.js FINAL carregado - use testarSistemaClientesFinal()');
+console.log('✅ clientes.js DEFINITIVO carregado - use testarSistemaClientes() para testar');

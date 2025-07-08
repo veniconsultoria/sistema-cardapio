@@ -13,7 +13,7 @@ if (typeof window.supabaseConfigured === 'undefined') {
     function inicializarSupabaseConfig() {
         console.log('🔄 Inicializando Supabase...');
         
-        // Verificar se CDN carregou - CORRIGIDO
+        // Verificar se CDN carregou
         if (typeof window.supabase?.createClient !== 'function') {
             console.log('⏳ Aguardando CDN do Supabase...');
             setTimeout(inicializarSupabaseConfig, 100);

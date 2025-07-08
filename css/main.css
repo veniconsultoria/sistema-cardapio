@@ -2879,3 +2879,540 @@ tr:last-child td {
 .calculando {
     animation: calculando 0.5s ease-in-out !important;
 }
+
+/* ===== CSS ADICIONAL PARA TELA DE RECEITAS ===== */
+/* Adicione este CSS ao final do seu arquivo main.css */
+
+/* ===== LAYOUT ESPECÍFICO PARA TELA DE RECEITAS ===== */
+.receita-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.receita-content {
+    padding: 30px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.receita-content.full-width {
+    grid-template-columns: 1fr;
+}
+
+/* ===== SEÇÃO DE MODO DE PREPARO ===== */
+.modo-preparo {
+    grid-column: 1 / -1;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.modo-preparo-header {
+    background: #667eea;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modo-preparo-content {
+    padding: 20px;
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.modo-preparo-content textarea {
+    width: 100%;
+    min-height: 150px;
+    border: none;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.6;
+    padding: 0;
+    outline: none;
+    background: transparent;
+}
+
+.toggle-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* ===== SEÇÃO DE INGREDIENTES ===== */
+.ingredientes-section {
+    grid-column: 1 / -1;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    margin-top: 20px;
+}
+
+.ingredientes-header {
+    background: #28a745;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ingredientes-content {
+    padding: 20px;
+}
+
+/* ===== TABELA DE INGREDIENTES ===== */
+#tabelaIngredientes {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#tabelaIngredientes th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#tabelaIngredientes td {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.inline-edit {
+    width: 80px;
+    padding: 5px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.inline-edit:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* ===== RESUMO DOS TOTAIS ===== */
+.totais-resumo {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.total-item {
+    text-align: center;
+}
+
+.total-item h3 {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+
+.total-item .valor {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* ===== MODAL DE INGREDIENTES ===== */
+.modal-ingredientes {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+}
+
+.modal-ingredientes .modal-content {
+    background-color: white;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.modal-ingredientes .modal-header {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 20px;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-ingredientes .modal-body {
+    padding: 20px;
+}
+
+.modal-ingredientes .modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* ===== LISTA DE PRODUTOS NO MODAL ===== */
+.produto-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.produto-item:hover {
+    background: #f8f9fa;
+    border-color: #667eea;
+}
+
+.produto-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.produto-info {
+    flex: 1;
+}
+
+.produto-codigo {
+    font-weight: bold;
+    color: #667eea;
+    font-size: 14px;
+}
+
+.produto-nome {
+    color: #495057;
+    margin-top: 2px;
+    font-size: 14px;
+}
+
+.produto-preco {
+    font-weight: bold;
+    color: #28a745;
+    font-size: 14px;
+}
+
+/* ===== BUSCA DE PRODUTOS ===== */
+.search-box {
+    margin-bottom: 20px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ===== CONTADOR DE SELECIONADOS ===== */
+.contador-selecionados {
+    margin-left: 20px;
+    color: #666;
+    font-size: 14px;
+}
+
+.contador-selecionados strong {
+    color: #667eea;
+    font-size: 16px;
+}
+
+/* ===== TOAST NOTIFICATIONS ===== */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 20000;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    min-width: 300px;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast.success {
+    background: #28a745;
+}
+
+.toast.error {
+    background: #dc3545;
+}
+
+.toast.warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.toast.info {
+    background: #17a2b8;
+}
+
+/* ===== FORM ROW PARA LAYOUT ===== */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-row .form-group {
+    margin-bottom: 15px;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 768px) {
+    .receita-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .totais-resumo {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-ingredientes .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+    
+    .produto-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .produto-info {
+        text-align: center;
+    }
+    
+    .produto-codigo,
+    .produto-nome,
+    .produto-preco {
+        text-align: center;
+    }
+    
+    .modal-ingredientes .modal-footer {
+        flex-direction: column;
+    }
+    
+    .modal-ingredientes .modal-footer .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* ===== ESTADOS DE HOVER E FOCUS ===== */
+.produto-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.produto-item:focus-within {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* ===== ANIMAÇÕES ===== */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ingredientes-section,
+.modo-preparo {
+    animation: slideIn 0.3s ease;
+}
+
+/* ===== INDICADORES VISUAIS ===== */
+.produto-item:has(input:checked) {
+    background: #e7f3ff;
+    border-color: #667eea;
+}
+
+.produto-item:has(input:disabled) {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.produto-item:has(input:disabled) label {
+    cursor: not-allowed;
+}
+
+/* ===== MELHORIAS ESPECÍFICAS PARA RECEITAS ===== */
+.receita-header-principal {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.receita-header-principal h1 {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 28px;
+    margin: 0;
+}
+
+.receita-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* ===== VALIDAÇÃO DE FORMULÁRIO ===== */
+.form-group input:invalid {
+    border-color: #dc3545;
+}
+
+.form-group input:valid {
+    border-color: #28a745;
+}
+
+.form-group .error-message {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* ===== LOADING STATES ===== */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ===== STICKY HEADER PARA TABELA ===== */
+.table-responsive {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.table-responsive thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* ===== MELHORIAS DE ACESSIBILIDADE ===== */
+.btn:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    .receita-header-principal,
+    .receita-actions,
+    .btn,
+    .modal {
+        display: none !important;
+    }
+    
+    .receita-content {
+        padding: 0;
+        box-shadow: none;
+    }
+    
+    .ingredientes-section,
+    .modo-preparo {
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+}
