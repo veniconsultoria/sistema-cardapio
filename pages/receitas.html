@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receitas - Sistema Restaurante</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Estilos customizados -->
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container-fluid {
+            padding: 20px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 15px 20px;
+            border: none;
+        }
+
+        .card-header h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            border-radius: 8px;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            border: none;
+            border-radius: 8px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        .table td {
+            vertical-align: middle;
+            padding: 12px;
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            border: none;
+        }
+
+        /* Editor de receitas */
+        #recipeEditor {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: white;
+            position: relative;
+            min-width: 300px;
+            min-height: 250px;
+            max-width: 1200px;
+            max-height: 800px;
+            resize: both;
+            overflow: auto;
+        }
+
+        #recipeEditor.resizing {
+            border-color: var(--primary-color);
+        }
+
+        .toolbar {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .toolbar button {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar button:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .toolbar button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        #textoReceita {
+            min-height: 200px;
+            padding: 15px;
+            border: none;
+            outline: none;
+            line-height: 1.6;
+            font-size: 14px;
+            resize: none;
+        }
+
+        .editor-footer {
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            padding: 10px 15px;
+            border-radius: 0 0 10px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, transparent 0%, transparent 40%, var(--primary-color) 50%, var(--primary-color) 100%);
+            cursor: nw-resize;
+            border-radius: 0 0 10px 0;
+        }
+
+        .char-counter {
+            font-size: 12px;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        /* Ingredientes */
+        .inline-edit {
+            border: none;
+            background: transparent;
+            width: 80px;
+            text-align: center;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .inline-edit:focus {
+            background: #f8f9fa;
+            border: 1px solid var(--primary-color);
+            outline: none;
+        }
+
+        .ingredient-item {
+            transition: all 0.2s ease;
+        }
+
+        .ingredient-item:hover {
+            background: #f8f9fa !important;
+        }
+
+        /* Busca */
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        .search-container input {
+            padding-left: 45px;
+        }
+
+        /* Estatísticas */
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container-fluid {
+                padding: 10px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .toolbar button {
+                margin: 2px 0;
+            }
+            
+            #recipeEditor {
+                min-width: 100%;
+            }
+        }
+
+        /* Tamanhos predefinidos do editor */
+        .size-small {
+            width: 400px !important;
+            height: 300px !important;
+        }
+
+        .size-medium {
+            width: 600px !important;
+            height: 400px !important;
+        }
+
+        .size-large {
+            width: 800px !important;
+            height: 500px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4><i class="fas fa-utensils me-2"></i>Gerenciamento de Receitas</h4>
+                            <div>
+                                <button type="button" class="btn btn-light" onclick="window.receitasModule.abrirModalNova()" data-toggle="modal" data-target="#modalReceita">
+                                    <i class="fas fa-plus"></i> Nova Receita
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="window.receitasModule.carregar()">
+                                    <i class="fas fa-list"></i> Listar Receitas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-value" id="total-receitas">0</div>
+                    <div class="stats-label">Total de Receitas</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-value" id="receitas-mes">0</div>
+                    <div class="stats-label">Receitas Este Mês</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-value" id="ingredientes-total">0</div>
+                    <div class="stats-label">Total de Ingredientes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Busca e Filtros -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="search-container">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="busca-receitas" class="form-control" placeholder="Buscar receitas por código ou descrição...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Receitas -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-list"></i> Lista de Receitas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="tabelaReceitas">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Descrição</th>
+                                        <th>Rendimento</th>
+                                        <th>Peso Final</th>
+                                        <th>Preço Total</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dados carregados dinamicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nova/Editar Receita -->
+    <div class="modal fade" id="modalReceita" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-utensils"></i> Cadastro de Receita</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formReceita">
+                        <div class="row">
+                            <!-- Informações Básicas -->
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6><i class="fas fa-info-circle"></i> Informações Básicas</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="codigoReceita">Código *</label>
+                                            <input type="text" class="form-control" id="codigoReceita" readonly>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="descricaoReceita">Descrição *</label>
+                                            <input type="text" class="form-control" id="descricaoReceita" required>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="rendimento">Rendimento</label>
+                                                    <input type="number" class="form-control" id="rendimento" step="0.001" min="0">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="unidadeRendimento">Unidade</label>
+                                                    <select class="form-control" id="unidadeRendimento">
+                                                        <option value="UN">Unidades</option>
+                                                        <option value="KG">Quilograma</option>
+                                                        <option value="LT">Litros</option>
+                                                        <option value="GR">Gramas</option>
+                                                        <option value="ML">Mililitros</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="pesoFinal">Peso Final (KG)</label>
+                                            <input type="number" class="form-control" id="pesoFinal" step="0.001" min="0" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Cálculos -->
+                                <div class="card mb-3">
+                                    <div class="card-header bg-success text-white">
+                                        <h6><i class="fas fa-calculator"></i> Cálculos</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>Peso Calculado:</strong>
+                                                <div class="h5 text-success" id="pesoFinalCalculado">0,000 KG</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Preço Total:</strong>
+                                                <div class="h5 text-primary" id="precoTotal">R$ 0,00</div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-info btn-sm" onclick="window.receitasModule.calcular()">
+                                            <i class="fas fa-calculator"></i> Recalcular
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ingredientes -->
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-warning text-dark">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6><i class="fas fa-list-ul"></i> Ingredientes</h6>
+                                            <button type="button" class="btn btn-sm btn-primary" onclick="window.receitasModule.abrirModalIngredientes()">
+                                                <i class="fas fa-plus"></i> Selecionar Ingredientes
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm mb-0" id="tabelaIngredientes">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th>Código</th>
+                                                        <th>Ingrediente</th>
+                                                        <th>Qtd</th>
+                                                        <th>Un</th>
+                                                        <th>Perda%</th>
+                                                        <th>Ganho%</th>
+                                                        <th>Preço</th>
+                                                        <th>Ação</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!-- Ingredientes carregados dinamicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Editor de Texto da Receita -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6><i class="fas fa-edit"></i> Modo de Preparo</h6>
+                                            <div>
+                                                <button type="button" class="btn btn-sm btn-light" onclick="window.receitasModule.previewReceita()">
+                                                    <i class="fas fa-eye"></i> Visualizar
+                                                </button>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-sm btn-light" onclick="window.receitasModule.setEditorSize('small')">P</button>
+                                                    <button type="button" class="btn btn-sm btn-light" onclick="window.receitasModule.setEditorSize('medium')">M</button>
+                                                    <button type="button" class="btn btn-sm btn-light" onclick="window.receitasModule.setEditorSize('large')">G</button>
+                                                    <button type="button" class="btn btn-sm btn-light" onclick="window.receitasModule.setEditorSize('auto')">Auto</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="recipeEditor">
+                                            <!-- Toolbar -->
+                                            <div class="toolbar">
+                                                <button type="button" onclick="window.receitasModule.formatText('bold')" title="Negrito (Ctrl+B)">
+                                                    <i class="fas fa-bold"></i>
+                                                </button>
+                                                <button type="button" onclick="window.receitasModule.formatText('italic')" title="Itálico (Ctrl+I)">
+                                                    <i class="fas fa-italic"></i>
+                                                </button>
+                                                <button type="button" onclick="window.receitasModule.formatText('underline')" title="Sublinhado (Ctrl+U)">
+                                                    <i class="fas fa-underline"></i>
+                                                </button>
+                                                <div style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></div>
+                                                <button type="button" onclick="window.receitasModule.formatText('insertUnorderedList')" title="Lista">
+                                                    <i class="fas fa-list-ul"></i>
+                                                </button>
+                                                <button type="button" onclick="window.receitasModule.formatText('insertOrderedList')" title="Lista Numerada">
+                                                    <i class="fas fa-list-ol"></i>
+                                                </button>
+                                                <div style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></div>
+                                                <select onchange="window.receitasModule.changeFontSize(this.value)" style="border: 1px solid #ddd; border-radius: 3px; padding: 2px;">
+                                                    <option value="12px">12px</option>
+                                                    <option value="14px" selected>14px</option>
+                                                    <option value="16px">16px</option>
+                                                    <option value="18px">18px</option>
+                                                    <option value="20px">20px</option>
+                                                </select>
+                                                <button type="button" onclick="window.receitasModule.clearFormatting()" title="Limpar Formatação">
+                                                    <i class="fas fa-eraser"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Área de texto -->
+                                            <div id="textoReceita" contenteditable="true" placeholder="Digite o modo de preparo da receita...">
+                                            </div>
+                                            
+                                            <!-- Footer -->
+                                            <div class="editor-footer">
+                                                <div class="char-counter">
+                                                    Caracteres: <span id="charCount">0</span>/2000
+                                                </div>
+                                                <small class="text-muted">
+                                                    Use Ctrl+B, Ctrl+I, Ctrl+U para formatação rápida
+                                                </small>
+                                            </div>
+                                            
+                                            <!-- Handle de redimensionamento -->
+                                            <div class="resize-handle" id="resizeHandle"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="window.receitasModule.limparFormulario()">
+                        <i class="fas fa-broom"></i> Limpar
+                    </button>
+                    <button type="submit" form="formReceita" class="btn btn-success">
+                        <i class="fas fa-save"></i> Salvar Receita
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Selecionar Ingredientes -->
+    <div class="modal fade" id="modalIngredientes" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-list-ul"></i> Selecionar Ingredientes</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Busca de ingredientes -->
+                    <div class="search-container mb-3">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchIngredientes" class="form-control" placeholder="Buscar ingredientes por código ou nome...">
+                    </div>
+                    
+                    <!-- Lista de ingredientes -->
+                    <div id="listaIngredientes" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Ingredientes carregados dinamicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery e Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Módulos do sistema -->
+    <script type="module">
+        import { initSupabase } from '../js/main.js';
+        import { initReceitas } from '../modules/receitas.js';
+        
+        // Inicializar quando DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                console.log('🚀 Inicializando página de receitas...');
+                
+                // Inicializar Supabase
+                const supabase = await initSupabase();
+                if (!supabase) {
+                    throw new Error('Falha ao inicializar Supabase');
+                }
+                
+                // Inicializar módulo de receitas
+                const sucesso = await initReceitas(supabase);
+                if (sucesso) {
+                    console.log('✅ Página de receitas inicializada com sucesso');
+                } else {
+                    console.error('❌ Falha ao inicializar módulo de receitas');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao inicializar página:', error);
+                alert('Erro ao carregar a página. Verifique o console para detalhes.');
+            }
+        });
+        
+        // Fechar modal ao clicar fora
+        window.addEventListener('click', function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    $(modal).modal('hide');
+                }
+            });
+        });
+        
+        // Atalhos de teclado globais
+        document.addEventListener('keydown', function(event) {
+            // Ctrl+N = Nova receita
+            if (event.ctrlKey && event.key === 'n') {
+                event.preventDefault();
+                $('#modalReceita').modal('show');
+                if (window.receitasModule) {
+                    window.receitasModule.abrirModalNova();
+                }
+            }
+            
+            // Ctrl+L = Listar receitas
+            if (event.ctrlKey && event.key === 'l') {
+                event.preventDefault();
+                if (window.receitasModule) {
+                    window.receitasModule.carregar();
+                }
+            }
+            
+            // ESC = Fechar modais
+            if (event.key === 'Escape') {
+                $('.modal').modal('hide');
+            }
+        });
+    </script>
+    
+    <!-- Script para placeholder do editor -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const editor = document.getElementById('textoReceita');
+            
+            function updatePlaceholder() {
+                if (editor.textContent.trim() === '') {
+                    editor.classList.add('empty');
+                    if (!editor.querySelector('.placeholder')) {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'placeholder';
+                        placeholder.style.cssText = 'position: absolute; top: 15px; left: 15px; color: #999; pointer-events: none; font-style: italic;';
+                        placeholder.textContent = 'Digite o modo de preparo da receita...';
+                        editor.style.position = 'relative';
+                        editor.appendChild(placeholder);
+                    }
+                } else {
+                    editor.classList.remove('empty');
+                    const placeholder = editor.querySelector('.placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                }
+            }
+            
+            if (editor) {
+                editor.addEventListener('input', updatePlaceholder);
+                editor.addEventListener('focus', updatePlaceholder);
+                editor.addEventListener('blur', updatePlaceholder);
+                updatePlaceholder();
+            }
+        });
+    </script>
+    
+    <!-- Estilos adicionais para o placeholder -->
+    <style>
+        #textoReceita.empty {
+            color: #999;
+        }
+        
+        #textoReceita:focus.empty {
+            color: #333;
+        }
+        
+        .placeholder {
+            user-select: none;
+        }
+        
+        /* Toast customizado */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .toast-notification {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 10px;
+            padding: 0;
+            border-left: 4px solid;
+            min-width: 300px;
+            animation: slideInRight 0.3s ease;
+        }
+        
+        .toast-success { border-left-color: var(--success-color); }
+        .toast-error { border-left-color: var(--danger-color); }
+        .toast-warning { border-left-color: var(--warning-color); }
+        .toast-info { border-left-color: var(--info-color); }
+        
+        .toast-content {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+        }
+        
+        .toast-icon {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #999;
+            margin-left: 10px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .toast-close:hover {
+            color: #666;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .toast-fade-out {
+            animation: fadeOut 0.3s ease forwards;
+        }
+        
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+        
+        /* Indicador de loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .loading-spinner {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+import { initSupabase } from '../js/main.js';
+import { initReceitas } from '../modules/receitas.js';
+
+</body>
+</html>

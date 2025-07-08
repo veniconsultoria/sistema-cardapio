@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardápios - Sistema Restaurante</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Estilos customizados -->
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container-fluid {
+            padding: 20px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 15px 20px;
+            border: none;
+        }
+
+        .card-header h4, .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        /* Indicadores de data */
+        .data-hoje {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .data-passada {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+        }
+
+        .data-futura {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+
+        /* Expandibles */
+        .expandable {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .expandable-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .expandable-header:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+        }
+
+        .expandable-content {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .expandable-content.active {
+            max-height: 2000px;
+            padding: 20px;
+        }
+
+        .arrow {
+            transition: transform 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        /* Grid de receitas */
+        .receitas-grid-header {
+            display: grid;
+            grid-template-columns: 2fr 120px 150px 150px 100px;
+            gap: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .receita-item {
+            display: grid;
+            grid-template-columns: 2fr 120px 150px 150px 100px;
+            gap: 15px;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .receita-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .receita-info strong {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .receita-nome {
+            display: block;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+
+        .total-display {
+            display: inline-block;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            border-radius: 6px;
+            font-weight: 600;
+            border: 2px solid #ffc107;
+            font-size: 13px;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .receita-empty {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .receita-empty i {
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        /* Modal */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            border: none;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            border: none;
+            padding: 20px 25px;
+        }
+
+        .receita-item-modal {
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .receita-item-modal:hover {
+            background: #f8f9fa;
+            border-color: var(--primary-color);
+        }
+
+        /* Comensais */
+        .comensais-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+
+        /* Estatísticas */
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stats-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .modal.show .modal-dialog {
+            animation: slideIn 0.3s ease;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container-fluid {
+                padding: 10px;
+            }
+            
+            .receitas-grid-header,
+            .receita-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .grid-col-receita {
+                grid-column: 1 / -1;
+                text-align: left;
+                border-bottom: 1px solid #e9ecef;
+                padding-bottom: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .modal-dialog {
+                margin: 10px;
+            }
+            
+            .comensais-section .row {
+                flex-direction: column;
+            }
+            
+            .comensais-section .col-md-4,
+            .comensais-section .col-md-8 {
+                max-width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+
+        /* Utilitários */
+        .text-center { text-align: center; }
+        .text-muted { color: #6c757d; }
+        .mb-3 { margin-bottom: 1rem; }
+        .py-4 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+
+        /* Custom checkboxes */
+        .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4><i class="fas fa-calendar-alt me-2"></i>Sistema de Cardápios</h4>
+                            <div>
+                                <button type="button" class="btn btn-light" onclick="window.cardapiosModule.atualizarTodos()">
+                                    <i class="fas fa-users"></i> Atualizar Todos
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="window.cardapiosModule.calcularTodos()">
+                                    <i class="fas fa-calculator"></i> Calcular Todos
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="window.cardapiosModule.gravarCardapio()">
+                                    <i class="fas fa-save"></i> Gravar Cardápio
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-value" id="total-cardapios">0</div>
+                    <div class="stats-label">Cardápios Criados</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-value" id="receitas-cardapio">0</div>
+                    <div class="stats-label">Receitas no Cardápio</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-value" id="comensais-total">0</div>
+                    <div class="stats-label">Total de Comensais</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles Principais -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <label for="dataCardapio" class="font-weight-bold">
+                            <i class="fas fa-calendar"></i> Data do Cardápio:
+                        </label>
+                        <input type="date" id="dataCardapio" class="form-control">
+                        <small class="text-muted">Selecione a data para montar o cardápio</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <label for="clienteCardapio" class="font-weight-bold">
+                            <i class="fas fa-user"></i> Cliente:
+                        </label>
+                        <select id="clienteCardapio" class="form-control">
+                            <option value="">Carregando clientes...</option>
+                        </select>
+                        <small class="text-muted">Escolha o cliente para montar o cardápio</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <label for="totalComensais" class="font-weight-bold">
+                            <i class="fas fa-users"></i> Total de Comensais:
+                        </label>
+                        <input type="number" id="totalComensais" class="form-control" min="1" max="99999" placeholder="Ex: 100">
+                        <small class="text-muted">Para aplicar a todos os tipos de refeição</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Tipos de Refeição -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-utensils"></i> Tipos de Refeição do Cliente</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="tiposRefeicaoCardapio">
+                            <!-- Conteúdo será carregado dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Selecionar Receitas -->
+    <div class="modal fade" id="modalReceitas" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <!-- Conteúdo será criado dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div>Carregando cardápios...</div>
+        </div>
+    </div>
+
+    <!-- jQuery e Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Módulos do sistema -->
+    <script type="module">
+        import { initSupabase } from '../js/main.js';
+        import { initCardapios } from '../modules/cardapios.js';
+        
+        // Inicializar quando DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                console.log('🚀 Inicializando página de cardápios...');
+                
+                // Mostrar loading
+                showLoading();
+                
+                // Inicializar Supabase
+                const supabase = await initSupabase();
+                if (!supabase) {
+                    throw new Error('Falha ao inicializar Supabase');
+                }
+                
+                // Inicializar módulo de cardápios
+                const sucesso = await initCardapios(supabase);
+                if (sucesso) {
+                    console.log('✅ Página de cardápios inicializada com sucesso');
+                    
+                    // Configurar estilos CSS adicionais
+                    configurarEstilosPersonalizados();
+                } else {
+                    console.error('❌ Falha ao inicializar módulo de cardápios');
+                }
+                
+                // Esconder loading
+                hideLoading();
+                
+            } catch (error) {
+                console.error('❌ Erro ao inicializar página:', error);
+                hideLoading();
+                alert('Erro ao carregar a página. Verifique o console para detalhes.');
+            }
+        });
+        
+        // Funções de loading
+        function showLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+        }
+        
+        function hideLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+        
+        // Configurar estilos personalizados
+        function configurarEstilosPersonalizados() {
+            const style = document.createElement('style');
+            style.textContent = `
+                .grid-col-receita { text-align: left; }
+                .grid-col-comensais { text-align: center; }
+                .grid-col-rendimento { text-align: center; }
+                .grid-col-total { text-align: center; }
+                .grid-col-acoes { text-align: center; }
+                
+                .expandable-content {
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                
+                .receita-item input[type="number"],
+                .receita-item input[type="text"] {
+                    border: 2px solid #e9ecef;
+                    border-radius: 6px;
+                    text-align: center;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                }
+                
+                .receita-item input:focus {
+                    border-color: var(--primary-color);
+                    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+                }
+                
+                .btn-group .btn {
+                    margin: 0 2px;
+                }
+                
+                .badge-success {
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Fechar modal ao clicar fora
+        window.addEventListener('click', function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    $(modal).modal('hide');
+                }
+            });
+        });
+        
+        // Atalhos de teclado globais
+        document.addEventListener('keydown', function(event) {
+            // Ctrl+S = Gravar cardápio
+            if (event.ctrlKey && event.key === 's') {
+                event.preventDefault();
+                if (window.cardapiosModule) {
+                    window.cardapiosModule.gravarCardapio();
+                }
+            }
+            
+            // Ctrl+C = Calcular todos
+            if (event.ctrlKey && event.key === 'c') {
+                event.preventDefault();
+                if (window.cardapiosModule) {
+                    window.cardapiosModule.calcularTodos();
+                }
+            }
+            
+            // ESC = Fechar modais
+            if (event.key === 'Escape') {
+                $('.modal').modal('hide');
+            }
+        });
+        
+        // Atualizar estatísticas periodicamente
+        setInterval(function() {
+            if (window.cardapiosModule && window.cardapiosModule.estado.inicializado) {
+                atualizarEstatisticas();
+            }
+        }, 5000);
+        
+        function atualizarEstatisticas() {
+            try {
+                const estado = window.cardapiosModule.estado;
+                
+                // Total de cardápios
+                const totalCardapios = Object.keys(estado.cardapios).length;
+                document.getElementById('total-cardapios').textContent = totalCardapios;
+                
+                // Receitas no cardápio atual
+                let receitasCardapio = 0;
+                if (estado.clienteAtual && estado.dataAtual) {
+                    Object.values(estado.receitasTemporarias || {}).forEach(receitas => {
+                        receitasCardapio += receitas.length;
+                    });
+                }
+                document.getElementById('receitas-cardapio').textContent = receitasCardapio;
+                
+                // Total de comensais
+                let comensaisTotal = 0;
+                if (estado.clienteAtual?.tiposRefeicao) {
+                    estado.clienteAtual.tiposRefeicao.forEach(tipo => {
+                        const input = document.getElementById(`comensais-${tipo.codigo}`);
+                        if (input && input.value) {
+                            comensaisTotal += parseInt(input.value) || 0;
+                        }
+                    });
+                }
+                document.getElementById('comensais-total').textContent = comensaisTotal;
+                
+            } catch (error) {
+                console.warn('Erro ao atualizar estatísticas:', error);
+            }
+        }
+    </script>
+    
+    <!-- Script para melhorar a experiência de entrada de dados -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-focus em campos de entrada quando visíveis
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === 1) { // Element node
+                                const inputs = node.querySelectorAll ? node.querySelectorAll('input[type="number"]') : [];
+                                inputs.forEach(function(input) {
+                                    input.addEventListener('focus', function() {
+                                        this.select();
+                                    });
+                                    
+                                    input.addEventListener('keydown', function(e) {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const nextInput = this.closest('.receita-item')?.querySelector('input[type="number"]:not([readonly])');
+                                            if (nextInput && nextInput !== this) {
+                                                nextInput.focus();
+                                            }
+                                        }
+                                    });
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        });
+    </script>
+    
+    <!-- CSS adicional para animações -->
+    <style>
+        .receita-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .receita-item:hover {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .expandable-header .arrow {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .expandable-content.active .expandable-header .arrow {
+            transform: rotate(180deg);
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            .receita-item {
+                transition: none;
+            }
+            
+            .receita-item:hover {
+                transform: none;
+            }
+        }
+    </style>
+</body>
+</html>

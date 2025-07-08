@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tipos de Refeições - Sistema de Restaurante</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- CSS customizado -->
+    <link href="css/style.css" rel="stylesheet">
+    
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            border: none;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+        }
+        
+        .modal-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 0.5rem 0.5rem 0 0;
+            background-color: #f8f9fa;
+        }
+        
+        .modal-body {
+            padding: 1.25rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid #dee2e6;
+            border-radius: 0 0 0.5rem 0.5rem;
+            background-color: #f8f9fa;
+        }
+        
+        .close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .badge-lg {
+            font-size: 1rem;
+            padding: 0.5rem 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navegação -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-utensils"></i> Sistema Restaurante
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="produtos.html">
+                            <i class="fas fa-box"></i> Produtos
+                        </a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="tipos-refeicoes.html">
+                            <i class="fas fa-utensils"></i> Tipos de Refeições
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="receitas.html">
+                            <i class="fas fa-clipboard-list"></i> Receitas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="cardapio.html">
+                            <i class="fas fa-book"></i> Cardápio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <button id="btnLogout" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Container principal -->
+    <div class="container mt-4">
+        <!-- Cabeçalho -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-utensils text-primary"></i> Tipos de Refeições</h2>
+                        <p class="text-muted mb-0">Gerencie os tipos de refeições do seu cardápio</p>
+                    </div>
+                    <div class="text-right">
+                        <span id="total-tipos" class="badge badge-primary badge-lg">0</span>
+                        <small class="text-muted d-block">tipo(s)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de ações -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <button onclick="tiposRefeicoes.abrirModalNovoTipo()" 
+                                        class="btn btn-primary mr-3">
+                                    <i class="fas fa-plus"></i> Novo Tipo
+                                </button>
+                                <button onclick="tiposRefeicoes.recarregarTipos()" 
+                                        class="btn btn-outline-secondary">
+                                    <i class="fas fa-sync-alt"></i> Listar Tipos
+                                </button>
+                            </div>
+                            <div class="form-group mb-0" style="width: 300px;">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                    </div>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="busca-tipos" 
+                                           placeholder="Pesquisar tipos...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card da listagem -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> Lista de Tipos de Refeições
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="20%">Código</th>
+                                <th width="60%">Descrição</th>
+                                <th width="20%" class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tipos-tbody">
+                            <!-- Tipos serão carregados aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar/editar tipo -->
+    <div id="modal-tipo" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modal-tipo-titulo">Novo Tipo de Refeição</h5>
+                <button type="button" class="close" onclick="tiposRefeicoes.fecharModal()">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="form-tipo">
+                <div class="modal-body">
+                    <input type="hidden" id="tipo-id">
+                    
+                    <div class="form-group">
+                        <label for="tipo-codigo">Código *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="tipo-codigo" 
+                               required 
+                               readonly>
+                    </div>
+                    
+                    <div class="form-group mb-0">
+                        <label for="tipo-descricao">Descrição *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="tipo-descricao" 
+                               required 
+                               placeholder="Ex: Café da Manhã, Almoço, Jantar..."
+                               maxlength="100">
+                        <small class="form-text text-muted">
+                            Digite uma descrição clara e objetiva para o tipo de refeição
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" 
+                            class="btn btn-secondary" 
+                            onclick="tiposRefeicoes.fecharModal()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="position-fixed" style="top: 20px; right: 20px; z-index: 9999;"></div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Módulos -->
+    <script type="module">
+        import { initSupabase } from './js/main.js';
+        import { initTiposRefeicoes } from './modules/tiposRefeicoes.js';
+        
+        // Inicializar quando página carregar
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                console.log('🚀 Inicializando página de tipos de refeições...');
+                
+                // Inicializar Supabase
+                const supabase = await initSupabase();
+                
+                // Inicializar módulo de tipos de refeições
+                await initTiposRefeicoes(supabase);
+                
+                console.log('✅ Página de tipos de refeições carregada com sucesso');
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar página:', error);
+                
+                // Verificar se é erro de autenticação
+                if (error.message.includes('autenticado')) {
+                    window.location.href = 'login.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -50,7 +50,7 @@
 
         <div class="tabs">
             <button class="tab active" onclick="showTab('produtos-novo')">🛒 Produtos</button>
-            <button class="tab" onclick="showTab('receitas')">Cadastro de Receitas</button>
+<button class="tab" onclick="irParaReceitas()">📋 Cadastro de Receitas</button>
             <button class="tab" onclick="showTab('tipos-refeicoes')">Tipos de Refeições</button>
             <button class="tab" onclick="showTab('clientes')">Cadastro de Clientes</button>
             <button class="tab" onclick="showTab('cardapio')">Planejamento de Cardápio</button>
@@ -113,178 +113,7 @@
             </div>
 
             <!-- Cadastro de Receitas -->
-            <div id="receitas" class="tab-content hidden">
-                <div class="section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2>📋 Gestão de Receitas</h2>
-                        <div>
-                            <button class="btn btn-primary" onclick="abrirNovaReceitaFormulario()">+ Nova Receita</button>
-                            <button class="btn btn-secondary" onclick="listarReceitas()">📋 Listar Receitas</button>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-                        <input type="text" id="busca-receitas" placeholder="🔍 Buscar receitas..." style="min-width: 200px; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
-                        <span>Total: <strong id="total-receitas">0</strong> receitas</span>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table id="tabelaReceitas">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Descrição</th>
-                                    <th>Rendimento</th>
-                                    <th>Peso Final</th>
-                                    <th>Preço Total</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
-                                        📋 Clique em "Listar Receitas" para carregar os dados
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- ===== FORMULÁRIO DE NOVA/EDITAR RECEITA ===== -->
-                    <div id="formulario-receita" class="section" style="display: none; margin-top: 30px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <h3>📝 Cadastro de Receita</h3>
-                            <div>
-                                <button class="btn btn-primary" onclick="salvarReceitaFormulario()">💾 Salvar</button>
-                                <button class="btn btn-secondary" onclick="cancelarEdicaoReceita()">❌ Cancelar</button>
-                            </div>
-                        </div>
-
-                        <!-- Dados Básicos da Receita -->
-                        <div class="receita-content">
-                            <!-- Primeira Coluna -->
-                            <div class="section">
-                                <h4>📝 Dados Básicos</h4>
-                                
-                                <div class="form-group">
-                                    <label for="codigoReceita">Código da Receita:</label>
-                                    <input type="text" id="codigoReceita" readonly style="background-color: #f8f9fa;">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="descricaoReceita">Descrição da Receita: *</label>
-                                    <input type="text" id="descricaoReceita" placeholder="Ex: Bolo de Chocolate" required>
-                                </div>
-                                
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="rendimento">Rendimento:</label>
-                                        <input type="number" id="rendimento" step="0.001" min="0" placeholder="0">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="unidadeRendimento">Unidade:</label>
-                                        <select id="unidadeRendimento">
-                                            <option value="UN">Unidades</option>
-                                            <option value="KG">Quilogramas</option>
-                                            <option value="L">Litros</option>
-                                            <option value="Porções">Porções</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="pesoFinal">Peso Final (KG):</label>
-                                    <input type="number" id="pesoFinal" step="0.001" min="0" placeholder="0.000">
-                                </div>
-                            </div>
-
-                            <!-- Segunda Coluna -->
-                            <div class="section">
-                                <h4>💰 Resumo da Receita</h4>
-                                
-                                <div class="total-item">
-                                    <h5>Peso Total Calculado</h5>
-                                    <div class="valor" id="pesoTotalCalculado">0,000 KG</div>
-                                </div>
-                                
-                                <div class="total-item" style="margin-top: 20px;">
-                                    <h5>Valor Total da Receita</h5>
-                                    <div class="valor" id="valorTotalReceita">R$ 0,00</div>
-                                </div>
-                                
-                                <div class="total-item" style="margin-top: 20px;">
-                                    <h5>Custo por Unidade</h5>
-                                    <div class="valor" id="custoPorUnidade">R$ 0,00</div>
-                                </div>
-                                
-                                <button class="btn btn-primary" onclick="calcularTotaisFormulario()" style="width: 100%; margin-top: 20px;">
-                                    🧮 Atualizar Cálculos
-                                </button>
-                            </div>
-
-                            <!-- Ingredientes -->
-                            <div class="ingredientes-section">
-                                <div class="ingredientes-header">
-                                    <h4>🥘 Ingredientes da Receita</h4>
-                                    <button class="btn btn-primary" onclick="abrirModalIngredientesFormulario()">
-                                        ➕ Adicionar Ingredientes
-                                    </button>
-                                </div>
-                                <div class="ingredientes-content">
-                                    <div class="table-responsive">
-                                        <table id="tabelaIngredientes">
-                                            <thead>
-                                                <tr>
-                                                    <th>Código</th>
-                                                    <th>Produto</th>
-                                                    <th>Quantidade</th>
-                                                    <th>Unidade</th>
-                                                    <th>% Perda</th>
-                                                    <th>% Ganho</th>
-                                                    <th>Preço Unit.</th>
-                                                    <th>Total Item</th>
-                                                    <th>Ações</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="ingredientesTbody">
-                                                <tr>
-                                                    <td colspan="9" style="text-align: center; padding: 40px; color: #666;">
-                                                        🥘 Nenhum ingrediente adicionado<br>
-                                                        <small>Clique em "Adicionar Ingredientes" para começar</small>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- ===== MODO DE PREPARO (APÓS INGREDIENTES) ===== -->
-                            <div class="modo-preparo">
-                                <div class="modo-preparo-header">
-                                    <h4>📖 Modo de Preparo</h4>
-                                    <button class="toggle-btn" onclick="toggleModoPreparo()">
-                                        <span id="toggleText">Exibir</span>
-                                    </button>
-                                </div>
-                                <div class="modo-preparo-content hidden" id="modoPreparoContent">
-                                    <div class="form-group">
-                                        <textarea id="modoPreparo" placeholder="Digite aqui o modo de preparo da receita...
-
-Exemplo:
-1. Pré-aqueça o forno a 180°C
-2. Em uma tigela, misture os ingredientes secos...
-3. Adicione os ingredientes líquidos...
-4. Misture bem até obter uma massa homogênea...
-5. Despeje na forma untada e enfarinhada...
-6. Asse por 30-40 minutos ou até dourar..."></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+           
 
             <!-- Tipos de Refeições -->
             <div id="tipos-refeicoes" class="tab-content hidden">
@@ -523,9 +352,12 @@ Exemplo:
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/core/utils.js"></script>
+<script src="js/ui/toast.js"></script>
+<script src="js/main-updated.js"></script>
     <script src="js/clientes-simplificado.js"></script>
     <script src="js/modulo-cardapios.js"></script>
-    <script src="js/modulo-receitas.js"></script>
+
     <script src="js/sistema-integracao.js"></script>
 
     <script>
@@ -1511,5 +1343,9 @@ Exemplo:
 
         console.log('✅ Sistema simplificado inicializado!');
     </script>
+
+    function irParaReceitas() {
+    window.location.href = 'pages/receitas.html';
+}
 </body>
 </html>
